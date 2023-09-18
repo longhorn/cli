@@ -1,0 +1,12 @@
+#!/bin/bash
+set -e
+
+cd $(dirname $0)/..
+
+echo Running tests
+
+PACKAGES="$(find -name '*.go' | xargs -I{} dirname {} |  cut -f2 -d/ | sort -u | grep -Ev '(^\.$|.git|fake|vendor|bin)' | sed -e 's!^!./!' -e 's!$!/...!')"
+
+# Disable parallel executions as number of tests mocks NewJoiner
+[ "${ARCH}" == "amd64" ] && RACE=-race
+go test ${RACE} -parallel 1 -v -cover -coverprofile=coverage.out -tags=test ${PACKAGES}
