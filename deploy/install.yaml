@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: longhorn-preflight
+  labels:
+    app: longhorn-preflight
+spec:
+  selector:
+    matchLabels:
+      app: longhorn-preflight
+  template:
+    metadata:
+      labels:
+        app: longhorn-preflight
+    spec:
+      hostNetwork: true
+      hostPID: true
+      initContainers:
+      - name: longhorn-preflight
+        command:
+          - longhorn-preflight
+          - install
+        image: longhornio/longhorn-preflight:master-head
+        securityContext:
+          privileged: true
+        env:
+        - name: UPDATE_PACKAGE_LIST
+          value: "true"
+        - name: ENABLE_SPDK
+          value: "true"
+        - name: HUGEMEM
+          value: "2048"
+        - name: PCI_ALLOWED
+          value: "none"
+        - name: DRIVER_OVERRIDE
+          value: "uio_pci_generic"
+        volumeMounts:
+        - name: host
+          mountPath: /host/
+      containers:
+      - name: sleep
+        image: registry.k8s.io/pause:3.1
+      volumes:
+      - name: host
+        hostPath:
+          path: /
+      - name: longhorn
+  updateStrategy:
+    type: RollingUpdate
