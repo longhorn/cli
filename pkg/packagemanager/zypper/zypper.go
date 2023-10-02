@@ -42,6 +42,12 @@ func (c *Command) Modprobe(module string) (string, error) {
 	return c.executor.Execute("modprobe", []string{module}, lhtypes.ExecuteNoTimeout)
 }
 
+// CheckModLoaded checks if a module is loaded
+func (c *Command) CheckModLoaded(module string) error {
+	_, err := c.executor.Execute("grep", []string{module, "/proc/modules"}, lhtypes.ExecuteNoTimeout)
+	return err
+}
+
 // StartService executes the service start command
 func (c *Command) StartService(name string) (string, error) {
 	output, err := c.executor.Execute("systemctl", []string{"-q", "enable", name}, lhtypes.ExecuteNoTimeout)
@@ -50,4 +56,14 @@ func (c *Command) StartService(name string) (string, error) {
 	}
 
 	return c.executor.Execute("systemctl", []string{"start", name}, lhtypes.ExecuteNoTimeout)
+}
+
+// GetServiceStatus executes the service status command
+func (c *Command) GetServiceStatus(name string) (string, error) {
+	return c.executor.Execute("systemctl", []string{"status", "--no-pager", name}, lhtypes.ExecuteNoTimeout)
+}
+
+// CheckPackageInstalled checks if a package is installed
+func (c *Command) CheckPackageInstalled(name string) (string, error) {
+	return c.executor.Execute("rpm", []string{"-q", name}, lhtypes.ExecuteNoTimeout)
 }
