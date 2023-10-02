@@ -92,6 +92,24 @@ func NewChecker(packageManager types.PackageManager) (*Checker, error) {
 				"nvme_tcp",
 			},
 		}, nil
+	case types.PackageManagerPacman:
+		return &Checker{
+			name:    types.PackageManagerPacman,
+			command: zypper.NewCommand(executor),
+			packages: []string{
+				"nfs-utils", "open-iscsi",
+			},
+			modules: []string{},
+			services: []string{
+				"multipathd.service",
+			},
+			spdkDepPackages: []string{
+				"nvme-cli",
+			},
+			spdkDepModules: []string{
+				"nvme_tcp",
+			},
+		}, nil
 	default:
 		return nil, fmt.Errorf("unknown package manager %s", packageManager)
 	}
