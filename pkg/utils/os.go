@@ -20,6 +20,8 @@ func GetPackageManager(platform string) (types.PackageManager, error) {
 		return types.PackageManagerApt, nil
 	case "rhel", "ol", "rocky", "centos", "fedora":
 		return types.PackageManagerYum, nil
+	case "arch":
+		return types.PackageManagerPacman, nil
 	default:
 		return types.PackageManagerUnknown, fmt.Errorf("unknown platform %s", platform)
 	}
