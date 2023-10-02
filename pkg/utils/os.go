@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"regexp"
+	"strings"
 
 	"github.com/longhorn/longhorn-preflight/pkg/types"
 )
@@ -16,7 +18,7 @@ func GetPackageManager(platform string) (types.PackageManager, error) {
 		return types.PackageManagerZypper, nil
 	case "ubuntu", "debian":
 		return types.PackageManagerApt, nil
-	case "rhel", "ol":
+	case "rhel", "ol", "rocky", "centos", "fedora":
 		return types.PackageManagerYum, nil
 	default:
 		return types.PackageManagerUnknown, fmt.Errorf("unknown platform %s", platform)
@@ -74,4 +76,27 @@ func readFileLines(path string) ([]string, error) {
 		lines = append(lines, scanner.Text())
 	}
 	return lines, scanner.Err()
+}
+
+func IsModuleLoaded(moduleName string) (bool, error) {
+	cmd := exec.Command("lsmod")
+	output, err := cmd.Output()
+	if err != nil {
+		return false, err
+	}
+
+	if strings.Contains(string(output), moduleName) {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+func GetKernelVersion() string {
+	cmd := exec.Command("uname", "-r")
+	output, err := cmd.Output()
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(output))
 }

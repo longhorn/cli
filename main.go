@@ -30,7 +30,7 @@ func main() {
 	a.Flags = []cli.Flag{}
 	a.Commands = []cli.Command{
 		app.PreflightInstallCmd(packageManager),
-		app.PreflightCheckCmd(),
+		app.PreflightCheckCmd(packageManager),
 	}
 	if err := a.Run(os.Args); err != nil {
 		logrus.WithError(err).Fatal("Failed to execute command")
