@@ -8,22 +8,17 @@ import (
 	"strconv"
 	"strings"
 
-	lhns "github.com/longhorn/go-common-libs/namespace"
+	lhns "github.com/longhorn/go-common-libs/ns"
 	lhtypes "github.com/longhorn/go-common-libs/types"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
-	"github.com/longhorn/longhorn-preflight/pkg/command"
-	"github.com/longhorn/longhorn-preflight/pkg/packagemanager/apt"
-	"github.com/longhorn/longhorn-preflight/pkg/packagemanager/yum"
-	"github.com/longhorn/longhorn-preflight/pkg/packagemanager/zypper"
-	"github.com/longhorn/longhorn-preflight/pkg/types"
+	"github.com/longhorn/longhorn-preflight/pkg/pkgmgr"
 	"github.com/longhorn/longhorn-preflight/pkg/utils"
 )
 
 type Checker struct {
-	name    types.PackageManager
-	command command.CommandInterface
+	pkgMgr pkgmgr.PackageManager
 
 	packages        []string
 	modules         []string
@@ -32,7 +27,7 @@ type Checker struct {
 	spdkDepModules  []string
 }
 
-func NewChecker(packageManager types.PackageManager) (*Checker, error) {
+func NewChecker(pkgMgrType pkgmgr.PackageManagerType) (*Checker, error) {
 	namespaces := []lhtypes.Namespace{
 		lhtypes.NamespaceMnt,
 		lhtypes.NamespaceNet,
@@ -43,11 +38,15 @@ func NewChecker(packageManager types.PackageManager) (*Checker, error) {
 		return nil, err
 	}
 
-	switch packageManager {
-	case types.PackageManagerApt:
+	pkgMgr, err := pkgmgr.New(pkgMgrType, executor)
+	if err != nil {
+		return nil, err
+	}
+
+	switch pkgMgrType {
+	case pkgmgr.PackageManagerApt:
 		return &Checker{
-			name:    types.PackageManagerApt,
-			command: apt.NewCommand(executor),
+			pkgMgr: pkgMgr,
 			packages: []string{
 				"nfs-common", "open-iscsi",
 			},
@@ -60,10 +59,10 @@ func NewChecker(packageManager types.PackageManager) (*Checker, error) {
 				"nvme_tcp",
 			},
 		}, nil
-	case types.PackageManagerYum:
+
+	case pkgmgr.PackageManagerYum:
 		return &Checker{
-			name:    types.PackageManagerYum,
-			command: yum.NewCommand(executor),
+			pkgMgr: pkgMgr,
 			packages: []string{
 				"nfs-utils", "iscsi-initiator-utils",
 			},
@@ -76,10 +75,10 @@ func NewChecker(packageManager types.PackageManager) (*Checker, error) {
 				"nvme_tcp",
 			},
 		}, nil
-	case types.PackageManagerZypper:
+
+	case pkgmgr.PackageManagerZypper:
 		return &Checker{
-			name:    types.PackageManagerZypper,
-			command: zypper.NewCommand(executor),
+			pkgMgr: pkgMgr,
 			packages: []string{
 				"nfs-client", "open-iscsi",
 			},
@@ -92,10 +91,10 @@ func NewChecker(packageManager types.PackageManager) (*Checker, error) {
 				"nvme_tcp",
 			},
 		}, nil
-	case types.PackageManagerPacman:
+
+	case pkgmgr.PackageManagerPacman:
 		return &Checker{
-			name:    types.PackageManagerPacman,
-			command: zypper.NewCommand(executor),
+			pkgMgr: pkgMgr,
 			packages: []string{
 				"nfs-utils", "open-iscsi",
 			},
@@ -110,8 +109,9 @@ func NewChecker(packageManager types.PackageManager) (*Checker, error) {
 				"nvme_tcp",
 			},
 		}, nil
+
 	default:
-		return nil, fmt.Errorf("unknown package manager %s", packageManager)
+		return nil, fmt.Errorf("unknown package manager %s", pkgMgrType)
 	}
 }
 
@@ -119,13 +119,13 @@ func NewChecker(packageManager types.PackageManager) (*Checker, error) {
 func (c *Checker) CheckMultipathService() {
 	logrus.Infof("Checking multipathd service status")
 
-	_, err := c.command.GetServiceStatus("multipathd.service")
+	_, err := c.pkgMgr.GetServiceStatus("multipathd.service")
 	if err == nil {
 		logrus.Warn("multipathd.service is running. Please refer to https://longhorn.io/kb/troubleshooting-volume-with-multipath/ for more information.")
 		return
 	}
 
-	_, err = c.command.GetServiceStatus("multipathd.socket")
+	_, err = c.pkgMgr.GetServiceStatus("multipathd.socket")
 	if err == nil {
 		logrus.Warn("multipathd.service is inactive, but it can still be activated by multipathd.socket")
 		return
@@ -137,13 +137,13 @@ func (c *Checker) CheckMultipathService() {
 func (c *Checker) CheckIscsidService() {
 	logrus.Infof("Checking iscsid service status")
 
-	_, err := c.command.GetServiceStatus("iscsid.service")
+	_, err := c.pkgMgr.GetServiceStatus("iscsid.service")
 	if err == nil {
 		logrus.Info("iscsid.service is running")
 		return
 	}
 
-	_, err = c.command.GetServiceStatus("iscsid.socket")
+	_, err = c.pkgMgr.GetServiceStatus("iscsid.socket")
 	if err == nil {
 		logrus.Info("iscsid.service is inactive, but it can still be activated by iscsid.socket")
 		return
@@ -183,11 +183,11 @@ func (c *Checker) CheckHugePages() {
 }
 
 func (c *Checker) isHugePagesTotalEqualOrLargerThan(requiredHugePages int) (bool, error) {
-	output, err := c.command.Execute("grep", []string{"HugePages_Total", "/proc/meminfo"}, lhtypes.ExecuteNoTimeout)
+	output, err := c.pkgMgr.Execute("grep", []string{"HugePages_Total", "/proc/meminfo"}, lhtypes.ExecuteNoTimeout)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to get total number of HugePages")
 	}
-	line := strings.Split(string(output), "\n")[0]
+	line := strings.Split(output, "\n")[0]
 	hugePagesTotal := strings.TrimSpace(strings.Split(line, ":")[1])
 
 	hugePagesTotalNum, err := strconv.Atoi(hugePagesTotal)
@@ -211,7 +211,7 @@ func (c *Checker) CheckCpuInstructionSet(instructionSets map[string][]string) {
 	}
 
 	for _, set := range sets {
-		_, err := c.command.Execute("grep", []string{set, "/proc/cpuinfo"}, lhtypes.ExecuteNoTimeout)
+		_, err := c.pkgMgr.Execute("grep", []string{set, "/proc/cpuinfo"}, lhtypes.ExecuteNoTimeout)
 		if err != nil {
 			logrus.Errorf("CPU instruction set %v is not supported", set)
 		} else {
@@ -233,7 +233,7 @@ func (c *Checker) CheckPackagesInstalled(spdkDependent bool) {
 	logrus.Infof("Checking if required packages are installed")
 
 	for _, pkg := range packages {
-		_, err := c.command.CheckPackageInstalled(pkg)
+		_, err := c.pkgMgr.CheckPackageInstalled(pkg)
 		if err != nil {
 			logrus.WithError(err).Errorf("Package %s is not installed", pkg)
 		} else {
@@ -262,7 +262,7 @@ func (c *Checker) CheckModulesLoaded(spdkDependent bool) {
 	for _, mod := range modules {
 		logrus.Infof("Checking if module %s is loaded", mod)
 
-		err := c.command.CheckModLoaded(mod)
+		err := c.pkgMgr.CheckModLoaded(mod)
 		if err != nil {
 			logrus.WithError(err).Errorf("Failed to check if module %s is loaded", mod)
 		} else {
@@ -281,7 +281,9 @@ func (c *Checker) CheckNFSv4Support() {
 		logrus.WithError(err).Errorf("Failed to check NFS4 support")
 		return
 	}
-	defer configFile.Close()
+	defer func(configFile *os.File) {
+		_ = configFile.Close()
+	}(configFile)
 
 	scanner := bufio.NewScanner(configFile)
 

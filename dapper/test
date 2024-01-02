@@ -1,0 +1,12 @@
+#!/bin/bash
+set -e
+
+cd "$(dirname "$0")"/..
+
+echo Running tests
+
+PACKAGES="$(go list ./...)"
+
+# Disable parallel executions as number of tests mocks NewJoiner
+[ "${ARCH}" == "amd64" ] && RACE=-race
+go test ${RACE} -parallel 1 -v -cover -coverprofile=coverage.out -tags=test ${PACKAGES}

@@ -7,16 +7,16 @@ import (
 	"github.com/urfave/cli"
 
 	"github.com/longhorn/longhorn-preflight/pkg/checker"
-	"github.com/longhorn/longhorn-preflight/pkg/types"
+	"github.com/longhorn/longhorn-preflight/pkg/pkgmgr"
 )
 
-func PreflightCheckCmd(packageManager types.PackageManager) cli.Command {
+func PreflightCheckCmd(pkgMgrType pkgmgr.PackageManagerType) cli.Command {
 	return cli.Command{
 		Name:  "check",
 		Flags: []cli.Flag{},
 		Usage: "Check environment",
 		Action: func(c *cli.Context) {
-			if err := check(c, packageManager); err != nil {
+			if err := check(c, pkgMgrType); err != nil {
 				logrus.WithError(err).Fatalf("Failed to run command")
 			}
 
@@ -24,26 +24,26 @@ func PreflightCheckCmd(packageManager types.PackageManager) cli.Command {
 	}
 }
 
-func check(c *cli.Context, packageManager types.PackageManager) error {
-	checker, err := checker.NewChecker(packageManager)
+func check(_ *cli.Context, pkgMgrType pkgmgr.PackageManagerType) error {
+	ckr, err := checker.NewChecker(pkgMgrType)
 	if err != nil {
 		return err
 	}
 
-	checker.CheckIscsidService()
-	checker.CheckMultipathService()
-	checker.CheckNFSv4Support()
-	checker.CheckPackagesInstalled(false)
+	ckr.CheckIscsidService()
+	ckr.CheckMultipathService()
+	ckr.CheckNFSv4Support()
+	ckr.CheckPackagesInstalled(false)
 
 	if os.Getenv("ENABLE_SPDK") == "true" {
 		instructionSets := map[string][]string{
 			"amd64": {"sse4_2"},
 		}
-		checker.CheckCpuInstructionSet(instructionSets)
+		ckr.CheckCpuInstructionSet(instructionSets)
 
-		checker.CheckHugePages()
-		checker.CheckPackagesInstalled(true)
-		checker.CheckModulesLoaded(true)
+		ckr.CheckHugePages()
+		ckr.CheckPackagesInstalled(true)
+		ckr.CheckModulesLoaded(true)
 	}
 
 	return nil

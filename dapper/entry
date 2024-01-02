@@ -1,0 +1,12 @@
+#!/bin/bash
+set -e
+
+if [ -e ./dapper/"$1" ]; then
+    # shellcheck disable=SC2145
+    # shellcheck disable=SC2068
+    ./dapper/$@
+else
+    exec "$@"
+fi
+
+chown -R "$DAPPER_UID":"$DAPPER_GID" .

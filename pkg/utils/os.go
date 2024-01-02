@@ -9,21 +9,21 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/longhorn/longhorn-preflight/pkg/types"
+	"github.com/longhorn/longhorn-preflight/pkg/pkgmgr"
 )
 
-func GetPackageManager(platform string) (types.PackageManager, error) {
+func GetPackageManagerType(platform string) (pkgmgr.PackageManagerType, error) {
 	switch platform {
 	case "sles", "suse", "opensuse", "opensuse-leap":
-		return types.PackageManagerZypper, nil
+		return pkgmgr.PackageManagerZypper, nil
 	case "ubuntu", "debian":
-		return types.PackageManagerApt, nil
+		return pkgmgr.PackageManagerApt, nil
 	case "rhel", "ol", "rocky", "centos", "fedora":
-		return types.PackageManagerYum, nil
+		return pkgmgr.PackageManagerYum, nil
 	case "arch":
-		return types.PackageManagerPacman, nil
+		return pkgmgr.PackageManagerPacman, nil
 	default:
-		return types.PackageManagerUnknown, fmt.Errorf("unknown platform %s", platform)
+		return pkgmgr.PackageManagerUnknown, fmt.Errorf("unknown platform %s", platform)
 	}
 }
 
@@ -70,7 +70,9 @@ func readFileLines(path string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer func(file *os.File) {
+		_ = file.Close()
+	}(file)
 
 	var lines []string
 	scanner := bufio.NewScanner(file)
