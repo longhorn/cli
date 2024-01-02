@@ -22,15 +22,15 @@ func main() {
 
 	logrus.Infof("Detected platform: %s", platform)
 
-	packageManager, err := utils.GetPackageManager(platform)
+	pkgMgrType, err := utils.GetPackageManagerType(platform)
 	if err != nil {
 		logrus.WithError(err).Fatal("Failed to get package manager")
 	}
 
 	a.Flags = []cli.Flag{}
 	a.Commands = []cli.Command{
-		app.PreflightInstallCmd(packageManager),
-		app.PreflightCheckCmd(packageManager),
+		app.PreflightInstallCmd(pkgMgrType),
+		app.PreflightCheckCmd(pkgMgrType),
 	}
 	if err := a.Run(os.Args); err != nil {
 		logrus.WithError(err).Fatal("Failed to execute command")

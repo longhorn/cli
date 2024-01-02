@@ -15,9 +15,11 @@ Users can create `longhorn-preflight` DaemonSet for installing and configuring t
 ### Tweak the Options
 
 #### General Options
+
 - `UPDATE_PACKAGE_LIST`: Update package list before install required packages.
 
 #### SPDK Specific Options
+
 - `ENABLE_SPDK`: Enable installation of required packages, modules and setup.
 - `HUGEMEM`: Hugepage size in MiB for SPDK.
 - `PCI_ALLOWED`: Whitespace separated list of PCI devices. By default, block all PCI devices use a non-valid address.
@@ -36,7 +38,7 @@ Users can create `longhorn-preflight` DaemonSet for checking the prerequisites a
 ### Tweak the Options
 
 #### SPDK Specific Options
+
 - `ENABLE_SPDK`: Enable installation of required packages, modules and setup.
 - `HUGEMEM`: Hugepage size in MiB for SPDK.
 - `UIO_DRIVER`: Userspace IO driver.
-

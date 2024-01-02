@@ -4,20 +4,14 @@ import (
 	"fmt"
 	"strings"
 
-	lhns "github.com/longhorn/go-common-libs/namespace"
+	lhns "github.com/longhorn/go-common-libs/ns"
 	lhtypes "github.com/longhorn/go-common-libs/types"
 
-	"github.com/longhorn/longhorn-preflight/pkg/command"
-	"github.com/longhorn/longhorn-preflight/pkg/packagemanager/apt"
-	"github.com/longhorn/longhorn-preflight/pkg/packagemanager/pacman"
-	"github.com/longhorn/longhorn-preflight/pkg/packagemanager/yum"
-	"github.com/longhorn/longhorn-preflight/pkg/packagemanager/zypper"
-	"github.com/longhorn/longhorn-preflight/pkg/types"
+	"github.com/longhorn/longhorn-preflight/pkg/pkgmgr"
 )
 
 type Installer struct {
-	name    types.PackageManager
-	command command.CommandInterface
+	pkgMgr pkgmgr.PackageManager
 
 	packages        []string
 	modules         []string
@@ -26,7 +20,7 @@ type Installer struct {
 	spdkDepModules  []string
 }
 
-func NewInstaller(packageManager types.PackageManager) (*Installer, error) {
+func NewInstaller(pkgMgrType pkgmgr.PackageManagerType) (*Installer, error) {
 	namespaces := []lhtypes.Namespace{
 		lhtypes.NamespaceMnt,
 		lhtypes.NamespaceNet,
@@ -43,11 +37,15 @@ func NewInstaller(packageManager types.PackageManager) (*Installer, error) {
 	}
 	kernelRelease = strings.TrimRight(kernelRelease, "\n")
 
-	switch packageManager {
-	case types.PackageManagerApt:
+	pkgMgr, err := pkgmgr.New(pkgMgrType, executor)
+	if err != nil {
+		return nil, err
+	}
+
+	switch pkgMgrType {
+	case pkgmgr.PackageManagerApt:
 		return &Installer{
-			name:    types.PackageManagerApt,
-			command: apt.NewCommand(executor),
+			pkgMgr: pkgMgr,
 			packages: []string{
 				"nfs-common", "open-iscsi",
 			},
@@ -62,10 +60,10 @@ func NewInstaller(packageManager types.PackageManager) (*Installer, error) {
 				"nvme-tcp",
 			},
 		}, nil
-	case types.PackageManagerYum:
+
+	case pkgmgr.PackageManagerYum:
 		return &Installer{
-			name:    types.PackageManagerYum,
-			command: yum.NewCommand(executor),
+			pkgMgr: pkgMgr,
 			packages: []string{
 				"nfs-utils", "iscsi-initiator-utils",
 			},
@@ -80,10 +78,10 @@ func NewInstaller(packageManager types.PackageManager) (*Installer, error) {
 				"nvme-tcp",
 			},
 		}, nil
-	case types.PackageManagerZypper:
+
+	case pkgmgr.PackageManagerZypper:
 		return &Installer{
-			name:    types.PackageManagerZypper,
-			command: zypper.NewCommand(executor),
+			pkgMgr: pkgMgr,
 			packages: []string{
 				"nfs-client", "open-iscsi",
 			},
@@ -98,10 +96,10 @@ func NewInstaller(packageManager types.PackageManager) (*Installer, error) {
 				"nvme-tcp",
 			},
 		}, nil
-	case types.PackageManagerPacman:
+
+	case pkgmgr.PackageManagerPacman:
 		return &Installer{
-			name:    types.PackageManagerPacman,
-			command: pacman.NewCommand(executor),
+			pkgMgr: pkgMgr,
 			packages: []string{
 				"nfs-utils", "open-iscsi",
 			},
@@ -116,7 +114,8 @@ func NewInstaller(packageManager types.PackageManager) (*Installer, error) {
 				"nvme-tcp",
 			},
 		}, nil
+
 	default:
-		return nil, fmt.Errorf("unknown package manager %s", packageManager)
+		return nil, fmt.Errorf("unknown package manager %s", pkgMgrType)
 	}
 }

@@ -7,40 +7,43 @@ import (
 	"github.com/urfave/cli"
 
 	"github.com/longhorn/longhorn-preflight/pkg/installer"
-	"github.com/longhorn/longhorn-preflight/pkg/types"
+	"github.com/longhorn/longhorn-preflight/pkg/pkgmgr"
 )
 
-func PreflightInstallCmd(packageManager types.PackageManager) cli.Command {
+func PreflightInstallCmd(pkgMgrType pkgmgr.PackageManagerType) cli.Command {
 	return cli.Command{
 		Name:  "install",
 		Flags: []cli.Flag{},
 		Usage: "Install and configure prerequisites",
 		Action: func(c *cli.Context) {
-			if err := install(c, packageManager); err != nil {
+			if err := install(c, pkgMgrType); err != nil {
 				logrus.WithError(err).Fatalf("Failed to run command")
 			}
 		},
 	}
 }
 
-func install(c *cli.Context, packageManager types.PackageManager) error {
-	installer, err := installer.NewInstaller(packageManager)
+func install(_ *cli.Context, pkgMgrType pkgmgr.PackageManagerType) error {
+	ins, err := installer.NewInstaller(pkgMgrType)
 	if err != nil {
 		return err
 	}
 
 	if os.Getenv("UPDATE_PACKAGE_LIST") == "true" {
-		installer.UpdatePackageList()
+		ins.UpdatePackageList()
 	}
 
-	installer.StartServices()
-	installer.ProbeModules(false)
-	installer.InstallPackages(false)
+	ins.StartServices()
+	ins.ProbeModules(false)
+	ins.InstallPackages(false)
 
 	if os.Getenv("ENABLE_SPDK") == "true" {
-		installer.InstallPackages(true)
-		installer.ProbeModules(true)
-		installer.ConfigureSPDKEnv()
+		ins.InstallPackages(true)
+		ins.ProbeModules(true)
+		err := ins.ConfigureSPDKEnv()
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

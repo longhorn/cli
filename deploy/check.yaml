@@ -18,8 +18,8 @@ spec:
       initContainers:
       - name: longhorn-preflight
         command:
-          - longhorn-preflight
-          - check
+        - longhorn-preflight
+        - check
         image: longhornio/longhorn-preflight:master-head
         securityContext:
           privileged: true

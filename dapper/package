@@ -1,0 +1,27 @@
+#!/bin/bash
+set -e
+
+source "$(dirname "$0")"/version
+cd "$(dirname "$0")"/..
+
+ARCH=${ARCH:-amd64}
+SUFFIX=""
+[ "${ARCH}" != "amd64" ] && SUFFIX="_${ARCH}"
+
+TAG=${TAG:-v$(date -u +%Y%m%d)}
+REPO=${REPO:-longhornio}
+IMAGE=${IMAGE:-${REPO}/longhorn-preflight:${TAG}}
+
+if [ ! -e ./bin/longhorn-preflight ]; then
+    ./dapper/build
+fi
+
+# Copy SPDK scripts from the dapper container
+mkdir -p ./spdk
+cp -rf /spdk/scripts ./spdk/
+
+# Build image
+docker build -t "${IMAGE}" -f package/Dockerfile .
+echo Built "${IMAGE}"
+# shellcheck disable=SC2086
+echo ${IMAGE} > ./bin/latest_image
