@@ -6,8 +6,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 
-	"github.com/longhorn/longhorn-preflight/cmd/app"
-	"github.com/longhorn/longhorn-preflight/pkg/utils"
+	"github.com/longhorn/cli/cmd/app"
+	"github.com/longhorn/cli/pkg/utils"
 )
 
 func main() {

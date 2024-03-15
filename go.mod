@@ -1,4 +1,4 @@
-module github.com/longhorn/longhorn-preflight
+module github.com/longhorn/cli
 
 go 1.21
 

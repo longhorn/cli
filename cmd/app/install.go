@@ -6,8 +6,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 
-	"github.com/longhorn/longhorn-preflight/pkg/installer"
-	"github.com/longhorn/longhorn-preflight/pkg/pkgmgr"
+	"github.com/longhorn/cli/pkg/installer"
+	"github.com/longhorn/cli/pkg/pkgmgr"
 )
 
 func PreflightInstallCmd(pkgMgrType pkgmgr.PackageManagerType) cli.Command {

@@ -7,7 +7,7 @@ import (
 	lhns "github.com/longhorn/go-common-libs/ns"
 	lhtypes "github.com/longhorn/go-common-libs/types"
 
-	"github.com/longhorn/longhorn-preflight/pkg/pkgmgr"
+	"github.com/longhorn/cli/pkg/pkgmgr"
 )
 
 type Installer struct {

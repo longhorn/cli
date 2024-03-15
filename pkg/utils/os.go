@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/longhorn/longhorn-preflight/pkg/pkgmgr"
+	"github.com/longhorn/cli/pkg/pkgmgr"
 )
 
 func GetPackageManagerType(platform string) (pkgmgr.PackageManagerType, error) {
