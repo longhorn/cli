@@ -13,8 +13,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
-	"github.com/longhorn/longhorn-preflight/pkg/pkgmgr"
-	"github.com/longhorn/longhorn-preflight/pkg/utils"
+	"github.com/longhorn/cli/pkg/pkgmgr"
+	"github.com/longhorn/cli/pkg/utils"
 )
 
 type Checker struct {
