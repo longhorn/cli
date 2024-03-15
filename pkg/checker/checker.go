@@ -183,7 +183,7 @@ func (c *Checker) CheckHugePages() {
 }
 
 func (c *Checker) isHugePagesTotalEqualOrLargerThan(requiredHugePages int) (bool, error) {
-	output, err := c.pkgMgr.Execute("grep", []string{"HugePages_Total", "/proc/meminfo"}, lhtypes.ExecuteNoTimeout)
+	output, err := c.pkgMgr.Execute([]string{}, "grep", []string{"HugePages_Total", "/proc/meminfo"}, lhtypes.ExecuteNoTimeout)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to get total number of HugePages")
 	}
@@ -211,7 +211,7 @@ func (c *Checker) CheckCpuInstructionSet(instructionSets map[string][]string) {
 	}
 
 	for _, set := range sets {
-		_, err := c.pkgMgr.Execute("grep", []string{set, "/proc/cpuinfo"}, lhtypes.ExecuteNoTimeout)
+		_, err := c.pkgMgr.Execute([]string{}, "grep", []string{set, "/proc/cpuinfo"}, lhtypes.ExecuteNoTimeout)
 		if err != nil {
 			logrus.Errorf("CPU instruction set %v is not supported", set)
 		} else {
