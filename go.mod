@@ -3,7 +3,7 @@ module github.com/longhorn/longhorn-preflight
 go 1.21
 
 require (
-	github.com/longhorn/go-common-libs v0.0.0-20240307063052-6e77996eda29
+	github.com/longhorn/go-common-libs v0.0.0-20240315062830-5aa0ac1dac62
 	github.com/otiai10/copy v1.14.0
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.3
