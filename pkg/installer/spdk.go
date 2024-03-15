@@ -31,7 +31,7 @@ func (i *Installer) ConfigureSPDKEnv() error {
 	// Configure SPDK environment
 	logrus.Infof("Configuring SPDK environment")
 	args := getArgsForConfiguringSPDKEnv()
-	if _, err := i.pkgMgr.Execute("bash", args, lhtypes.ExecuteNoTimeout); err != nil {
+	if _, err := i.pkgMgr.Execute([]string{}, "bash", args, lhtypes.ExecuteNoTimeout); err != nil {
 		logrus.WithError(err).Errorf("Failed to configure SPDK environment")
 	} else {
 		logrus.Infof("Successfully configured SPDK environment")

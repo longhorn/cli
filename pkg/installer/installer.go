@@ -31,7 +31,7 @@ func NewInstaller(pkgMgrType pkgmgr.PackageManagerType) (*Installer, error) {
 		return nil, err
 	}
 
-	kernelRelease, err := executor.Execute("uname", []string{"-r"}, lhtypes.ExecuteNoTimeout)
+	kernelRelease, err := executor.Execute([]string{}, "uname", []string{"-r"}, lhtypes.ExecuteNoTimeout)
 	if err != nil {
 		return nil, err
 	}

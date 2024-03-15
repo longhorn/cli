@@ -27,7 +27,7 @@ type PackageManager interface {
 	StartService(name string) (string, error)
 	GetServiceStatus(name string) (string, error)
 	CheckPackageInstalled(name string) (string, error)
-	Execute(binary string, args []string, timeout time.Duration) (string, error)
+	Execute(envs []string, binary string, args []string, timeout time.Duration) (string, error)
 }
 
 func New(pkgMgrType PackageManagerType, executor *lhns.Executor) (PackageManager, error) {
