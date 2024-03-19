@@ -3,7 +3,7 @@ module github.com/longhorn/cli
 go 1.21
 
 require (
-	github.com/longhorn/go-common-libs v0.0.0-20240315062830-5aa0ac1dac62
+	github.com/longhorn/go-common-libs v0.0.0-20240319112414-b75404dc7fbc
 	github.com/otiai10/copy v1.14.0
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.3
@@ -25,6 +25,6 @@ require (
 	golang.org/x/sync v0.5.0 // indirect
 	golang.org/x/sys v0.18.0 // indirect
 	k8s.io/klog/v2 v2.110.1 // indirect
-	k8s.io/mount-utils v0.29.2 // indirect
+	k8s.io/mount-utils v0.29.3 // indirect
 	k8s.io/utils v0.0.0-20230726121419-3b25d923346b // indirect
 )
