@@ -15,7 +15,7 @@ github.com/go-ole/go-ole/oleutil
 # github.com/google/uuid v1.6.0
 ## explicit
 github.com/google/uuid
-# github.com/longhorn/go-common-libs v0.0.0-20240315062830-5aa0ac1dac62
+# github.com/longhorn/go-common-libs v0.0.0-20240319112414-b75404dc7fbc
 ## explicit; go 1.21
 github.com/longhorn/go-common-libs/exec
 github.com/longhorn/go-common-libs/io
@@ -75,7 +75,7 @@ k8s.io/klog/v2/internal/dbg
 k8s.io/klog/v2/internal/serialize
 k8s.io/klog/v2/internal/severity
 k8s.io/klog/v2/internal/sloghandler
-# k8s.io/mount-utils v0.29.2
+# k8s.io/mount-utils v0.29.3
 ## explicit; go 1.21
 k8s.io/mount-utils
 # k8s.io/utils v0.0.0-20230726121419-3b25d923346b
