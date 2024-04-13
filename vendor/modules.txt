@@ -15,7 +15,7 @@ github.com/go-ole/go-ole/oleutil
 # github.com/google/uuid v1.6.0
 ## explicit
 github.com/google/uuid
-# github.com/longhorn/go-common-libs v0.0.0-20240319112414-b75404dc7fbc
+# github.com/longhorn/go-common-libs v0.0.0-20240411093823-b8862efb8e03
 ## explicit; go 1.21
 github.com/longhorn/go-common-libs/exec
 github.com/longhorn/go-common-libs/io
@@ -43,7 +43,7 @@ github.com/power-devops/perfstat
 # github.com/russross/blackfriday/v2 v2.1.0
 ## explicit
 github.com/russross/blackfriday/v2
-# github.com/shirou/gopsutil/v3 v3.24.2
+# github.com/shirou/gopsutil/v3 v3.24.3
 ## explicit; go 1.15
 github.com/shirou/gopsutil/v3/common
 github.com/shirou/gopsutil/v3/disk
@@ -61,7 +61,7 @@ github.com/yusufpapurcu/wmi
 ## explicit; go 1.18
 golang.org/x/sync/errgroup
 golang.org/x/sync/semaphore
-# golang.org/x/sys v0.18.0
+# golang.org/x/sys v0.19.0
 ## explicit; go 1.18
 golang.org/x/sys/unix
 golang.org/x/sys/windows
