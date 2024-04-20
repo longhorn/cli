@@ -4,10 +4,9 @@ github.com/c9s/goprocinfo/linux
 # github.com/cpuguy83/go-md2man/v2 v2.0.3
 ## explicit; go 1.11
 github.com/cpuguy83/go-md2man/v2/md2man
-# github.com/go-logr/logr v1.3.0
+# github.com/go-logr/logr v1.4.1
 ## explicit; go 1.18
 github.com/go-logr/logr
-github.com/go-logr/logr/slogr
 # github.com/go-ole/go-ole v1.3.0
 ## explicit; go 1.12
 github.com/go-ole/go-ole
@@ -15,8 +14,8 @@ github.com/go-ole/go-ole/oleutil
 # github.com/google/uuid v1.6.0
 ## explicit
 github.com/google/uuid
-# github.com/longhorn/go-common-libs v0.0.0-20240411093823-b8862efb8e03
-## explicit; go 1.21
+# github.com/longhorn/go-common-libs v0.0.0-20240420123020-ed4ab0cfdbea
+## explicit; go 1.22.2
 github.com/longhorn/go-common-libs/exec
 github.com/longhorn/go-common-libs/io
 github.com/longhorn/go-common-libs/ns
@@ -66,8 +65,8 @@ golang.org/x/sync/semaphore
 golang.org/x/sys/unix
 golang.org/x/sys/windows
 golang.org/x/sys/windows/registry
-# k8s.io/klog/v2 v2.110.1
-## explicit; go 1.13
+# k8s.io/klog/v2 v2.120.1
+## explicit; go 1.18
 k8s.io/klog/v2
 k8s.io/klog/v2/internal/buffer
 k8s.io/klog/v2/internal/clock
@@ -75,8 +74,8 @@ k8s.io/klog/v2/internal/dbg
 k8s.io/klog/v2/internal/serialize
 k8s.io/klog/v2/internal/severity
 k8s.io/klog/v2/internal/sloghandler
-# k8s.io/mount-utils v0.29.3
-## explicit; go 1.21
+# k8s.io/mount-utils v0.30.0
+## explicit; go 1.22.0
 k8s.io/mount-utils
 # k8s.io/utils v0.0.0-20230726121419-3b25d923346b
 ## explicit; go 1.18
