@@ -1,44 +1,43 @@
-# Longhorn Preflight
+# Longhorn Commandline Interface (longhornctl)
 
-`longhorn-preflight` helps install, configure and check the prerequisites for Longhorn system.
+This repository contains the source code for `longhornctl`, a CLI (command-line interface) designed to simplify Longhorn manual operations.
 
-## Install
+## What Can You Do With `longhornctl`?
 
-### Deploy
+- Install and verify prelight requirements.
+- Execute one-time Longhorn operations.
+- Gain inside into your Longhorn system.
 
-Users can create `longhorn-preflight` DaemonSet for installing and configuring the prerequisites and the environment.
+## Install `longhornctl`
 
-```
-# kubectl -f deploy/install.yaml
-```
+### Run From Container Image
 
-### Tweak the Options
+`To be updated`
 
-#### General Options
+### Using curl
 
-- `UPDATE_PACKAGE_LIST`: Update package list before install required packages.
+`To be updated`
 
-#### SPDK Specific Options
+### Build From Source
 
-- `ENABLE_SPDK`: Enable installation of required packages, modules and setup.
-- `HUGEMEM`: Hugepage size in MiB for SPDK.
-- `PCI_ALLOWED`: Whitespace separated list of PCI devices. By default, block all PCI devices use a non-valid address.
-- `DRIVER_OVERRIDE`: Bind devices to the given user space driver.
+1. Clone repository
+    ```bash
+    git clone https://github.com/longhorn/cli.git
+    ```
+1. Build the `longhornctl` binary
+    ```bash
+    cd cli
+    make
+    ```
+    > **Note:** This process will generate two binaries:
+    >   - `longhornctl`: A command-line interface for remote Longhorn operations, designed to be run outside the Kubernetes cluster. It executes `longhornctl-local` for operations within the cluster.
+    >   - `longhornctl-local`: A command-line interface to be used within a DaemonSet pod inside the Kubernetes cluster, handling in-cluster and host operations.
+1. After the build process completes, find the `longhornctl` binary in the `./bin` directory.
 
-## Check
+## Getting Started
 
-### Deploy
+To begin, run `longhornctl --help` to access a list of available commands and options.
 
-Users can create `longhorn-preflight` DaemonSet for checking the prerequisites and the environment.
+### Command Reference
 
-```
-# kubectl -f deploy/check.yaml
-```
-
-### Tweak the Options
-
-#### SPDK Specific Options
-
-- `ENABLE_SPDK`: Enable installation of required packages, modules and setup.
-- `HUGEMEM`: Hugepage size in MiB for SPDK.
-- `UIO_DRIVER`: Userspace IO driver.
+`To be updated`
