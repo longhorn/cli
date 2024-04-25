@@ -1,10 +1,10 @@
-package pkgmgr
+package packagemanager
 
 import (
 	"fmt"
 	"time"
 
-	lhns "github.com/longhorn/go-common-libs/ns"
+	lhgons "github.com/longhorn/go-common-libs/ns"
 )
 
 type PackageManagerType string
@@ -30,7 +30,7 @@ type PackageManager interface {
 	Execute(envs []string, binary string, args []string, timeout time.Duration) (string, error)
 }
 
-func New(pkgMgrType PackageManagerType, executor *lhns.Executor) (PackageManager, error) {
+func New(pkgMgrType PackageManagerType, executor *lhgons.Executor) (PackageManager, error) {
 	switch pkgMgrType {
 	case PackageManagerApt:
 		return NewAptPackageManager(executor), nil
