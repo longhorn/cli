@@ -6,14 +6,16 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strings"
 
-	"github.com/longhorn/cli/pkg/pkgmgr"
+	"github.com/longhorn/cli/pkg/consts"
+	pkgmgr "github.com/longhorn/cli/pkg/local/preflight/packagemanager"
 )
 
-func GetPackageManagerType(platform string) (pkgmgr.PackageManagerType, error) {
-	switch platform {
+func GetPackageManagerType(osRelease string) (pkgmgr.PackageManagerType, error) {
+	switch osRelease {
 	case "sles", "suse", "opensuse", "opensuse-leap":
 		return pkgmgr.PackageManagerZypper, nil
 	case "ubuntu", "debian":
@@ -23,24 +25,31 @@ func GetPackageManagerType(platform string) (pkgmgr.PackageManagerType, error) {
 	case "arch":
 		return pkgmgr.PackageManagerPacman, nil
 	default:
-		return pkgmgr.PackageManagerUnknown, fmt.Errorf("unknown platform %s", platform)
+		return pkgmgr.PackageManagerUnknown, fmt.Errorf("operating system (%s) is not supported", osRelease)
 	}
 }
 
 func GetOSRelease() (string, error) {
-	var lines []string
-	var err error
-
-	if _, err = os.Stat("/host/etc/os-release"); err == nil {
-		lines, err = readFileLines("/host/etc/os-release")
-	} else if _, err = os.Stat("/host/usr/lib/os-release"); err == nil {
-		lines, err = readFileLines("/host/usr/lib/os-release")
-	} else {
-		err = errors.New("no os-release file found")
+	// List of possible locations for the os-release file.
+	possiblePaths := []string{
+		filepath.Join("/etc/os-release"),
+		filepath.Join("/usr/lib/os-release"),
 	}
 
+	// Try to find the os-release file
+	var lines []string
+	var err error
+	for _, path := range possiblePaths {
+		hostPath := filepath.Join(consts.VolumeMountHostDirectory, path)
+		if _, err = os.Stat(hostPath); err == nil {
+			lines, err = readFileLines(hostPath)
+			break
+		}
+	}
+
+	// Return error is os-release file is not found
 	if err != nil {
-		return "", err
+		return "", errors.New("no os-release file found")
 	}
 
 	return parseOSreleaseFile(lines)
@@ -96,11 +105,11 @@ func IsModuleLoaded(moduleName string) (bool, error) {
 	return false, nil
 }
 
-func GetKernelVersion() string {
+func GetKernelVersion() (string, error) {
 	cmd := exec.Command("uname", "-r")
 	output, err := cmd.Output()
 	if err != nil {
-		return ""
+		return "", err
 	}
-	return strings.TrimSpace(string(output))
+	return strings.TrimSpace(string(output)), nil
 }

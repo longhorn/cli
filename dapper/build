@@ -1,14 +1,29 @@
 #!/bin/bash
 set -e -x
 
-source "$(dirname "$0")"/version
-cd "$(dirname "$0")"/..
 
-mkdir -p bin
+ROOT_DIR=$(cd "$(dirname "$0")"/.. && pwd)
+echo "Root dir: ${ROOT_DIR}"
+LINKFLAGS="-extldflags -static -s"
 
-[ "$(uname)" != "Darwin" ] && LINKFLAGS="-extldflags -static -s"
-CGO_ENABLED=0 go build -ldflags \
-  "-X github.com/longhorn/longhorn-preflight/meta.Version=$VERSION \
-   -X github.com/longhorn/longhorn-preflight/meta.GitCommit=$GITCOMMIT \
-   -X github.com/longhorn/longhorn-preflight/meta.BuildDate=$BUILDDATE \
-   $LINKFLAGS" -o bin/longhorn-preflight
+build_app() {
+  local _dir=$1
+  local _app=$2
+
+  cd "${ROOT_DIR}/cmd/${_dir}"
+
+  [ "$(uname)" != "Darwin" ] && LINKFLAGS="-extldflags -static -s"
+  CGO_ENABLED=0 go build -ldflags \
+    "-X github.com/longhorn/cli/meta.Version=$VERSION \
+     -X github.com/longhorn/cli/meta.GitCommit=$GITCOMMIT \
+     -X github.com/longhorn/cli/meta.BuildDate=$BUILDDATE \
+     $LINKFLAGS" -o ${ROOT_DIR}/bin/${_app}
+}
+
+source "${ROOT_DIR}/dapper/version"
+
+mkdir -p "${ROOT_DIR}/bin"
+echo "Making binary at ${ROOT_DIR}/bin"
+
+build_app local longhornctl-local
+build_app remote longhornctl
