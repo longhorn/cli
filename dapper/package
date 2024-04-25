@@ -1,8 +1,7 @@
 #!/bin/bash
 set -e
 
-source "$(dirname "$0")"/version
-cd "$(dirname "$0")"/..
+ROOT_DIR=$(cd "$(dirname "$0")"/.. && pwd)
 
 ARCH=${ARCH:-amd64}
 SUFFIX=""
@@ -10,9 +9,12 @@ SUFFIX=""
 
 TAG=${TAG:-v$(date -u +%Y%m%d)}
 REPO=${REPO:-longhornio}
-IMAGE=${IMAGE:-${REPO}/longhorn-preflight:${TAG}}
+IMAGE=${IMAGE:-${REPO}/longhornctl:${TAG}}
 
-if [ ! -e ./bin/longhorn-preflight ]; then
+source "${ROOT_DIR}/dapper/version"
+cd "${ROOT_DIR}"
+
+if [ ! -e ./bin/longhornctl ]; then
     ./dapper/build
 fi
 

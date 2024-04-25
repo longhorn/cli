@@ -20,7 +20,7 @@ spec:
         command:
         - longhorn-preflight
         - install
-        image: longhornio/longhorn-preflight:master-head
+        image: longhornio/longhorn-cli:master-head
         securityContext:
           privileged: true
         env:
