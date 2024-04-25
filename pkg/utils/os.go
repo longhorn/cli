@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/longhorn/cli/pkg/consts"
+
 	pkgmgr "github.com/longhorn/cli/pkg/local/preflight/packagemanager"
 )
 
