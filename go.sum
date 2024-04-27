@@ -45,6 +45,8 @@ github.com/longhorn/go-common-libs v0.0.0-20240411093823-b8862efb8e03 h1:RN7mq4F
 github.com/longhorn/go-common-libs v0.0.0-20240411093823-b8862efb8e03/go.mod h1:7onp+E4hSg2DnB40dJU0Y7adrvykGg6jHxOb48imPGg=
 github.com/longhorn/go-common-libs v0.0.0-20240420123020-ed4ab0cfdbea h1:v0bayAUkxSDAwknvPFwnpOSrfmRZHdVoHrfDF617hZA=
 github.com/longhorn/go-common-libs v0.0.0-20240420123020-ed4ab0cfdbea/go.mod h1:3V1ZXTenmy7nCaQ555gtvp785fur1jK+seQ5gTUCEcI=
+github.com/longhorn/go-common-libs v0.0.0-20240426033718-77710d2242df h1:q2a/IL7zoPkYxIMsz46E6uWDamu9z4k+h/4u4pHsdqE=
+github.com/longhorn/go-common-libs v0.0.0-20240426033718-77710d2242df/go.mod h1:qppGSy9WsxH1C9T6yhSMvG53ynpasyKOH/n9e1jr8mw=
 github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0/go.mod h1:zJYVVT2jmtg6P3p1VtQj7WsuWi/y4VnjVBn7F8KPB3I=
 github.com/mitchellh/go-ps v1.0.0 h1:i6ampVEEF4wQFF+bkYfwYgY+F/uYJDktmvLPf7qIgjc=
 github.com/mitchellh/go-ps v1.0.0/go.mod h1:J4lOc8z8yJs6vUwklHw2XEIiT4z4C40KtWVN3nvg8Pg=
