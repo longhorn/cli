@@ -1,0 +1,23 @@
+name: build
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+jobs:
+  build:
+    name: Build binaries
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    # Build binaries
+    - name: Run ci
+      run: make ci
+
+    - uses: codecov/codecov-action@v4
+      with:
+        files: ./coverage.out
+        flags: unittests
+        token: ${{ secrets.CODECOV_TOKEN }}
