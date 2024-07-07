@@ -11,7 +11,7 @@ github.com/go-ole/go-ole/oleutil
 # github.com/google/uuid v1.6.0
 ## explicit
 github.com/google/uuid
-# github.com/longhorn/go-common-libs v0.0.0-20240706152523-ac799085128f
+# github.com/longhorn/go-common-libs v0.0.0-20240707062002-b9354601827e
 ## explicit; go 1.22.0
 github.com/longhorn/go-common-libs/exec
 github.com/longhorn/go-common-libs/io
