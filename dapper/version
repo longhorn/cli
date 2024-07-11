@@ -4,15 +4,13 @@ if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
     DIRTY="-dirty"
 fi
 
-COMMIT=$(git rev-parse --short HEAD)
+VERSION=$(cat $(dirname $0)/../version)
 GIT_TAG=$(git tag -l --contains HEAD | head -n 1)
 
 if [[ -z "$DIRTY" && -n "$GIT_TAG" ]]; then
     VERSION=$GIT_TAG
-else
-    VERSION="${COMMIT}${DIRTY}"
 fi
 
-GITCOMMIT=$(git rev-parse HEAD)
+GITCOMMIT="$(git rev-parse HEAD)${DIRTY}"
 BUILDDATE=$(date -u --rfc-3339=seconds)
 BUILDDATE=${BUILDDATE// /T}
