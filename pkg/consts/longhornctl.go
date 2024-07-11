@@ -1,11 +1,19 @@
 package consts
 
+import (
+	"fmt"
+
+	"github.com/longhorn/cli/meta"
+)
+
 const (
 	ImageBciBase = "registry.suse.com/bci/bci-base:15.5"
 	ImagePause   = "registry.k8s.io/pause:3.1"
+)
 
-	ImageEngine      = "longhornio/longhorn-engine:master-head"
-	ImageLonghornctl = "longhornio/longhornctl:master-head"
+var (
+	ImageEngine      = fmt.Sprintf("longhornio/longhorn-engine:%s", meta.Version)
+	ImageLonghornctl = fmt.Sprintf("longhornio/longhornctl:%s", meta.Version)
 )
 
 const (
