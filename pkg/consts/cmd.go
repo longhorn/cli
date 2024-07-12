@@ -21,6 +21,9 @@ const (
 
 	// The third layer of subcommands (action to the previous layers)
 	SubCmdStop = "stop"
+
+	// Other subcommands
+	SubCmdVersion = "version"
 )
 
 const (
