@@ -1,5 +1,19 @@
 # syntax=docker/dockerfile:1.8.1
 
+FROM  registry.suse.com/bci/golang:1.22 AS builder
+
+ARG ARCH=amd64
+
+RUN zypper -n ref && \
+    zypper update -y
+
+ENV SPDK_COMMIT_ID a6478cde7e0cff2fb09992868308a7387aa5202a
+RUN cd /usr/src && \
+    git clone https://github.com/longhorn/spdk.git /spdk && \
+    cd /spdk && \
+    git checkout ${SPDK_COMMIT_ID} && \
+    rm -rf .git
+
 FROM registry.suse.com/bci/bci-base:15.6
 
 ARG TARGETPLATFORM
@@ -19,6 +33,8 @@ RUN zypper -n install jq && \
 COPY bin/longhornctl-linux-${ARCH} /usr/local/bin/longhornctl
 COPY bin/longhornctl-local-linux-${ARCH} /usr/local/bin/longhornctl-local
 
-COPY spdk /spdk
+COPY --from=builder \
+   /spdk \
+   /spdk
 
 CMD ["longhornctl"]
