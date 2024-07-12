@@ -20,6 +20,11 @@ RUN zypper -n install curl awk docker && \
 
 RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin ${GOLANGCI_LINT_VERSION}
 
+# Docker Buildx: The docker version in dapper is too old to have buildx. Install it manually.
+RUN curl -sSfLO https://github.com/docker/buildx/releases/download/v0.13.1/buildx-v0.13.1.linux-${ARCH} && \
+    chmod +x buildx-v0.13.1.linux-${ARCH} && \
+    mv buildx-v0.13.1.linux-${ARCH} /usr/local/bin/buildx
+
 ENV SPDK_COMMIT_ID 4542f9b14010fc7192d42e05adaafc2ae863bac5
 RUN cd /usr/src && \
     git clone https://github.com/longhorn/spdk.git /spdk && \
