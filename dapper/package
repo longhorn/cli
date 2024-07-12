@@ -19,11 +19,12 @@ if [ ! -e ./bin/longhornctl ]; then
 fi
 
 # Copy SPDK scripts from the dapper container
-mkdir -p ./spdk
-cp -rf /spdk/scripts ./spdk/
+mkdir -p /spdk
+cp -rf /spdk/scripts spdk
 
 # Build image
-docker build -t "${IMAGE}" -f package/Dockerfile .
+buildx build --load -t ${IMAGE} -f package/Dockerfile .
+
 echo Built "${IMAGE}"
 # shellcheck disable=SC2086
 echo ${IMAGE} > ./bin/latest_image
