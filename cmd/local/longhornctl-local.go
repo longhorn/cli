@@ -61,6 +61,12 @@ func newCmdLonghornctlLocal() *cobra.Command {
 				localsubcmd.NewCmdGet(globalOpts),
 			},
 		},
+		{
+			Message: "Other Commands:",
+			Commands: []*cobra.Command{
+				localsubcmd.NewCmdVersion(),
+			},
+		},
 	}
 	groups.Add(cmd)
 
