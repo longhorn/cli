@@ -25,8 +25,3 @@ RUN curl -sSfLO https://github.com/docker/buildx/releases/download/v0.13.1/build
     chmod +x buildx-v0.13.1.linux-${ARCH} && \
     mv buildx-v0.13.1.linux-${ARCH} /usr/local/bin/buildx
 
-ENV SPDK_COMMIT_ID 4542f9b14010fc7192d42e05adaafc2ae863bac5
-RUN cd /usr/src && \
-    git clone https://github.com/longhorn/spdk.git /spdk && \
-    cd /spdk && \
-    git checkout ${SPDK_COMMIT_ID}
