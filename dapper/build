@@ -9,15 +9,17 @@ LINKFLAGS="-extldflags -static -s"
 build_app() {
   local _dir=$1
   local _app=$2
+  local _os=$3
+  local _arch=$4
 
   cd "${ROOT_DIR}/cmd/${_dir}"
 
   [ "$(uname)" != "Darwin" ] && LINKFLAGS="-extldflags -static -s"
-  CGO_ENABLED=0 go build -ldflags \
+  CGO_ENABLED=0 GOARCH=${_arch} GOOS=${_os} go build -ldflags \
     "-X github.com/longhorn/cli/meta.Version=$VERSION \
      -X github.com/longhorn/cli/meta.GitCommit=$GITCOMMIT \
      -X github.com/longhorn/cli/meta.BuildDate=$BUILDDATE \
-     $LINKFLAGS" -o ${ROOT_DIR}/bin/${_app}
+     $LINKFLAGS" -o ${ROOT_DIR}/bin/${_app}-${_os}-${_arch}
 }
 
 source "${ROOT_DIR}/dapper/version"
@@ -25,5 +27,9 @@ source "${ROOT_DIR}/dapper/version"
 mkdir -p "${ROOT_DIR}/bin"
 echo "Making binary at ${ROOT_DIR}/bin"
 
-build_app local longhornctl-local
-build_app remote longhornctl
+for os in linux; do
+  for arch in amd64 arm64; do
+    build_app local longhornctl-local ${os} ${arch}
+    build_app remote longhornctl ${os} ${arch}
+  done
+done
