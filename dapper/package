@@ -18,10 +18,6 @@ if [ ! -e ./bin/longhornctl ]; then
     ./dapper/build
 fi
 
-# Copy SPDK scripts from the dapper container
-mkdir -p /spdk
-cp -rf /spdk/scripts spdk
-
 # Build image
 buildx build --load -t ${IMAGE} -f package/Dockerfile .
 
