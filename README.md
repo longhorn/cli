@@ -8,15 +8,15 @@ This repository contains the source code for `longhornctl`, a CLI (command-line 
 - Execute one-time Longhorn operations.
 - Gain inside into your Longhorn system.
 
-## Install `longhornctl`
+## Usage
 
-### Run From Container Image
+For detailed usage information and examples, please refer to the [documents](./docs/longhornctl.md) run `longhornctl --help`.
 
-`To be updated`
+You can obtain `longhornctl` either through downloading a prebuilt binary or by building it from source.
 
-### Using curl
+### Prebuilt Binary
 
-`To be updated`
+Download the latest release suitable for your operating system and machine architecture from the [GitHub release page](https://github.com/longhorn/cli/releases). Then, rename it to `/usr/local/bin/longhornctl`.
 
 ### Build From Source
 
@@ -32,12 +32,4 @@ This repository contains the source code for `longhornctl`, a CLI (command-line 
     > **Note:** This process will generate two binaries:
     >   - `longhornctl`: A command-line interface for remote Longhorn operations, designed to be run outside the Kubernetes cluster. It executes `longhornctl-local` for operations within the cluster.
     >   - `longhornctl-local`: A command-line interface to be used within a DaemonSet pod inside the Kubernetes cluster, handling in-cluster and host operations.
-1. After the build process completes, find the `longhornctl` binary in the `./bin` directory.
 
-## Getting Started
-
-To begin, run `longhornctl --help` to access a list of available commands and options.
-
-### Command Reference
-
-`To be updated`
