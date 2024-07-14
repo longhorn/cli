@@ -9,7 +9,7 @@ SUFFIX=""
 
 TAG=${TAG:-v$(date -u +%Y%m%d)}
 REPO=${REPO:-longhornio}
-IMAGE=${IMAGE:-${REPO}/longhornctl:${TAG}}
+IMAGE=${IMAGE:-${REPO}/longhorn-cli:${TAG}}
 
 source "${ROOT_DIR}/dapper/version"
 cd "${ROOT_DIR}"
