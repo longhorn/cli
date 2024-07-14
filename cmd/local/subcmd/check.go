@@ -64,7 +64,7 @@ These checks can help to identify issues that might prevent Longhorn from functi
 
 	cmd.Flags().StringVarP(&localChecker.OutputFilePath, consts.CmdOptOutputFile, "o", os.Getenv(consts.EnvOutputFilePath), "Output the result to a file, default to stdout.")
 	cmd.Flags().BoolVar(&localChecker.EnableSpdk, consts.CmdOptEnableSpdk, utils.ConvertStringToTypeOrDefault(os.Getenv(consts.EnvEnableSpdk), false), "Enable checking of SPDK required packages, modules, and setup.")
-	cmd.Flags().IntVar(&localChecker.HugePageSize, consts.CmdOptHugePageSize, utils.ConvertStringToTypeOrDefault(os.Getenv(consts.EnvHugePageSize), 1024), "Specify the huge page size in MiB for SPDK.")
+	cmd.Flags().IntVar(&localChecker.HugePageSize, consts.CmdOptHugePageSize, utils.ConvertStringToTypeOrDefault(os.Getenv(consts.EnvHugePageSize), 2048), "Specify the huge page size in MiB for SPDK.")
 	cmd.Flags().StringVar(&localChecker.UioDriver, consts.CmdOptUioDriver, os.Getenv(consts.EnvUioDriver), "User space I/O driver for SPDK.")
 
 	return cmd
