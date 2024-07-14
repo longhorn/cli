@@ -87,7 +87,7 @@ INFO[2024-07-16T17:09:08+08:00] Completed preflight installer. Use 'longhornctl 
 	cmd.Flags().BoolVar(&preflightInstaller.UpdatePackages, consts.CmdOptUpdatePackages, true, "Update packages before installing required dependencies.")
 	cmd.Flags().BoolVar(&preflightInstaller.EnableSpdk, consts.CmdOptEnableSpdk, false, "Enable installation of SPDK required packages, modules, and setup.")
 	cmd.Flags().StringVar(&preflightInstaller.SpdkOptions, consts.CmdOptSpdkOptions, "", fmt.Sprintf("Specify a comma-separated (%s) list of custom options for configuring SPDK environment.", consts.CmdOptSeperator))
-	cmd.Flags().IntVar(&preflightInstaller.HugePageSize, consts.CmdOptHugePageSize, 1024, "Specify the huge page size in MiB for SPDK.")
+	cmd.Flags().IntVar(&preflightInstaller.HugePageSize, consts.CmdOptHugePageSize, 2048, "Specify the huge page size in MiB for SPDK.")
 	cmd.Flags().StringVar(&preflightInstaller.AllowPci, consts.CmdOptAllowPci, "none", fmt.Sprintf("Specify a comma-separated (%s) list of allowed PCI devices. By default, all PCI devices are blocked by a non-valid address.", consts.CmdOptSeperator))
 	cmd.Flags().StringVar(&preflightInstaller.DriverOverride, consts.CmdOptDriverOverride, "uio_pci_generic", "User space driver for device bindings. Override default driver for PCI devices.")
 
