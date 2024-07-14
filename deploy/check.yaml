@@ -27,7 +27,7 @@ spec:
         - name: ENABLE_SPDK
           value: "true"
         - name: HUGEMEM
-          value: "1024"
+          value: "2048"
         - name: UIO_DRIVER
           value: "uio_pci_generic"
         volumeMounts:
