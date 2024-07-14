@@ -285,12 +285,13 @@ func (local *Checker) checkHugePages() error {
 
 	pages := local.HugePageSize >> 1
 
-	ok, err := local.isHugePagesTotalEqualOrLargerThan(pages)
+	ok, hugePagesTotalNum, requiredHugePages, err := local.isHugePagesTotalEqualOrLargerThan(pages)
 	if err != nil {
 		return errors.Wrapf(err, "failed to check HugePages")
 	}
 	if !ok {
-		local.collection.Log.Error = append(local.collection.Log.Error, "HugePages is not enabled")
+		local.collection.Log.Error = append(local.collection.Log.Error,
+			fmt.Sprintf("HugePages is insufficient. Required 2MiB HugePages: %v pages, Total 2MiB HugePages: %v pages", requiredHugePages, hugePagesTotalNum))
 		return nil
 	}
 
@@ -298,20 +299,20 @@ func (local *Checker) checkHugePages() error {
 	return nil
 }
 
-func (local *Checker) isHugePagesTotalEqualOrLargerThan(requiredHugePages int) (bool, error) {
+func (local *Checker) isHugePagesTotalEqualOrLargerThan(requiredHugePages int) (bool, int, int, error) {
 	output, err := local.packageManager.Execute([]string{}, "grep", []string{"HugePages_Total", "/proc/meminfo"}, lhgotypes.ExecuteNoTimeout)
 	if err != nil {
-		return false, errors.Wrap(err, "failed to get total number of HugePages")
+		return false, 0, 0, errors.Wrap(err, "failed to get total number of HugePages")
 	}
 	line := strings.Split(output, "\n")[0]
 	hugePagesTotal := strings.TrimSpace(strings.Split(line, ":")[1])
 
 	hugePagesTotalNum, err := strconv.Atoi(hugePagesTotal)
 	if err != nil {
-		return false, errors.Wrap(err, "failed to convert HugePages total to a number")
+		return false, 0, 0, errors.Wrap(err, "failed to convert HugePages total to a number")
 	}
 
-	return hugePagesTotalNum >= requiredHugePages, nil
+	return hugePagesTotalNum >= requiredHugePages, hugePagesTotalNum, requiredHugePages, nil
 }
 
 // CheckCpuInstructionSet checks if the CPU instruction set is supported.
