@@ -40,7 +40,7 @@ func newCmdLonghornctl() *cobra.Command {
 
 	cmd.PersistentFlags().StringVarP(&globalOpts.LogLevel, consts.CmdOptLogLevel, "l", "info", "log level (trace, debug, info, warn, error, fatal, panic)")
 	cmd.PersistentFlags().StringVar(&globalOpts.KubeConfigPath, consts.CmdOptKubeConfigPath, os.Getenv(consts.EnvKubeConfigPath), "Kubernetes config (kubeconfig) path")
-	cmd.PersistentFlags().StringVar(&globalOpts.Image, consts.CmdOptImage, consts.ImageLonghornctl, "Image containing longhornctl-local")
+	cmd.PersistentFlags().StringVar(&globalOpts.Image, consts.CmdOptImage, consts.ImageLonghornCli, "Image containing longhornctl-local")
 
 	groups := templates.CommandGroups{
 		{
