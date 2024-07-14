@@ -13,7 +13,7 @@ const (
 
 var (
 	ImageEngine      = fmt.Sprintf("longhornio/longhorn-engine:%s", meta.Version)
-	ImageLonghornctl = fmt.Sprintf("longhornio/longhornctl:%s", meta.Version)
+	ImageLonghornCli = fmt.Sprintf("longhornio/longhorn-cli:%s", meta.Version)
 )
 
 const (
