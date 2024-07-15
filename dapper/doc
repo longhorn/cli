@@ -1,0 +1,37 @@
+#!/bin/bash
+set -e -x
+
+OS_TYPE=$(uname -s)
+ARCH_TYPE=$(uname -m)
+
+# Check if the OS is Linux
+OS="linux"
+if [[ x"$OS_TYPE" != x"Linux" ]]; then
+    exit 1
+fi
+
+# Find the architecture
+ARCH=""
+case "$ARCH_TYPE" in
+    x86_64)
+        ARCH='amd64'
+        ;;
+    aarch64)
+        ARCH='arm64'
+        ;;
+esac
+
+if [[ x"$ARCH" == x"" ]]; then
+    echo "Unsupported architecture: $ARCH_TYPE"
+    exit 1
+fi
+
+# Find the root directory
+ROOT_DIR=$(cd "$(dirname "$0")"/.. && pwd)
+echo "Root dir: ${ROOT_DIR}"
+
+# Build the longhornctl doc
+rm -rf ${ROOT_DIR}/docs
+mkdir -p ${ROOT_DIR}/docs
+${ROOT_DIR}/bin/longhornctl-${OS}-${ARCH} doc ${ROOT_DIR}/docs
+

@@ -68,6 +68,7 @@ func newCmdLonghornctl() *cobra.Command {
 
 	cmd.AddCommand(subcmd.NewCmdVersion())
 	cmd.AddCommand(subcmd.NewCmdGlobalOptions())
+	cmd.AddCommand(subcmd.NewCmdDoc())
 
 	filters := []string{"options"}
 	templates.ActsAsRootCommand(cmd, filters, groups...)
