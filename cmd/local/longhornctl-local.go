@@ -61,15 +61,10 @@ func newCmdLonghornctlLocal() *cobra.Command {
 				localsubcmd.NewCmdGet(globalOpts),
 			},
 		},
-		{
-			Message: "Other Commands:",
-			Commands: []*cobra.Command{
-				localsubcmd.NewCmdVersion(),
-			},
-		},
 	}
 	groups.Add(cmd)
 
+	cmd.AddCommand(localsubcmd.NewCmdVersion())
 	cmd.AddCommand(remotesubcmd.NewCmdGlobalOptions())
 
 	filters := []string{"options"}

@@ -7,10 +7,9 @@ import (
 
 	"github.com/longhorn/cli/meta"
 	"github.com/longhorn/cli/pkg/consts"
-	"github.com/longhorn/cli/pkg/types"
 )
 
-func NewCmdVersion(globalOpts *types.GlobalCmdOptions) *cobra.Command {
+func NewCmdVersion() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   consts.SubCmdVersion,
 		Short: fmt.Sprintf("Print %s version", consts.CmdLonghornctlRemote),
