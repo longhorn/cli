@@ -15,8 +15,9 @@ build_app() {
   cd "${ROOT_DIR}/cmd/${_dir}"
 
   [ "$(uname)" != "Darwin" ] && LINKFLAGS="-extldflags -static -s"
-  CGO_ENABLED=0 GOARCH=${_arch} GOOS=${_os} go build -ldflags \
-    "-X github.com/longhorn/cli/meta.Version=$VERSION \
+  CGO_ENABLED=0 GOARCH=${_arch} GOOS=${_os} go build \
+     -gcflags=all="-l" -ldflags " \
+     -X github.com/longhorn/cli/meta.Version=$VERSION \
      -X github.com/longhorn/cli/meta.GitCommit=$GITCOMMIT \
      -X github.com/longhorn/cli/meta.BuildDate=$BUILDDATE \
      $LINKFLAGS" -o ${ROOT_DIR}/bin/${_app}-${_os}-${_arch}
