@@ -38,12 +38,30 @@ It provides data recovery capabilities when the Longhorn system is unavailable.
 To perform an export, provide the name of the replica data directory to the --name option.
 
 To find available replica data directory names, use the following command:
-> longhornctl get replica
+  $ longhornctl get replica
 
 After the export is completed, you can access the exported data at the specified location on the node provided in the output.
 
 To terminate the replica exporter and stop the replica export process, use the 'stop' subcommand with the original command. For example:
-> longhornctl export replica <options> stop`,
+  $ longhornctl export replica <options> stop`,
+		Example: `$ longhornctl export replica --name=pvc-48a6457d-585e-423b-b530-bbc68a5f948a-0e2603a7 --target-dir=/tmp/export
+INFO[2024-07-16T17:26:53+08:00] Initializing replica exporter
+INFO[2024-07-16T17:26:53+08:00] Running replica exporter
+INFO[2024-07-16T17:27:15+08:00] Exported replica:
+ volumes:
+    pvc-48a6457d-585e-423b-b530-bbc68a5f948a:
+        - replicas:
+            - node: ip-10-0-2-217
+              warn: cannot find replica pvc-48a6457d-585e-423b-b530-bbc68a5f948a-0e2603a7 on this node.
+            - node: ip-10-0-2-142
+              warn: cannot find replica pvc-48a6457d-585e-423b-b530-bbc68a5f948a-0e2603a7 on this node.
+            - node: ip-10-0-2-123
+              exportedDirectory: /tmp/export/pvc-48a6457d-585e-423b-b530-bbc68a5f948a
+INFO[2024-07-16T17:27:15+08:00] Completed replica exporter. Use 'longhornctl export replica stop' to stop exporting replica.
+
+$ ssh user@10.0.2.123
+$ ls /tmp/export/pvc-48a6457d-585e-423b-b530-bbc68a5f948a
+lost+found`,
 
 		PreRun: func(cmd *cobra.Command, args []string) {
 			replicaExporter.Image = globalOpts.Image
@@ -96,6 +114,9 @@ func newCmdExportReplicaStop(globalOpts *types.GlobalCmdOptions) *cobra.Command 
 		Use:   consts.SubCmdStop,
 		Short: "Stop exporting Longhorn replica",
 		Long:  `This command terminates the replica exporter, stopping the export process for the replica.`,
+		Example: `$ longhornctl export replica --name=pvc-48a6457d-585e-423b-b530-bbc68a5f948a-0e2603a7 --target-dir=/tmp/export stop
+INFO[2024-07-16T17:29:14+08:00] Stopping replica exporter
+INFO[2024-07-16T17:29:14+08:00] Successfully stopped exporting replica`,
 
 		PreRun: func(cmd *cobra.Command, args []string) {
 			replicaExporter.KubeConfigPath = globalOpts.KubeConfigPath
