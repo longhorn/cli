@@ -32,7 +32,7 @@ import (
 
 // WaitForDaemonSetContainersReady waits for the containers in the given DaemonSet to be ready.
 func WaitForDaemonSetContainersReady(ctx context.Context, logger *logrus.Entry, kubeClient *kubeclient.Clientset, daemonSet *appsv1.DaemonSet, containerName string, maxConditionToleration *int) error {
-	logger.Info("Waiting for DaemonSet container to be ready")
+	logger.Debug("Waiting for DaemonSet container to be ready")
 
 	conditionFunc := func(pod *corev1.Pod) bool {
 		return lhgokube.IsPodContainerInState(pod, containerName, lhgokube.IsContainerReady)
@@ -42,7 +42,7 @@ func WaitForDaemonSetContainersReady(ctx context.Context, logger *logrus.Entry, 
 
 // WaitForDaemonSetContainersExit waits for the containers in the given DaemonSet to exit.
 func WaitForDaemonSetContainersExit(ctx context.Context, logger *logrus.Entry, kubeClient *kubeclient.Clientset, daemonSet *appsv1.DaemonSet, containerName string, maxConditionToleration *int) error {
-	logger.Info("Waiting for DaemonSet container to exit")
+	logger.Debug("Waiting for DaemonSet container to exit")
 
 	conditionFunc := func(pod *corev1.Pod) bool {
 		isInitializing := lhgokube.IsPodContainerInState(pod, containerName, lhgokube.IsContainerInitializing)
