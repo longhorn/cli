@@ -32,6 +32,31 @@ func newCmdCheckPreflight(globalOpts *types.GlobalCmdOptions) *cobra.Command {
 		Short: "Check Longhorn preflight",
 		Long: `This command verifies your Kubernetes cluster environment. It performs a series of checks to ensure your cluster meets the requirements for Longhorn to function properly.
 These checks can help to identify issues that might prevent Longhorn from functioning properly.`,
+		Example: `$ longhornctl check preflight
+INFO[2024-07-16T17:17:38+08:00] Initializing preflight checker
+INFO[2024-07-16T17:17:38+08:00] Cleaning up preflight checker
+INFO[2024-07-16T17:17:38+08:00] Running preflight checker
+INFO[2024-07-16T17:17:42+08:00] Retrieved preflight checker result:
+ip-10-0-2-123:
+  info:
+  - Service iscsid is running
+  - NFS4 is supported
+  - Package nfs-client is installed
+  - Package open-iscsi is installed
+ip-10-0-2-142:
+  info:
+  - Service iscsid is running
+  - NFS4 is supported
+  - Package nfs-client is installed
+  - Package open-iscsi is installed
+ip-10-0-2-217:
+  info:
+  - Service iscsid is running
+  - NFS4 is supported
+  - Package nfs-client is installed
+  - Package open-iscsi is installed
+INFO[2024-07-16T17:17:42+08:00] Cleaning up preflight checker
+INFO[2024-07-16T17:17:42+08:00] Completed preflight checker`,
 
 		PreRun: func(cmd *cobra.Command, args []string) {
 			preflightChecker.Image = globalOpts.Image

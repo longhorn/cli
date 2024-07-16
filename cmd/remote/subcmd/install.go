@@ -34,6 +34,14 @@ func newCmdInstallPreflight(globalOpts *types.GlobalCmdOptions) *cobra.Command {
 		Short: "Install Longhorn preflight",
 		Long: `This command prepares your system for Longhorn deployment. It automates the installation of the necessary dependencies.
 These dependencies ensure your cluster meets the necessary requirements for successful Longhorn operation.`,
+		Example: `$ longhornctl install preflight
+INFO[2024-07-16T17:06:55+08:00] Initializing preflight installer
+INFO[2024-07-16T17:06:55+08:00] Cleaning up preflight installer
+INFO[2024-07-16T17:06:55+08:00] Running preflight installer
+INFO[2024-07-16T17:06:55+08:00] Installing dependencies with package manager
+INFO[2024-07-16T17:09:08+08:00] Installed dependencies with package manager
+INFO[2024-07-16T17:09:08+08:00] Cleaning up preflight installer
+INFO[2024-07-16T17:09:08+08:00] Completed preflight installer. Use 'longhornctl check preflight' to check the result.`,
 
 		PreRun: func(cmd *cobra.Command, args []string) {
 			preflightInstaller.Image = globalOpts.Image
@@ -93,6 +101,9 @@ func newCmdInstallPreflightStop(globalOpts *types.GlobalCmdOptions) *cobra.Comma
 		Use:   consts.SubCmdStop,
 		Short: "Stop Longhorn preflight installer",
 		Long:  `This command terminates the preflight installer.`,
+		Example: `$ longhornctl install preflight stop
+INFO[2024-07-16T17:21:32+08:00] Stopping preflight installer
+INFO[2024-07-16T17:21:32+08:00] Successfully stopped preflight installer`,
 
 		PreRun: func(cmd *cobra.Command, args []string) {
 			preflightInstaller.KubeConfigPath = globalOpts.KubeConfigPath
