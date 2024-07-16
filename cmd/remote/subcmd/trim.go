@@ -37,6 +37,12 @@ To use this command, you'll need to specify the following:
 - --name: Specify a specific Longhorn volume you want to trim.
 
 By regularly trimming your Longhorn volumes, you can ensure efficient storage management with your system.`,
+		Example: `$ longhornctl trim volume --name="pvc-48a6457d-585e-423b-b530-bbc68a5f948a"
+INFO[2024-07-16T17:31:59+08:00] Initializing volume trimmer
+INFO[2024-07-16T17:31:59+08:00] Cleaning volume trimmer
+INFO[2024-07-16T17:31:59+08:00] Running volume trimmer                        volume=pvc-48a6457d-585e-423b-b530-bbc68a5f948a
+INFO[2024-07-16T17:32:01+08:00] Cleaning volume trimmer                       volume=pvc-48a6457d-585e-423b-b530-bbc68a5f948a
+INFO[2024-07-16T17:32:01+08:00] Completed volume trimmer                      volume=pvc-48a6457d-585e-423b-b530-bbc68a5f948a`,
 
 		PreRun: func(cmd *cobra.Command, args []string) {
 			volumeTrimmer.Image = globalOpts.Image

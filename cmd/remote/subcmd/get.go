@@ -37,6 +37,29 @@ By default, the command retrieves information about all Longhorn replicas in the
 You can narrow down the information returned by using the following option flags:
 - --name: Specify a specific Longhorn replica data directory name to retrieve details for.
 - --volume-name: Filter replicas based on the volume they belong to.`,
+		Example: `$ longhornctl get replica
+INFO[2024-07-16T17:23:47+08:00] Initializing replica getter
+INFO[2024-07-16T17:23:47+08:00] Cleaning up replica getter
+INFO[2024-07-16T17:23:47+08:00] Running replica getter
+INFO[2024-07-16T17:23:51+08:00] Retrieved replica information:
+ replicas:
+    pvc-48a6457d-585e-423b-b530-bbc68a5f948a-0e2603a7:
+        - node: ip-10-0-2-123
+          directory: /var/lib/longhorn/replicas/pvc-48a6457d-585e-423b-b530-bbc68a5f948a-0e2603a7
+          isInUse: true
+          volumeName: pvc-48a6457d-585e-423b-b530-bbc68a5f948a
+          metadata:
+            size: 10737418240
+            head: volume-head-000.img
+            dirty: true
+            rebuilding: false
+            error: ""
+            parent: ""
+            sectorsize: 512
+            backingfilepath: ""
+            backingfile: null
+INFO[2024-07-16T17:23:51+08:00] Cleaning up replica getter
+INFO[2024-07-16T17:23:51+08:00] Completed replica getter`,
 
 		PreRun: func(cmd *cobra.Command, args []string) {
 			replicaGetter.Image = globalOpts.Image
