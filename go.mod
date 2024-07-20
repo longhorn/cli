@@ -3,19 +3,19 @@ module github.com/longhorn/cli
 go 1.22.2
 
 require (
-	github.com/longhorn/go-common-libs v0.0.0-20240707062002-b9354601827e
+	github.com/longhorn/go-common-libs v0.0.0-20240720044518-32fc527fe868
 	github.com/longhorn/longhorn-manager v1.6.2
 	github.com/otiai10/copy v1.14.0
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.3
-	github.com/spf13/cobra v1.8.0
+	github.com/spf13/cobra v1.8.1
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/api v0.30.2
-	k8s.io/apimachinery v0.30.2
+	k8s.io/api v0.30.3
+	k8s.io/apimachinery v0.30.3
 	k8s.io/cli-runtime v0.29.3
-	k8s.io/client-go v0.30.2
+	k8s.io/client-go v0.30.3
 	k8s.io/kubectl v0.29.3
-	k8s.io/utils v0.0.0-20240502163921-fe8a2dddb1d0
+	k8s.io/utils v0.0.0-20240711033017-18e509b52bc8
 	sigs.k8s.io/kustomize/kyaml v0.14.3-0.20230601165947-6ce0bf390ce3
 )
 
@@ -89,7 +89,7 @@ require (
 	k8s.io/component-base v0.29.3 // indirect
 	k8s.io/klog/v2 v2.120.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20240228011516-70dd3763d340 // indirect
-	k8s.io/mount-utils v0.30.2 // indirect
+	k8s.io/mount-utils v0.30.3 // indirect
 	sigs.k8s.io/controller-runtime v0.10.1 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/kustomize/api v0.13.5-0.20230601165947-6ce0bf390ce3 // indirect
