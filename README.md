@@ -10,13 +10,31 @@ This repository contains the source code for `longhornctl`, a CLI (command-line 
 
 ## Usage
 
-For detailed usage information and examples, please refer to the [documents](./docs/longhornctl.md) run `longhornctl --help`.
+For detailed usage information and examples, please refer to the [document](./docs/longhornctl.md) run `longhornctl --help`.
 
 You can obtain `longhornctl` either through downloading a prebuilt binary or by building it from source.
 
 ### Prebuilt Binary
 
-Download the latest release suitable for your operating system and machine architecture from the [GitHub release page](https://github.com/longhorn/cli/releases). Then, rename it to `/usr/local/bin/longhornctl`.
+1. Remove any previous `longhornctl` installation.
+
+    ```
+    rm -rf /usr/local/bin/longhornctl
+    ```
+
+2. Download the command-line tool release suitable for your operating system and machine architecture from the [GitHub release page](https://github.com/longhorn/cli/releases).
+
+    ```
+    curl -L https://github.com/longhorn/cli/releases/download/${LonghornVersion}/longhornctl-${OS}-${ARCH} -o longhornctl
+    chmod +x longhornctl
+    mv ./longhornctl /usr/local/bin/longhornctl
+    ```
+
+3. Verify that you've installed
+
+    ```
+    longhornctl version
+    ```
 
 ### Build From Source
 
