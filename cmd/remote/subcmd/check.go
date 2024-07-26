@@ -5,6 +5,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
+	lhtypes "github.com/longhorn/go-common-libs/types"
+
 	"github.com/longhorn/cli/pkg/consts"
 	"github.com/longhorn/cli/pkg/remote/preflight"
 	"github.com/longhorn/cli/pkg/types"
@@ -97,7 +99,7 @@ INFO[2024-07-16T17:17:42+08:00] Completed preflight checker`,
 
 	cmd.Flags().BoolVar(&preflightChecker.EnableSpdk, consts.CmdOptEnableSpdk, false, "Enable checking of SPDK required packages, modules, and setup.")
 	cmd.Flags().IntVar(&preflightChecker.HugePageSize, consts.CmdOptHugePageSize, 2048, "Specify the huge page size in MiB for SPDK.")
-	cmd.Flags().StringVar(&preflightChecker.UioDriver, consts.CmdOptUioDriver, "uio_pci_generic", "User space I/O driver for SPDK.")
+	cmd.Flags().StringVar(&preflightChecker.UserspaceDriver, consts.CmdOptUserspaceDriver, string(lhtypes.DiskDriverVfioPci), "Userspace I/O driver for SPDK.")
 
 	return cmd
 }

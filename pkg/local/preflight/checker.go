@@ -370,8 +370,8 @@ func (local *Checker) checkModulesLoaded(spdkDependent bool) error {
 	if spdkDependent {
 		modules = local.spdkDepModules
 
-		if local.UioDriver != "" {
-			modules = append(modules, local.UioDriver)
+		if local.UserspaceDriver != "" {
+			modules = append(modules, local.UserspaceDriver)
 		}
 	}
 
