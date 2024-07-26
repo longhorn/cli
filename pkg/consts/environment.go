@@ -24,7 +24,7 @@ const (
 	EnvEnableSpdk        = "ENABLE_SPDK"
 	EnvHugePageSize      = "HUGEMEM"
 	EnvPciAllowed        = "PCI_ALLOWED"
-	EnvUioDriver         = "UIO_DRIVER"
+	EnvUserspaceDriver   = "USERSPACE_DRIVER"
 	EnvUpdatePackageList = "UPDATE_PACKAGE_LIST"
 	EnvSpdkOptions       = "SPDK_OPTIONS"
 )
