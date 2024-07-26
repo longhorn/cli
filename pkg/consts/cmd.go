@@ -41,12 +41,12 @@ const (
 	CmdOptUpdatePackages  = "update-packages"
 
 	// SPDK options
-	CmdOptAllowPci       = "allow-pci"
-	CmdOptDriverOverride = "driver-override"
-	CmdOptEnableSpdk     = "enable-spdk"
-	CmdOptHugePageSize   = "huge-page-size"
-	CmdOptSpdkOptions    = "spdk-options"
-	CmdOptUioDriver      = "uio-driver"
+	CmdOptAllowPci        = "allow-pci"
+	CmdOptDriverOverride  = "driver-override"
+	CmdOptEnableSpdk      = "enable-spdk"
+	CmdOptHugePageSize    = "huge-page-size"
+	CmdOptSpdkOptions     = "spdk-options"
+	CmdOptUserspaceDriver = "userspace-driver"
 
 	// Longhorn options
 	CmdOptLonghornDataDirectory = "data-dir"

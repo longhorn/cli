@@ -61,7 +61,7 @@ This can help to ensure that your Kubernetes cluster is properly configured and 
 	cmd.Flags().StringVar(&localInstaller.SpdkOptions, consts.CmdOptSpdkOptions, os.Getenv(consts.EnvSpdkOptions), fmt.Sprintf("Specify a comma-separated (%s) list of custom options for configuring SPDK environment.", consts.CmdOptSeperator))
 	cmd.Flags().IntVar(&localInstaller.HugePageSize, consts.CmdOptHugePageSize, utils.ConvertStringToTypeOrDefault(os.Getenv(consts.EnvHugePageSize), 2048), "Specify the huge page size in MiB for SPDK.")
 	cmd.Flags().StringVar(&localInstaller.AllowPci, consts.CmdOptAllowPci, os.Getenv(consts.EnvPciAllowed), fmt.Sprintf("Specify a comma-separated (%s) list of allowed PCI devices. By default, all PCI devices are blocked by a non-valid address.", consts.CmdOptSeperator))
-	cmd.Flags().StringVar(&localInstaller.DriverOverride, consts.CmdOptDriverOverride, os.Getenv(consts.EnvDriverOverride), "User space driver for device bindings. Override default driver for PCI devices.")
+	cmd.Flags().StringVar(&localInstaller.DriverOverride, consts.CmdOptDriverOverride, os.Getenv(consts.EnvDriverOverride), "Userspace driver for device bindings. Override default driver for PCI devices.")
 
 	return cmd
 }

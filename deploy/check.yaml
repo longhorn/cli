@@ -28,8 +28,8 @@ spec:
           value: "true"
         - name: HUGEMEM
           value: "2048"
-        - name: UIO_DRIVER
-          value: "uio_pci_generic"
+        - name: USERSPACE_DRIVER
+          value: "vfio_pci"
         volumeMounts:
         - name: host
           mountPath: /host/

@@ -38,9 +38,9 @@ type Checker struct {
 type CheckerCmdOptions struct {
 	types.GlobalCmdOptions
 
-	EnableSpdk   bool
-	HugePageSize int
-	UioDriver    string
+	EnableSpdk      bool
+	HugePageSize    int
+	UserspaceDriver string
 }
 
 // Init initializes the Checker.
@@ -250,8 +250,8 @@ func (remote *Checker) newDaemonSet() *appsv1.DaemonSet {
 									Value: libutils.ConvertTypeToString(remote.HugePageSize),
 								},
 								{
-									Name:  consts.EnvUioDriver,
-									Value: remote.UioDriver,
+									Name:  consts.EnvUserspaceDriver,
+									Value: remote.UserspaceDriver,
 								},
 							},
 							SecurityContext: &corev1.SecurityContext{
