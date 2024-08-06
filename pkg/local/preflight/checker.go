@@ -128,7 +128,7 @@ func (local *Checker) Init() error {
 			"vfio_pci",
 		}
 
-	case pkgmgr.PackageManagerZypper:
+	case pkgmgr.PackageManagerZypper, pkgmgr.PackageManagerTransactionalUpdate:
 		local.packageManager = packageManager
 		local.packages = []string{
 			"nfs-client", "open-iscsi",
