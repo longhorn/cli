@@ -124,7 +124,7 @@ func (local *Checker) Init() error {
 			"nvme_tcp",
 		}
 
-	case pkgmgr.PackageManagerZypper:
+	case pkgmgr.PackageManagerZypper, pkgmgr.PackageManagerTransactionalUpdate:
 		local.packageManager = packageManager
 		local.packages = []string{
 			"nfs-client", "open-iscsi",

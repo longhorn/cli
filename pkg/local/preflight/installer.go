@@ -107,7 +107,7 @@ func (local *Installer) Init() error {
 		}
 		return nil
 
-	case pkgmgr.PackageManagerZypper:
+	case pkgmgr.PackageManagerZypper, pkgmgr.PackageManagerTransactionalUpdate:
 		local.packageManager = pkgMgr
 		local.packages = []string{
 			"nfs-client", "open-iscsi",
