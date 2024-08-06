@@ -19,9 +19,11 @@ func GetPackageManagerType(osRelease string) (pkgmgr.PackageManagerType, error) 
 	switch osRelease {
 	case "sles", "suse", "opensuse", "opensuse-leap":
 		return pkgmgr.PackageManagerZypper, nil
+	case "sl-micro":
+		return pkgmgr.PackageManagerTransactionalUpdate, nil
 	case "ubuntu", "debian":
 		return pkgmgr.PackageManagerApt, nil
-	case "rhel", "ol", "rocky", "centos", "fedora":
+	case "rhel", "ol", "rocky", "centos", "fedora", "amzn":
 		return pkgmgr.PackageManagerYum, nil
 	case "arch":
 		return pkgmgr.PackageManagerPacman, nil
