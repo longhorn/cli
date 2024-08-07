@@ -108,6 +108,8 @@ func (local *Checker) Init() error {
 		local.spdkDepPackages = []string{}
 		local.spdkDepModules = []string{
 			"nvme_tcp",
+			"uio_pci_generic",
+			"vfio_pci",
 		}
 
 	case pkgmgr.PackageManagerYum:
@@ -122,6 +124,8 @@ func (local *Checker) Init() error {
 		local.spdkDepPackages = []string{}
 		local.spdkDepModules = []string{
 			"nvme_tcp",
+			"uio_pci_generic",
+			"vfio_pci",
 		}
 
 	case pkgmgr.PackageManagerZypper, pkgmgr.PackageManagerTransactionalUpdate:
@@ -136,6 +140,8 @@ func (local *Checker) Init() error {
 		local.spdkDepPackages = []string{}
 		local.spdkDepModules = []string{
 			"nvme_tcp",
+			"uio_pci_generic",
+			"vfio_pci",
 		}
 
 	case pkgmgr.PackageManagerPacman:
@@ -150,6 +156,8 @@ func (local *Checker) Init() error {
 		local.spdkDepPackages = []string{}
 		local.spdkDepModules = []string{
 			"nvme_tcp",
+			"uio_pci_generic",
+			"vfio_pci",
 		}
 
 	default:

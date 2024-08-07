@@ -86,7 +86,9 @@ func (local *Installer) Init() error {
 			"linux-modules-extra-" + kernelRelease,
 		}
 		local.spdkDepModules = []string{
-			"nvme-tcp",
+			"nvme_tcp",
+			"uio_pci_generic",
+			"vfio_pci",
 		}
 		return nil
 
@@ -104,6 +106,8 @@ func (local *Installer) Init() error {
 		local.spdkDepPackages = []string{}
 		local.spdkDepModules = []string{
 			"nvme_tcp",
+			"uio_pci_generic",
+			"vfio_pci",
 		}
 		return nil
 
@@ -121,6 +125,8 @@ func (local *Installer) Init() error {
 		local.spdkDepPackages = []string{}
 		local.spdkDepModules = []string{
 			"nvme_tcp",
+			"uio_pci_generic",
+			"vfio_pci",
 		}
 		return nil
 
@@ -138,6 +144,8 @@ func (local *Installer) Init() error {
 		local.spdkDepPackages = []string{}
 		local.spdkDepModules = []string{
 			"nvme_tcp",
+			"uio_pci_generic",
+			"vfio_pci",
 		}
 		return nil
 
