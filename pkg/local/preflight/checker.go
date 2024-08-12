@@ -101,7 +101,9 @@ func (local *Checker) Init() error {
 		local.packages = []string{
 			"nfs-common", "open-iscsi", "cryptsetup",
 		}
-		local.modules = []string{}
+		local.modules = []string{
+			"dm_crypt",
+		}
 		local.services = []string{
 			"multipathd.service",
 		}
@@ -117,7 +119,9 @@ func (local *Checker) Init() error {
 		local.packages = []string{
 			"nfs-utils", "iscsi-initiator-utils", "cryptsetup",
 		}
-		local.modules = []string{}
+		local.modules = []string{
+			"dm_crypt",
+		}
 		local.services = []string{
 			"multipathd.service",
 		}
@@ -133,7 +137,9 @@ func (local *Checker) Init() error {
 		local.packages = []string{
 			"nfs-client", "open-iscsi", "cryptsetup",
 		}
-		local.modules = []string{}
+		local.modules = []string{
+			"dm_crypt",
+		}
 		local.services = []string{
 			"multipathd.service",
 		}
@@ -149,7 +155,9 @@ func (local *Checker) Init() error {
 		local.packages = []string{
 			"nfs-utils", "open-iscsi", "cryptsetup",
 		}
-		local.modules = []string{}
+		local.modules = []string{
+			"dm_crypt",
+		}
 		local.services = []string{
 			"multipathd.service",
 		}
@@ -189,6 +197,10 @@ func (local *Checker) Run() error {
 		}
 
 		if err := local.checkPackagesInstalled(false); err != nil {
+			return err
+		}
+
+		if err := local.checkModulesLoaded(false); err != nil {
 			return err
 		}
 
