@@ -77,7 +77,7 @@ func (local *Installer) Init() error {
 			"nfs-common", "open-iscsi",
 		}
 		local.modules = []string{
-			"nfs",
+			"nfs", "dm_crypt",
 		}
 		local.services = []string{
 			"iscsid",
@@ -98,7 +98,7 @@ func (local *Installer) Init() error {
 			"nfs-utils", "iscsi-initiator-utils",
 		}
 		local.modules = []string{
-			"nfs", "iscsi_tcp",
+			"nfs", "iscsi_tcp", "dm_crypt",
 		}
 		local.services = []string{
 			"iscsid",
@@ -117,7 +117,7 @@ func (local *Installer) Init() error {
 			"nfs-client", "open-iscsi",
 		}
 		local.modules = []string{
-			"nfs", "iscsi_tcp",
+			"nfs", "iscsi_tcp", "dm_crypt",
 		}
 		local.services = []string{
 			"iscsid",
@@ -136,7 +136,7 @@ func (local *Installer) Init() error {
 			"nfs-utils", "open-iscsi",
 		}
 		local.modules = []string{
-			"nfs", "iscsi_tcp",
+			"nfs", "iscsi_tcp", "dm_crypt",
 		}
 		local.services = []string{
 			"iscsid",
