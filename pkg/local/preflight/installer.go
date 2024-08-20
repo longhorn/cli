@@ -161,15 +161,15 @@ func (local *Installer) Run() error {
 		}
 	}
 
-	if err := local.startServices(); err != nil {
-		return err
-	}
-
 	if err := local.probeModules(consts.DependencyModuleDefault); err != nil {
 		return err
 	}
 
 	if err := local.installPackages(false); err != nil {
+		return err
+	}
+
+	if err := local.startServices(); err != nil {
 		return err
 	}
 
