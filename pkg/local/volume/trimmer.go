@@ -17,9 +17,9 @@ import (
 	lhmgrtypes "github.com/longhorn/longhorn-manager/types"
 	lhmgrutils "github.com/longhorn/longhorn-manager/util"
 
-	lhgokube "github.com/longhorn/go-common-libs/kubernetes"
-	lhgons "github.com/longhorn/go-common-libs/ns"
-	lhgotypes "github.com/longhorn/go-common-libs/types"
+	commonkube "github.com/longhorn/go-common-libs/kubernetes"
+	commonns "github.com/longhorn/go-common-libs/ns"
+	commontypes "github.com/longhorn/go-common-libs/types"
 
 	remote "github.com/longhorn/cli/pkg/remote/volume"
 )
@@ -33,7 +33,7 @@ type Trimmer struct {
 	config         *rest.Config
 	kubeClient     *kubeclient.Clientset
 	longhornClient *lhclient.Clientset
-	executor       *lhgons.Executor
+	executor       *commonns.Executor
 }
 
 // Validate validates the command options.
@@ -47,18 +47,18 @@ func (local *Trimmer) Validate() error {
 
 // Init initializes the Trimmer.
 func (local *Trimmer) Init() error {
-	namespaces := []lhgotypes.Namespace{
-		lhgotypes.NamespaceMnt,
-		lhgotypes.NamespaceNet,
+	namespaces := []commontypes.Namespace{
+		commontypes.NamespaceMnt,
+		commontypes.NamespaceNet,
 	}
 
-	executor, err := lhgons.NewNamespaceExecutor(lhgotypes.ProcessSelf, lhgotypes.HostProcDirectory, namespaces)
+	executor, err := commonns.NewNamespaceExecutor(commontypes.ProcessSelf, commontypes.HostProcDirectory, namespaces)
 	if err != nil {
 		return err
 	}
 	local.executor = executor
 
-	local.config, err = lhgokube.GetInClusterConfig()
+	local.config, err = commonkube.GetInClusterConfig()
 	if err != nil {
 		return errors.Wrap(err, "failed to get client config")
 	}

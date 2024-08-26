@@ -16,9 +16,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeclient "k8s.io/client-go/kubernetes"
 
-	lhgokube "github.com/longhorn/go-common-libs/kubernetes"
-	lhgons "github.com/longhorn/go-common-libs/ns"
-	lhgotypes "github.com/longhorn/go-common-libs/types"
+	commonkube "github.com/longhorn/go-common-libs/kubernetes"
+	commonns "github.com/longhorn/go-common-libs/ns"
+	commontypes "github.com/longhorn/go-common-libs/types"
 
 	"github.com/longhorn/cli/pkg/consts"
 	pkgmgr "github.com/longhorn/cli/pkg/local/preflight/packagemanager"
@@ -61,7 +61,7 @@ func (local *Checker) Init() error {
 	local.logger = logrus.WithField("os", local.osRelease)
 
 	if local.osRelease == fmt.Sprint(consts.OperatingSystemContainerOptimizedOS) {
-		config, err := lhgokube.GetInClusterConfig()
+		config, err := commonkube.GetInClusterConfig()
 		if err != nil {
 			return errors.Wrap(err, "failed to get client config")
 		}
@@ -80,12 +80,12 @@ func (local *Checker) Init() error {
 	}
 	local.logger = local.logger.WithField("package-manager", packageManagerType)
 
-	namespaces := []lhgotypes.Namespace{
-		lhgotypes.NamespaceMnt,
-		lhgotypes.NamespaceNet,
+	namespaces := []commontypes.Namespace{
+		commontypes.NamespaceMnt,
+		commontypes.NamespaceNet,
 	}
 
-	executor, err := lhgons.NewNamespaceExecutor(lhgotypes.ProcessSelf, lhgotypes.HostProcDirectory, namespaces)
+	executor, err := commonns.NewNamespaceExecutor(commontypes.ProcessSelf, commontypes.HostProcDirectory, namespaces)
 	if err != nil {
 		return err
 	}
@@ -244,12 +244,12 @@ func (local *Checker) Output() error {
 
 // checkContainerOptimizedOS checks if the node-agent DaemonSet is running.
 func (local *Checker) checkContainerOptimizedOS() error {
-	daemonSet, err := lhgokube.GetDaemonSet(local.kubeClient, metav1.NamespaceDefault, consts.AppNamePreflightContainerOptimizedOS)
+	daemonSet, err := commonkube.GetDaemonSet(local.kubeClient, metav1.NamespaceDefault, consts.AppNamePreflightContainerOptimizedOS)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get DaemonSet %v", consts.AppNamePreflightContainerOptimizedOS)
 	}
 
-	if !lhgokube.IsDaemonSetReady(daemonSet) {
+	if !commonkube.IsDaemonSetReady(daemonSet) {
 		return errors.Errorf("DaemonSet %v is not ready", consts.AppNamePreflightContainerOptimizedOS)
 	}
 	return nil
@@ -320,7 +320,7 @@ func (local *Checker) checkHugePages() error {
 }
 
 func (local *Checker) isHugePagesTotalEqualOrLargerThan(requiredHugePages int) (bool, int, int, error) {
-	output, err := local.packageManager.Execute([]string{}, "grep", []string{"HugePages_Total", "/proc/meminfo"}, lhgotypes.ExecuteNoTimeout)
+	output, err := local.packageManager.Execute([]string{}, "grep", []string{"HugePages_Total", "/proc/meminfo"}, commontypes.ExecuteNoTimeout)
 	if err != nil {
 		return false, 0, 0, errors.Wrap(err, "failed to get total number of HugePages")
 	}
@@ -349,7 +349,7 @@ func (local *Checker) checkCpuInstructionSet(instructionSets map[string][]string
 	}
 
 	for _, set := range sets {
-		_, err := local.packageManager.Execute([]string{}, "grep", []string{set, "/proc/cpuinfo"}, lhgotypes.ExecuteNoTimeout)
+		_, err := local.packageManager.Execute([]string{}, "grep", []string{set, "/proc/cpuinfo"}, commontypes.ExecuteNoTimeout)
 		if err != nil {
 			local.collection.Log.Error = append(local.collection.Log.Error, fmt.Sprintf("CPU instruction set %v is not supported: %s", set, err))
 		} else {

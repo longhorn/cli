@@ -12,7 +12,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	lhgoio "github.com/longhorn/go-common-libs/io"
+	commonio "github.com/longhorn/go-common-libs/io"
 
 	"github.com/longhorn/cli/pkg/consts"
 	"github.com/longhorn/cli/pkg/types"
@@ -128,7 +128,7 @@ func HandleResult(resultBytes []byte, outputFile string, logger *logrus.Entry) e
 	}
 
 	// Create directory if not already created.
-	_, err := lhgoio.CreateDirectory(filepath.Dir(outputFile), time.Now())
+	_, err := commonio.CreateDirectory(filepath.Dir(outputFile), time.Now())
 	if err != nil {
 		return errors.Wrap(err, "failed to create directory")
 	}

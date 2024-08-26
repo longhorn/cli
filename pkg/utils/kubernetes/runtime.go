@@ -25,7 +25,7 @@ import (
 	watchtools "k8s.io/client-go/tools/watch"
 	"k8s.io/kubectl/pkg/util/interrupt"
 
-	lhgokube "github.com/longhorn/go-common-libs/kubernetes"
+	commonkube "github.com/longhorn/go-common-libs/kubernetes"
 
 	"github.com/longhorn/cli/pkg/types"
 )
@@ -35,7 +35,7 @@ func WaitForDaemonSetContainersReady(ctx context.Context, logger *logrus.Entry, 
 	logger.Debug("Waiting for DaemonSet container to be ready")
 
 	conditionFunc := func(pod *corev1.Pod) bool {
-		return lhgokube.IsPodContainerInState(pod, containerName, lhgokube.IsContainerReady)
+		return commonkube.IsPodContainerInState(pod, containerName, commonkube.IsContainerReady)
 	}
 	return waitForDaemonSetContainers(ctx, logger, kubeClient, daemonSet, containerName, conditionFunc, maxConditionToleration)
 }
@@ -45,13 +45,13 @@ func WaitForDaemonSetContainersExit(ctx context.Context, logger *logrus.Entry, k
 	logger.Debug("Waiting for DaemonSet container to exit")
 
 	conditionFunc := func(pod *corev1.Pod) bool {
-		isInitializing := lhgokube.IsPodContainerInState(pod, containerName, lhgokube.IsContainerInitializing)
+		isInitializing := commonkube.IsPodContainerInState(pod, containerName, commonkube.IsContainerInitializing)
 		if isInitializing {
 			return false
 		}
 
-		isWaitingCrashloopBackoff := lhgokube.IsPodContainerInState(pod, containerName, lhgokube.IsContainerWaitingCrashLoopBackOff)
-		isCompleted := lhgokube.IsPodContainerInState(pod, containerName, lhgokube.IsContainerCompleted)
+		isWaitingCrashloopBackoff := commonkube.IsPodContainerInState(pod, containerName, commonkube.IsContainerWaitingCrashLoopBackOff)
+		isCompleted := commonkube.IsPodContainerInState(pod, containerName, commonkube.IsContainerCompleted)
 		return !isWaitingCrashloopBackoff && isCompleted
 	}
 	return waitForDaemonSetContainers(ctx, logger, kubeClient, daemonSet, containerName, conditionFunc, maxConditionToleration)
@@ -98,7 +98,7 @@ func waitForDaemonSetContainers(ctx context.Context, logger *logrus.Entry, kubeC
 		for _, pod := range pods.Items {
 			logger.WithField("pod", pod.Name).Trace("Checking pod container condition")
 
-			if lhgokube.IsPodContainerInState(&pod, containerName, lhgokube.IsContainerWaitingCrashLoopBackOff) {
+			if commonkube.IsPodContainerInState(&pod, containerName, commonkube.IsContainerWaitingCrashLoopBackOff) {
 				logger.Debug("Pod container is in crashloopbackoff")
 
 				*maxConditionToleration = -1
@@ -143,7 +143,7 @@ func NewWorkload(kubeClient *kubeclient.Clientset, obj interface{}, kind, labelS
 		return nil, errors.Errorf("Failed to convert obj (%v) to runtime.Object", obj)
 	}
 
-	objMeta, err := lhgokube.GetObjMetaAccesser(obj)
+	objMeta, err := commonkube.GetObjMetaAccesser(obj)
 	if err != nil {
 		return nil, err
 	}
@@ -372,9 +372,9 @@ func getPodContainerLogs(ctx context.Context, logger *logrus.Entry, kubeClient *
 	// Check if only logs of failed containers are required
 	if onlyFailed {
 		isContainerFailed := func() bool {
-			isContainerReady := lhgokube.IsPodContainerInState(pod, containerName, lhgokube.IsContainerReady)
-			isContainerCompleted := lhgokube.IsPodContainerInState(pod, containerName, lhgokube.IsContainerCompleted)
-			isContainerWaitingCrashloopBackoff := lhgokube.IsPodContainerInState(pod, containerName, lhgokube.IsContainerWaitingCrashLoopBackOff)
+			isContainerReady := commonkube.IsPodContainerInState(pod, containerName, commonkube.IsContainerReady)
+			isContainerCompleted := commonkube.IsPodContainerInState(pod, containerName, commonkube.IsContainerCompleted)
+			isContainerWaitingCrashloopBackoff := commonkube.IsPodContainerInState(pod, containerName, commonkube.IsContainerWaitingCrashLoopBackOff)
 			return (!isContainerReady && !isContainerCompleted) || isContainerWaitingCrashloopBackoff
 		}()
 

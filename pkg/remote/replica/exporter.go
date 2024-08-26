@@ -16,8 +16,8 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/utils/ptr"
 
-	lhgokube "github.com/longhorn/go-common-libs/kubernetes"
-	lhgolonghorn "github.com/longhorn/go-common-libs/longhorn"
+	commonkube "github.com/longhorn/go-common-libs/kubernetes"
+	commonlonghorn "github.com/longhorn/go-common-libs/longhorn"
 
 	"github.com/longhorn/cli/pkg/consts"
 	"github.com/longhorn/cli/pkg/types"
@@ -81,7 +81,7 @@ func (remote *Exporter) Init() error {
 
 	// Not required for cleanup
 	if remote.ReplicaName != "" {
-		remote.volumeName, err = lhgolonghorn.GetVolumeNameFromReplicaDataDirectoryName(remote.ReplicaName)
+		remote.volumeName, err = commonlonghorn.GetVolumeNameFromReplicaDataDirectoryName(remote.ReplicaName)
 		if err != nil {
 			return err
 		}
@@ -97,26 +97,26 @@ func (remote *Exporter) Run() (string, error) {
 	newConfigMap := remote.newConfigMapForSimpleLonghorn()
 	newDaemonSet := remote.newDaemonSet()
 
-	configMap, err := lhgokube.GetConfigMap(remote.kubeClient, newConfigMap.Namespace, newConfigMap.Name)
+	configMap, err := commonkube.GetConfigMap(remote.kubeClient, newConfigMap.Namespace, newConfigMap.Name)
 	if err == nil {
 		return "", errors.Errorf("ConfigMap %v already exists", configMap.Name)
 	} else if !apierrors.IsNotFound(err) {
 		return "", err
 	}
 
-	daemonSet, err := lhgokube.GetDaemonSet(remote.kubeClient, newDaemonSet.Namespace, newDaemonSet.Name)
+	daemonSet, err := commonkube.GetDaemonSet(remote.kubeClient, newDaemonSet.Namespace, newDaemonSet.Name)
 	if err == nil {
 		return "", errors.Errorf("DaemonSet %v already exists", daemonSet.Name)
 	} else if !apierrors.IsNotFound(err) {
 		return "", err
 	}
 
-	_, err = lhgokube.CreateConfigMap(remote.kubeClient, newConfigMap)
+	_, err = commonkube.CreateConfigMap(remote.kubeClient, newConfigMap)
 	if err != nil {
 		return "", err
 	}
 
-	daemonSet, err = lhgokube.CreateDaemonSet(remote.kubeClient, newDaemonSet)
+	daemonSet, err = commonkube.CreateDaemonSet(remote.kubeClient, newDaemonSet)
 	if err != nil {
 		return "", err
 	}
@@ -180,11 +180,11 @@ func (remote *Exporter) Run() (string, error) {
 
 // Cleanup deletes the ConfigMap and DaemonSet created for the replica exporter.
 func (remote *Exporter) Cleanup() error {
-	if err := lhgokube.DeleteConfigMap(remote.kubeClient, remote.namespace, remote.appName); err != nil {
+	if err := commonkube.DeleteConfigMap(remote.kubeClient, remote.namespace, remote.appName); err != nil {
 		return err
 	}
 
-	return lhgokube.DeleteDaemonSet(remote.kubeClient, remote.namespace, remote.appName)
+	return commonkube.DeleteDaemonSet(remote.kubeClient, remote.namespace, remote.appName)
 }
 
 // newConfigMapForSimpleLonghorn prepares a ConfigMap with entrypoint script for the replica exporter.

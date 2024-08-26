@@ -9,8 +9,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
-	lhgons "github.com/longhorn/go-common-libs/ns"
-	lhgotypes "github.com/longhorn/go-common-libs/types"
+	commonns "github.com/longhorn/go-common-libs/ns"
+	commontypes "github.com/longhorn/go-common-libs/types"
 
 	"github.com/longhorn/cli/pkg/consts"
 	pkgmgr "github.com/longhorn/cli/pkg/local/preflight/packagemanager"
@@ -49,17 +49,17 @@ func (local *Installer) Init() error {
 	}
 	local.logger = local.logger.WithField("package-manager", packageManagerType)
 
-	namespaces := []lhgotypes.Namespace{
-		lhgotypes.NamespaceMnt,
-		lhgotypes.NamespaceNet,
+	namespaces := []commontypes.Namespace{
+		commontypes.NamespaceMnt,
+		commontypes.NamespaceNet,
 	}
 
-	executor, err := lhgons.NewNamespaceExecutor(lhgotypes.ProcessSelf, lhgotypes.HostProcDirectory, namespaces)
+	executor, err := commonns.NewNamespaceExecutor(commontypes.ProcessSelf, commontypes.HostProcDirectory, namespaces)
 	if err != nil {
 		return err
 	}
 
-	kernelRelease, err := executor.Execute([]string{}, "uname", []string{"-r"}, lhgotypes.ExecuteNoTimeout)
+	kernelRelease, err := executor.Execute([]string{}, "uname", []string{"-r"}, commontypes.ExecuteNoTimeout)
 	if err != nil {
 		return err
 	}
@@ -280,7 +280,7 @@ func (local *Installer) configureSPDKEnv() error {
 	// Configure SPDK environment
 	logrus.Info("Configuring SPDK environment")
 	args := getArgsForConfiguringSPDKEnv(local.SpdkOptions)
-	if _, err := local.packageManager.Execute([]string{}, "bash", args, lhgotypes.ExecuteNoTimeout); err != nil {
+	if _, err := local.packageManager.Execute([]string{}, "bash", args, commontypes.ExecuteNoTimeout); err != nil {
 		logrus.WithError(err).Error("Failed to configure SPDK environment")
 	} else {
 		logrus.Info("Successfully configured SPDK environment")
