@@ -10,7 +10,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/utils/ptr"
 
-	lhgokube "github.com/longhorn/go-common-libs/kubernetes"
+	commonkube "github.com/longhorn/go-common-libs/kubernetes"
 
 	"github.com/longhorn/cli/pkg/consts"
 	"github.com/longhorn/cli/pkg/types"
@@ -68,7 +68,7 @@ func (remote *Trimmer) Init() error {
 // Run creates the DaemonSet for the volume trimmer, and waits for it to complete.
 func (remote *Trimmer) Run() error {
 	newDaemonSet := remote.newDaemonSet()
-	daemonSet, err := lhgokube.CreateDaemonSet(remote.kubeClient, newDaemonSet)
+	daemonSet, err := commonkube.CreateDaemonSet(remote.kubeClient, newDaemonSet)
 	if err != nil {
 		return err
 	}
@@ -78,7 +78,7 @@ func (remote *Trimmer) Run() error {
 
 // Cleanup deletes the DaemonSet created for the volume trimmer.
 func (remote *Trimmer) Cleanup() error {
-	return lhgokube.DeleteDaemonSet(remote.kubeClient, remote.LonghornNamespace, remote.appName)
+	return commonkube.DeleteDaemonSet(remote.kubeClient, remote.LonghornNamespace, remote.appName)
 }
 
 // NewDaemonSet prepares the DaemonSet for the volume trimmer.

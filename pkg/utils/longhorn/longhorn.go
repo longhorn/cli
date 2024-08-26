@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
-	lhgoio "github.com/longhorn/go-common-libs/io"
+	commonio "github.com/longhorn/go-common-libs/io"
 
 	"github.com/longhorn/cli/pkg/consts"
 )
@@ -16,7 +16,7 @@ import (
 func FindDataDirectory(logger *logrus.Entry, hostDirectory string) (string, error) {
 	logger.Debug("Finding Longhorn data directory")
 
-	foundFiles, err := lhgoio.FindFiles(hostDirectory, consts.LonghornDiskConfigFile, 0)
+	foundFiles, err := commonio.FindFiles(hostDirectory, consts.LonghornDiskConfigFile, 0)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to find %s in %s", consts.LonghornDiskConfigFile, consts.VolumeMountHostDirectory)
 	}

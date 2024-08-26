@@ -11,8 +11,8 @@ import (
 
 	lhmgrutil "github.com/longhorn/longhorn-manager/util"
 
-	lhgoio "github.com/longhorn/go-common-libs/io"
-	lhgotypes "github.com/longhorn/go-common-libs/types"
+	commonio "github.com/longhorn/go-common-libs/io"
+	commontypes "github.com/longhorn/go-common-libs/types"
 
 	"github.com/longhorn/cli/pkg/consts"
 	remote "github.com/longhorn/cli/pkg/remote/replica"
@@ -111,7 +111,7 @@ func (local *Getter) getReplicaNamesInDirectory() ([]string, error) {
 	}
 	log.Infof("Searching for replicas in %s", replicasDirectory)
 
-	filePaths, err := lhgoio.FindFiles(replicasDirectory, "", 1)
+	filePaths, err := commonio.FindFiles(replicasDirectory, "", 1)
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +161,7 @@ func (local *Getter) getReplicaInfo(replicaName string) (replicaInfo *types.Repl
 	replicaDirectory := filepath.Join(local.replicasDirectory, replicaName)
 	replicaInfo.Directory = strings.TrimPrefix(replicaDirectory, consts.VolumeMountHostDirectory)
 
-	isEmpty, err := lhgoio.IsDirectoryEmpty(replicaDirectory)
+	isEmpty, err := commonio.IsDirectoryEmpty(replicaDirectory)
 	if err != nil {
 		replicaInfo.Error = errors.Wrapf(err, "failed to check if directory %s is empty", replicaInfo.Directory).Error()
 		return replicaInfo, nil
@@ -199,7 +199,7 @@ func (local *Getter) isReplicaInUse(name string) (bool, error) {
 
 	logrus.Tracef("Listing open files in %s", replicaDirectory)
 
-	openedFiles, err := lhgoio.ListOpenFiles(lhgotypes.HostProcDirectory, replicaDirectory)
+	openedFiles, err := commonio.ListOpenFiles(commontypes.HostProcDirectory, replicaDirectory)
 	if err != nil {
 		return false, errors.Wrapf(err, "failed to list open files in %s", replicaDirectory)
 	}

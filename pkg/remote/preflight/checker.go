@@ -14,8 +14,8 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/utils/ptr"
 
-	lhgokube "github.com/longhorn/go-common-libs/kubernetes"
-	libutils "github.com/longhorn/go-common-libs/utils"
+	commonkube "github.com/longhorn/go-common-libs/kubernetes"
+	commonutils "github.com/longhorn/go-common-libs/utils"
 
 	"github.com/longhorn/cli/pkg/consts"
 	"github.com/longhorn/cli/pkg/types"
@@ -69,7 +69,7 @@ func (remote *Checker) Run() (string, error) {
 	}
 
 	newDaemonSet := remote.newDaemonSet()
-	daemonSet, err := lhgokube.CreateDaemonSet(remote.kubeClient, newDaemonSet)
+	daemonSet, err := commonkube.CreateDaemonSet(remote.kubeClient, newDaemonSet)
 	if err != nil {
 		return "", err
 	}
@@ -120,19 +120,19 @@ func (remote *Checker) Run() (string, error) {
 func (remote *Checker) createRbacForNodeAgent() error {
 	// Create the RBAC for checking if node agent exists when the cluster is running on Container-Optimized OS.
 	newServiceAccount := remote.newServiceAccount()
-	_, err := lhgokube.CreateServiceAccount(remote.kubeClient, newServiceAccount)
+	_, err := commonkube.CreateServiceAccount(remote.kubeClient, newServiceAccount)
 	if err != nil {
 		return err
 	}
 
 	newClusterRole := remote.newClusterRole()
-	_, err = lhgokube.CreateClusterRole(remote.kubeClient, newClusterRole)
+	_, err = commonkube.CreateClusterRole(remote.kubeClient, newClusterRole)
 	if err != nil {
 		return err
 	}
 
 	newClusterRoleBinding := remote.newClusterRoleBinding()
-	_, err = lhgokube.CreateClusterRoleBinding(remote.kubeClient, newClusterRoleBinding)
+	_, err = commonkube.CreateClusterRoleBinding(remote.kubeClient, newClusterRoleBinding)
 	if err != nil {
 		return err
 	}
@@ -142,19 +142,19 @@ func (remote *Checker) createRbacForNodeAgent() error {
 
 // Cleanup deletes the DaemonSet created for the preflight check.
 func (remote *Checker) Cleanup() error {
-	if err := lhgokube.DeleteDaemonSet(remote.kubeClient, remote.namespace, remote.appName); err != nil {
+	if err := commonkube.DeleteDaemonSet(remote.kubeClient, remote.namespace, remote.appName); err != nil {
 		return err
 	}
 
-	if err := lhgokube.DeleteClusterRoleBinding(remote.kubeClient, remote.appName); err != nil {
+	if err := commonkube.DeleteClusterRoleBinding(remote.kubeClient, remote.appName); err != nil {
 		return err
 	}
 
-	if err := lhgokube.DeleteClusterRole(remote.kubeClient, remote.appName); err != nil {
+	if err := commonkube.DeleteClusterRole(remote.kubeClient, remote.appName); err != nil {
 		return err
 	}
 
-	return lhgokube.DeleteServiceAccount(remote.kubeClient, remote.namespace, remote.appName)
+	return commonkube.DeleteServiceAccount(remote.kubeClient, remote.namespace, remote.appName)
 }
 
 func (remote *Checker) newClusterRole() *rbacv1.ClusterRole {
@@ -243,11 +243,11 @@ func (remote *Checker) newDaemonSet() *appsv1.DaemonSet {
 								},
 								{
 									Name:  consts.EnvEnableSpdk,
-									Value: libutils.ConvertTypeToString(remote.EnableSpdk),
+									Value: commonutils.ConvertTypeToString(remote.EnableSpdk),
 								},
 								{
 									Name:  consts.EnvHugePageSize,
-									Value: libutils.ConvertTypeToString(remote.HugePageSize),
+									Value: commonutils.ConvertTypeToString(remote.HugePageSize),
 								},
 								{
 									Name:  consts.EnvUserspaceDriver,

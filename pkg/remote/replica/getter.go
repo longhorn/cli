@@ -13,7 +13,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/utils/ptr"
 
-	lhgokube "github.com/longhorn/go-common-libs/kubernetes"
+	commonkube "github.com/longhorn/go-common-libs/kubernetes"
 
 	"github.com/longhorn/cli/pkg/consts"
 	"github.com/longhorn/cli/pkg/types"
@@ -64,7 +64,7 @@ func (remote *Getter) Init() error {
 func (remote *Getter) Run() (string, error) {
 	newDaemonSet := remote.newDaemonSet()
 
-	daemonSet, err := lhgokube.CreateDaemonSet(remote.kubeClient, newDaemonSet)
+	daemonSet, err := commonkube.CreateDaemonSet(remote.kubeClient, newDaemonSet)
 	if err != nil {
 		return "", err
 	}
@@ -108,7 +108,7 @@ func (remote *Getter) Run() (string, error) {
 
 // Cleanup deletes the DaemonSet created for the replica getter.
 func (remote *Getter) Cleanup() error {
-	return lhgokube.DeleteDaemonSet(remote.kubeClient, remote.namespace, remote.appName)
+	return commonkube.DeleteDaemonSet(remote.kubeClient, remote.namespace, remote.appName)
 }
 
 // newDaemonSet prepares the DaemonSet for the replica getter.

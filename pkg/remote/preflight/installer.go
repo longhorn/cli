@@ -11,8 +11,8 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/utils/ptr"
 
-	lhgokube "github.com/longhorn/go-common-libs/kubernetes"
-	libutils "github.com/longhorn/go-common-libs/utils"
+	commonkube "github.com/longhorn/go-common-libs/kubernetes"
+	commonutils "github.com/longhorn/go-common-libs/utils"
 
 	"github.com/longhorn/cli/pkg/consts"
 	"github.com/longhorn/cli/pkg/types"
@@ -96,20 +96,20 @@ func (remote *Installer) Run() error {
 
 // Cleanup deletes the DaemonSet created for the preflight install when it's installed with package manager.
 func (remote *Installer) Cleanup() error {
-	return lhgokube.DeleteDaemonSet(remote.kubeClient, metav1.NamespaceDefault, remote.appName)
+	return commonkube.DeleteDaemonSet(remote.kubeClient, metav1.NamespaceDefault, remote.appName)
 }
 
 // InstallByContainerOptimizedOS installs the dependencies on Container Optimized OS.
 // It creates a ConfigMap and a DaemonSet. Then it waits for the DaemonSet to be ready.
 func (remote *Installer) InstallByContainerOptimizedOS() error {
 	newConfigMap := remote.newConfigMapForContainerOptimizedOS()
-	_, err := lhgokube.CreateConfigMap(remote.kubeClient, newConfigMap)
+	_, err := commonkube.CreateConfigMap(remote.kubeClient, newConfigMap)
 	if err != nil {
 		return err
 	}
 
 	newDaemonSet := remote.newDaemonSetForContainerOptimizedOS()
-	daemonSet, err := lhgokube.CreateDaemonSet(remote.kubeClient, newDaemonSet)
+	daemonSet, err := commonkube.CreateDaemonSet(remote.kubeClient, newDaemonSet)
 	if err != nil {
 		return err
 	}
@@ -121,7 +121,7 @@ func (remote *Installer) InstallByContainerOptimizedOS() error {
 // It creates a DaemonSet. Then it waits for the DaemonSet to complete.
 func (remote *Installer) InstallByPackageManager() error {
 	newDaemonSet := remote.NewDaemonSetForPackageManager()
-	daemonSet, err := lhgokube.CreateDaemonSet(remote.kubeClient, newDaemonSet)
+	daemonSet, err := commonkube.CreateDaemonSet(remote.kubeClient, newDaemonSet)
 	if err != nil {
 		return err
 	}
@@ -392,11 +392,11 @@ func (remote *Installer) NewDaemonSetForPackageManager() *appsv1.DaemonSet {
 								},
 								{
 									Name:  consts.EnvUpdatePackageList,
-									Value: libutils.ConvertTypeToString(remote.UpdatePackages),
+									Value: commonutils.ConvertTypeToString(remote.UpdatePackages),
 								},
 								{
 									Name:  consts.EnvEnableSpdk,
-									Value: libutils.ConvertTypeToString(remote.EnableSpdk),
+									Value: commonutils.ConvertTypeToString(remote.EnableSpdk),
 								},
 								{
 									Name:  consts.EnvSpdkOptions,
@@ -404,7 +404,7 @@ func (remote *Installer) NewDaemonSetForPackageManager() *appsv1.DaemonSet {
 								},
 								{
 									Name:  consts.EnvHugePageSize,
-									Value: libutils.ConvertTypeToString(remote.HugePageSize),
+									Value: commonutils.ConvertTypeToString(remote.HugePageSize),
 								},
 								{
 									Name:  consts.EnvPciAllowed,
