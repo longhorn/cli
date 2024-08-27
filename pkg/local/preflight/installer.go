@@ -74,7 +74,7 @@ func (local *Installer) Init() error {
 	case pkgmgr.PackageManagerApt:
 		local.packageManager = pkgMgr
 		local.packages = []string{
-			"nfs-common", "open-iscsi",
+			"nfs-common", "open-iscsi", "cryptsetup",
 		}
 		local.modules = []string{
 			"nfs",
@@ -95,7 +95,7 @@ func (local *Installer) Init() error {
 	case pkgmgr.PackageManagerYum:
 		local.packageManager = pkgMgr
 		local.packages = []string{
-			"nfs-utils", "iscsi-initiator-utils",
+			"nfs-utils", "iscsi-initiator-utils", "cryptsetup",
 		}
 		local.modules = []string{
 			"nfs", "iscsi_tcp",
@@ -114,7 +114,7 @@ func (local *Installer) Init() error {
 	case pkgmgr.PackageManagerZypper, pkgmgr.PackageManagerTransactionalUpdate:
 		local.packageManager = pkgMgr
 		local.packages = []string{
-			"nfs-client", "open-iscsi",
+			"nfs-client", "open-iscsi", "cryptsetup",
 		}
 		local.modules = []string{
 			"nfs", "iscsi_tcp",
@@ -133,7 +133,7 @@ func (local *Installer) Init() error {
 	case pkgmgr.PackageManagerPacman:
 		local.packageManager = pkgMgr
 		local.packages = []string{
-			"nfs-utils", "open-iscsi",
+			"nfs-utils", "open-iscsi", "cryptsetup",
 		}
 		local.modules = []string{
 			"nfs", "iscsi_tcp",
