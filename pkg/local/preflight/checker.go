@@ -99,7 +99,7 @@ func (local *Checker) Init() error {
 	case pkgmgr.PackageManagerApt:
 		local.packageManager = packageManager
 		local.packages = []string{
-			"nfs-common", "open-iscsi",
+			"nfs-common", "open-iscsi", "cryptsetup",
 		}
 		local.modules = []string{}
 		local.services = []string{
@@ -115,7 +115,7 @@ func (local *Checker) Init() error {
 	case pkgmgr.PackageManagerYum:
 		local.packageManager = packageManager
 		local.packages = []string{
-			"nfs-utils", "iscsi-initiator-utils",
+			"nfs-utils", "iscsi-initiator-utils", "cryptsetup",
 		}
 		local.modules = []string{}
 		local.services = []string{
@@ -131,7 +131,7 @@ func (local *Checker) Init() error {
 	case pkgmgr.PackageManagerZypper, pkgmgr.PackageManagerTransactionalUpdate:
 		local.packageManager = packageManager
 		local.packages = []string{
-			"nfs-client", "open-iscsi",
+			"nfs-client", "open-iscsi", "cryptsetup",
 		}
 		local.modules = []string{}
 		local.services = []string{
@@ -147,7 +147,7 @@ func (local *Checker) Init() error {
 	case pkgmgr.PackageManagerPacman:
 		local.packageManager = packageManager
 		local.packages = []string{
-			"nfs-utils", "open-iscsi",
+			"nfs-utils", "open-iscsi", "cryptsetup",
 		}
 		local.modules = []string{}
 		local.services = []string{
