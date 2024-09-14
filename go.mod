@@ -3,7 +3,7 @@ module github.com/longhorn/cli
 go 1.22.2
 
 require (
-	github.com/longhorn/go-common-libs v0.0.0-20240907130740-7060fefb5bda
+	github.com/longhorn/go-common-libs v0.0.0-20240914083622-928beb30c12e
 	github.com/longhorn/longhorn-manager v1.7.1
 	github.com/otiai10/copy v1.14.0
 	github.com/pkg/errors v0.9.1
@@ -97,7 +97,7 @@ require (
 	k8s.io/component-base v0.31.0 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20240228011516-70dd3763d340 // indirect
-	k8s.io/mount-utils v0.31.0 // indirect
+	k8s.io/mount-utils v0.31.1 // indirect
 	sigs.k8s.io/controller-runtime v0.19.0 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/kustomize/api v0.17.2 // indirect
