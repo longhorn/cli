@@ -28,7 +28,7 @@ source "${ROOT_DIR}/dapper/version"
 mkdir -p "${ROOT_DIR}/bin"
 echo "Making binary at ${ROOT_DIR}/bin"
 
-for os in linux; do
+for os in linux darwin; do
   for arch in amd64 arm64; do
     build_app local longhornctl-local ${os} ${arch}
     build_app remote longhornctl ${os} ${arch}
