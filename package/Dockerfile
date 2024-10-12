@@ -1,6 +1,6 @@
-# syntax=docker/dockerfile:1.9.0
+# syntax=docker/dockerfile:1.10.0
 
-FROM  registry.suse.com/bci/golang:1.22 AS builder
+FROM  registry.suse.com/bci/golang:1.23 AS builder
 
 ARG ARCH=amd64
 
