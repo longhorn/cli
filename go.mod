@@ -1,6 +1,8 @@
 module github.com/longhorn/cli
 
-go 1.22.2
+go 1.22.7
+
+toolchain go1.23.2
 
 require (
 	github.com/longhorn/go-common-libs v0.0.0-20241012153249-4c71f1cbdd9e
@@ -16,7 +18,7 @@ require (
 	k8s.io/client-go v0.31.1
 	k8s.io/kubectl v0.31.1
 	k8s.io/utils v0.0.0-20240921022957-49e7df575cb6
-	sigs.k8s.io/kustomize/kyaml v0.17.2
+	sigs.k8s.io/kustomize/kyaml v0.18.1
 )
 
 require (
@@ -80,7 +82,6 @@ require (
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xlab/treeprint v1.2.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
-	go.starlark.net v0.0.0-20230525235612-a134d8f9ddca // indirect
 	golang.org/x/net v0.28.0 // indirect
 	golang.org/x/oauth2 v0.22.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
