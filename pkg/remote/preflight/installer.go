@@ -144,7 +144,7 @@ IFS=',' read -ra LONGHORN_DATA_DIRS <<< "$LONGHORN_DATA_PATHS"  # Split comma-se
 
 # Function to check the operating system is Container Optimized OS (cos)
 function check_operating_system() {
-	os=$(cat /etc/os-release | grep '^ID=' | cut -d= -f2)
+	os=$(cat ${HOST_MOUNT_DIR}/etc/os-release | grep '^ID=' | cut -d= -f2)
 	if [ "$os" != "cos" ]; then
 		echo "ERROR: Operating system ($os) is not Container Optimized OS (cos)"
 		exit 1
