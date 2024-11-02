@@ -3,7 +3,7 @@ module github.com/longhorn/cli
 go 1.22.2
 
 require (
-	github.com/longhorn/go-common-libs v0.0.0-20241027235151-deb5e9574536
+	github.com/longhorn/go-common-libs v0.0.0-20241102040927-43901cc2fa33
 	github.com/longhorn/longhorn-manager v1.7.2
 	github.com/otiai10/copy v1.14.0
 	github.com/pkg/errors v0.9.1
