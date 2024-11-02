@@ -102,8 +102,8 @@ github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de h1:9TO3cAIGXtEhn
 github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de/go.mod h1:zAbeS9B/r2mtpb6U+EI2rYA5OAXxsYw6wTamcNW+zcE=
 github.com/lithammer/dedent v1.1.0 h1:VNzHMVCBNG1j0fh3OrsFRkVUwStdDArbgBWoPAffktY=
 github.com/lithammer/dedent v1.1.0/go.mod h1:jrXYCQtgg0nJiN+StA2KgR7w6CiQNv9Fd/Z9BP0jIOc=
-github.com/longhorn/go-common-libs v0.0.0-20241027235151-deb5e9574536 h1:ZRSdi7VSXXh27pCMpbuJ0/eUpUqmPOdKrlv0rJ/8+vU=
-github.com/longhorn/go-common-libs v0.0.0-20241027235151-deb5e9574536/go.mod h1:oGY0xjgWbzNzhQrGKs+tOqMmdlYxOmSLSng2tl4CMuY=
+github.com/longhorn/go-common-libs v0.0.0-20241102040927-43901cc2fa33 h1:mjHjHqmOmYpZlq4rCk5mJbT26zKfStNRjCxwRdx0aj0=
+github.com/longhorn/go-common-libs v0.0.0-20241102040927-43901cc2fa33/go.mod h1:NCYH4V236LBX4hFM+1gwaMqDkgoj80hO2lY4BOxzaVk=
 github.com/longhorn/longhorn-manager v1.7.2 h1:hf0phTtk8Odq+zoVYO5JuHbKJOi4nK+iugUJ1FQw56M=
 github.com/longhorn/longhorn-manager v1.7.2/go.mod h1:QvOuwQP3TqICQHyJcPynjtAhF3TMCFeygVIpf9q7/cI=
 github.com/mailru/easyjson v0.7.7 h1:UGYAvKxe3sBsEDzO8ZeWOSlIQfWFlxbzLZe7hwFURr0=
