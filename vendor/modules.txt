@@ -139,8 +139,8 @@ github.com/json-iterator/go
 # github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de
 ## explicit
 github.com/liggitt/tabwriter
-# github.com/longhorn/go-common-libs v0.0.0-20241102040927-43901cc2fa33
-## explicit; go 1.22.0
+# github.com/longhorn/go-common-libs v0.0.0-20241109101504-614ae31d2212
+## explicit; go 1.22.7
 github.com/longhorn/go-common-libs/exec
 github.com/longhorn/go-common-libs/io
 github.com/longhorn/go-common-libs/kubernetes
@@ -266,7 +266,7 @@ go.starlark.net/resolve
 go.starlark.net/starlark
 go.starlark.net/starlarkstruct
 go.starlark.net/syntax
-# golang.org/x/exp v0.0.0-20241009180824-f66d83c29e7c
+# golang.org/x/exp v0.0.0-20241108190413-2d47ceb2692f
 ## explicit; go 1.22.0
 golang.org/x/exp/constraints
 # golang.org/x/net v0.30.0
@@ -280,15 +280,15 @@ golang.org/x/net/idna
 golang.org/x/net/internal/socks
 golang.org/x/net/proxy
 golang.org/x/net/websocket
-# golang.org/x/oauth2 v0.22.0
+# golang.org/x/oauth2 v0.23.0
 ## explicit; go 1.18
 golang.org/x/oauth2
 golang.org/x/oauth2/internal
-# golang.org/x/sync v0.8.0
+# golang.org/x/sync v0.9.0
 ## explicit; go 1.18
 golang.org/x/sync/errgroup
 golang.org/x/sync/semaphore
-# golang.org/x/sys v0.26.0
+# golang.org/x/sys v0.27.0
 ## explicit; go 1.18
 golang.org/x/sys/plan9
 golang.org/x/sys/unix
