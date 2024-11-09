@@ -2,7 +2,7 @@ module github.com/longhorn/cli
 
 go 1.23
 
-toolchain go1.23.2
+toolchain go1.23.3
 
 require (
 	github.com/longhorn/go-common-libs v0.0.0-20241102040927-43901cc2fa33
@@ -17,7 +17,7 @@ require (
 	k8s.io/cli-runtime v0.31.2
 	k8s.io/client-go v0.31.2
 	k8s.io/kubectl v0.31.2
-	k8s.io/utils v0.0.0-20240921022957-49e7df575cb6
+	k8s.io/utils v0.0.0-20241104163129-6fe5fd82f078
 	sigs.k8s.io/kustomize/kyaml v0.18.1
 )
 
