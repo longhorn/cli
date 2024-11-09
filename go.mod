@@ -1,9 +1,11 @@
 module github.com/longhorn/cli
 
-go 1.22.2
+go 1.22.7
+
+toolchain go1.23.3
 
 require (
-	github.com/longhorn/go-common-libs v0.0.0-20241102040927-43901cc2fa33
+	github.com/longhorn/go-common-libs v0.0.0-20241109101504-614ae31d2212
 	github.com/longhorn/longhorn-manager v1.7.2
 	github.com/otiai10/copy v1.14.0
 	github.com/pkg/errors v0.9.1
@@ -83,11 +85,11 @@ require (
 	github.com/xlab/treeprint v1.2.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.starlark.net v0.0.0-20230525235612-a134d8f9ddca // indirect
-	golang.org/x/exp v0.0.0-20241009180824-f66d83c29e7c // indirect
+	golang.org/x/exp v0.0.0-20241108190413-2d47ceb2692f // indirect
 	golang.org/x/net v0.30.0 // indirect
-	golang.org/x/oauth2 v0.22.0 // indirect
-	golang.org/x/sync v0.8.0 // indirect
-	golang.org/x/sys v0.26.0 // indirect
+	golang.org/x/oauth2 v0.23.0 // indirect
+	golang.org/x/sync v0.9.0 // indirect
+	golang.org/x/sys v0.27.0 // indirect
 	golang.org/x/term v0.25.0 // indirect
 	golang.org/x/text v0.19.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
