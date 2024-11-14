@@ -5,7 +5,7 @@ go 1.23
 toolchain go1.23.3
 
 require (
-	github.com/longhorn/go-common-libs v0.0.0-20241124035508-d6221574e626
+	github.com/longhorn/go-common-libs v0.0.0-20241128023039-4d6c3a880dbc
 	github.com/longhorn/longhorn-manager v1.7.2
 	github.com/otiai10/copy v1.14.0
 	github.com/pkg/errors v0.9.1
