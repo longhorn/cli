@@ -53,6 +53,16 @@ type Checker struct {
 func (local *Checker) Init() error {
 	local.collection.Log = &types.LogCollection{}
 
+	config, err := lhgokube.GetInClusterConfig()
+	if err != nil {
+		return errors.Wrap(err, "failed to get client config")
+	}
+
+	local.kubeClient, err = kubeclient.NewForConfig(config)
+	if err != nil {
+		return errors.Wrap(err, "failed to get Kubernetes clientset")
+	}
+
 	osRelease, err := utils.GetOSRelease()
 	if err != nil {
 		return errors.Wrap(err, "failed to get OS release")
@@ -61,16 +71,6 @@ func (local *Checker) Init() error {
 	local.logger = logrus.WithField("os", local.osRelease)
 
 	if local.osRelease == fmt.Sprint(consts.OperatingSystemContainerOptimizedOS) {
-		config, err := lhgokube.GetInClusterConfig()
-		if err != nil {
-			return errors.Wrap(err, "failed to get client config")
-		}
-
-		local.kubeClient, err = kubeclient.NewForConfig(config)
-		if err != nil {
-			return errors.Wrap(err, "failed to get Kubernetes clientset")
-		}
-
 		return nil
 	}
 
@@ -177,6 +177,8 @@ func (local *Checker) Init() error {
 
 // Run executes the preflight checks.
 func (local *Checker) Run() error {
+	local.checkKubeDNS()
+
 	switch local.osRelease {
 	case fmt.Sprint(consts.OperatingSystemContainerOptimizedOS):
 		logrus.Infof("Checking preflight for %v", consts.OperatingSystemContainerOptimizedOS)
@@ -465,4 +467,44 @@ func (local *Checker) checkNFSv4Support() error {
 
 	local.collection.Log.Error = append(local.collection.Log.Error, "NFS4 is not supported")
 	return nil
+}
+
+// checkKubeDNS checks if the DNS deployment in the Kubernetes cluster
+// has multiple replicas and logs warnings if it does not.
+//
+// It retrieves the deployment in the "kube-system" namespace with a
+// "kube-app: kube-dns" label and checks the number of replicas specified in
+// the deployment spec. If the number of replicas is less than 2, it logs a
+// warning indicating that Kube DNS is not set to run with multiple replicas.
+// Additionally, it checks the number of ready replicas in the deployment
+// status and logs a warning if there are fewer than 2 ready replicas.
+//
+// https://github.com/longhorn/longhorn/issues/9752
+func (local *Checker) checkKubeDNS() {
+	logrus.Info("Checking if CoreDNS has multiple replicas")
+
+	deployments, err := lhgokube.ListDeployments(local.kubeClient, metav1.NamespaceSystem, map[string]string{consts.KubeAppLabel: consts.KubeAppValueDNS})
+	if err != nil {
+		local.collection.Log.Error = append(local.collection.Log.Error, fmt.Sprintf("Failed to list Kube DNS with label %s=%s: %v", consts.KubeAppLabel, consts.KubeAppValueDNS, err))
+		return
+	}
+
+	if len(deployments.Items) != 1 {
+		local.collection.Log.Warn = append(local.collection.Log.Warn, fmt.Sprintf("Found %d deployments with label %s=%s; expected 1", len(deployments.Items), consts.KubeAppLabel, consts.KubeAppValueDNS))
+		return
+	}
+
+	deployment := deployments.Items[0]
+
+	if deployment.Spec.Replicas == nil || *deployment.Spec.Replicas < 2 {
+		local.collection.Log.Warn = append(local.collection.Log.Warn, fmt.Sprintf("Kube DNS %q is set with fewer than 2 replicas; consider increasing replica count for high availability", deployment.Name))
+		return
+	}
+
+	if deployment.Status.ReadyReplicas < 2 {
+		local.collection.Log.Warn = append(local.collection.Log.Warn, fmt.Sprintf("Kube DNS %q has fewer than 2 ready replicas; some replicas may not be running or ready", deployment.Name))
+		return
+	}
+
+	local.collection.Log.Info = append(local.collection.Log.Info, fmt.Sprintf("Kube DNS %q is set with %d replicas and %d ready replicas", deployment.Name, *deployment.Spec.Replicas, deployment.Status.ReadyReplicas))
 }
