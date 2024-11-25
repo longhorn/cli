@@ -420,32 +420,35 @@ func (local *Checker) checkModulesLoaded(spdkDependent bool) error {
 func (local *Checker) checkNFSv4Support() error {
 	logrus.Info("Checking if NFS4 (either 4.0, 4.1 or 4.2) is supported")
 
+	var isKernelSupport = false
+	var isDefaultV4 = true
+
 	kernelVersion, err := utils.GetKernelVersion()
 	if err != nil {
 		return err
 	}
 	kernelConfigPath := "/boot/config-" + kernelVersion
 	kernelConfigPath = filepath.Join(consts.VolumeMountHostDirectory, kernelConfigPath)
-	configFile, err := os.Open(kernelConfigPath)
+	kernelConfigFile, err := os.Open(kernelConfigPath)
 	if err != nil {
 		return err
 	}
 	defer func(configFile *os.File) {
 		_ = configFile.Close()
-	}(configFile)
+	}(kernelConfigFile)
 
-	scanner := bufio.NewScanner(configFile)
+	kernelConfigScanner := bufio.NewScanner(kernelConfigFile)
 
-	for scanner.Scan() {
-		line := scanner.Text()
+	for kernelConfigScanner.Scan() {
+		line := kernelConfigScanner.Text()
 		if strings.HasPrefix(line, "CONFIG_NFS_V4_2=") ||
 			strings.HasPrefix(line, "CONFIG_NFS_V4_1=") ||
 			strings.HasPrefix(line, "CONFIG_NFS_V4=") {
 			option := strings.Split(line, "=")
 			if len(option) == 2 {
 				if option[1] == "y" {
-					local.collection.Log.Info = append(local.collection.Log.Info, "NFS4 is supported")
-					return nil
+					isKernelSupport = true
+					break
 				} else if option[1] == "m" {
 					// Check if the module is loaded
 					moduleLoaded, err := utils.IsModuleLoaded(option[0])
@@ -453,19 +456,55 @@ func (local *Checker) checkNFSv4Support() error {
 						continue
 					}
 					if moduleLoaded {
-						local.collection.Log.Info = append(local.collection.Log.Info, "NFS4 is supported")
-						return nil
+						isKernelSupport = true
+						break
 					}
 				}
 			}
 		}
 	}
 
-	if err := scanner.Err(); err != nil {
+	if err := kernelConfigScanner.Err(); err != nil {
 		return errors.Wrap(err, "failed to check NFS4 support")
 	}
 
-	local.collection.Log.Error = append(local.collection.Log.Error, "NFS4 is not supported")
+	// NFS default mount settings. Reference: man 5 nfsmount.conf
+	nfsMountConfigPath := "/etc/nfsmount.conf"
+	nfsMountConfigPath = filepath.Join(consts.VolumeMountHostDirectory, nfsMountConfigPath)
+	nfsMountConfigFile, err := os.Open(nfsMountConfigPath)
+	if err == nil {
+		defer func(configFile *os.File) {
+			_ = configFile.Close()
+		}(nfsMountConfigFile)
+
+		nfsMountConfigScanner := bufio.NewScanner(nfsMountConfigFile)
+		var section = ""
+
+		for nfsMountConfigScanner.Scan() {
+			line := strings.TrimSpace(nfsMountConfigScanner.Text())
+			if strings.HasPrefix(line, "[") {
+				section = strings.TrimSpace(strings.Trim(line, "[]"))
+			} else if section == "NFSMount_Global_Options" {
+				switch key, val, _ := strings.Cut(line, "="); key {
+				case "Defaultvers":
+					isDefaultV4 = val == "4"
+				}
+			}
+		}
+
+		err = nfsMountConfigScanner.Err()
+	}
+	if err != nil && !os.IsNotExist(err) {
+		return errors.Wrap(err, "failed to check NFS4 default configurations")
+	}
+
+	if !isKernelSupport {
+		local.collection.Log.Error = append(local.collection.Log.Error, "NFS4 is not supported")
+	} else if !isDefaultV4 {
+		local.collection.Log.Warn = append(local.collection.Log.Warn, "NFS4 is supported, but default protocol version is not 4. Please refer to the NFS mount configuration manual page for more information: man 5 nfsmount.conf")
+	} else {
+		local.collection.Log.Info = append(local.collection.Log.Info, "NFS4 is supported")
+	}
 	return nil
 }
 
