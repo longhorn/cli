@@ -1,10 +1,8 @@
 package preflight
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
-	"os"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -17,7 +15,9 @@ import (
 	kubeclient "k8s.io/client-go/kubernetes"
 
 	commonkube "github.com/longhorn/go-common-libs/kubernetes"
+	commonnfs "github.com/longhorn/go-common-libs/nfs"
 	commonns "github.com/longhorn/go-common-libs/ns"
+	commonsys "github.com/longhorn/go-common-libs/sys"
 	commontypes "github.com/longhorn/go-common-libs/types"
 
 	"github.com/longhorn/cli/pkg/consts"
@@ -420,52 +420,62 @@ func (local *Checker) checkModulesLoaded(spdkDependent bool) error {
 func (local *Checker) checkNFSv4Support() error {
 	logrus.Info("Checking if NFS4 (either 4.0, 4.1 or 4.2) is supported")
 
+	// check kernel capability
+	var isKernelSupport = false
+
 	kernelVersion, err := utils.GetKernelVersion()
 	if err != nil {
 		return err
 	}
-	kernelConfigPath := "/boot/config-" + kernelVersion
-	kernelConfigPath = filepath.Join(consts.VolumeMountHostDirectory, kernelConfigPath)
-	configFile, err := os.Open(kernelConfigPath)
+	hostBootDir := filepath.Join(consts.VolumeMountHostDirectory, commontypes.SysBootDirectory)
+	kernelConfigMap, err := commonsys.GetBootKernelConfigMap(hostBootDir, kernelVersion)
 	if err != nil {
 		return err
 	}
-	defer func(configFile *os.File) {
-		_ = configFile.Close()
-	}(configFile)
-
-	scanner := bufio.NewScanner(configFile)
-
-	for scanner.Scan() {
-		line := scanner.Text()
-		if strings.HasPrefix(line, "CONFIG_NFS_V4_2=") ||
-			strings.HasPrefix(line, "CONFIG_NFS_V4_1=") ||
-			strings.HasPrefix(line, "CONFIG_NFS_V4=") {
-			option := strings.Split(line, "=")
-			if len(option) == 2 {
-				if option[1] == "y" {
-					local.collection.Log.Info = append(local.collection.Log.Info, "NFS4 is supported")
-					return nil
-				} else if option[1] == "m" {
-					// Check if the module is loaded
-					moduleLoaded, err := utils.IsModuleLoaded(option[0])
-					if err != nil {
-						continue
-					}
-					if moduleLoaded {
-						local.collection.Log.Info = append(local.collection.Log.Info, "NFS4 is supported")
-						return nil
-					}
-				}
+	for configItem, module := range map[string]string{"CONFIG_NFS_V4_2": "nfs", "CONFIG_NFS_V4_1": "nfs", "CONFIG_NFS_V4": "nfs"} {
+		if configVal, exist := kernelConfigMap[configItem]; !exist {
+			continue
+		} else if configVal == "y" {
+			isKernelSupport = true
+			break
+		} else if configVal == "m" {
+			// Check if the module is loaded
+			moduleLoaded, err := utils.IsModuleLoaded(module)
+			if err != nil {
+				continue
+			}
+			if moduleLoaded {
+				isKernelSupport = true
+				break
 			}
 		}
 	}
 
-	if err := scanner.Err(); err != nil {
-		return errors.Wrap(err, "failed to check NFS4 support")
+	if !isKernelSupport {
+		local.collection.Log.Error = append(local.collection.Log.Error, "NFS4 is not supported")
+		return nil
 	}
 
-	local.collection.Log.Error = append(local.collection.Log.Error, "NFS4 is not supported")
+	// check default NFS protocol version
+	var isSupportedNFSVersion bool
+
+	hostEtcDir := filepath.Join(consts.VolumeMountHostDirectory, commontypes.SysEtcDirectory)
+	nfsMajor, nfsMinor, err := commonnfs.GetSystemDefaultNFSVersion(hostEtcDir)
+	if err == nil {
+		isSupportedNFSVersion = nfsMajor == 4 && (nfsMinor == 0 || nfsMinor == 1 || nfsMinor == 2)
+	} else if errors.Is(err, commontypes.ErrNotConfigured) {
+		// NFSv4 by default
+		isSupportedNFSVersion = true
+	} else {
+		local.collection.Log.Error = append(local.collection.Log.Error, "Failed to read NFS mount config")
+		return err
+	}
+
+	if !isSupportedNFSVersion {
+		local.collection.Log.Warn = append(local.collection.Log.Warn, "NFS4 is supported, but default protocol version is not 4, 4.1, or 4.2. Please refer to the NFS mount configuration manual page for more information: man 5 nfsmount.conf")
+	}
+
+	local.collection.Log.Info = append(local.collection.Log.Info, "NFS4 is supported")
 	return nil
 }
 
