@@ -485,23 +485,31 @@ func (local *Checker) checkNFSv4Support() error {
 			if strings.HasPrefix(line, "[") {
 				section = strings.TrimSpace(strings.Trim(line, "[]"))
 			} else if section == "NFSMount_Global_Options" {
-				switch key, val, _ := strings.Cut(line, "="); key {
-				case "Defaultvers":
-					isDefaultV4 = val == "4"
+				if key, val, isParsable := strings.Cut(line, "="); isParsable {
+					switch key {
+					case "Defaultvers":
+						verParts := strings.SplitN(val, ".", 2)
+						isDefaultV4 = verParts[0] == "4"
+						if len(verParts) == 2 && isDefaultV4 {
+							isDefaultV4 = verParts[1] == "0" || verParts[1] == "1" || verParts[1] == "2"
+						}
+					}
 				}
 			}
 		}
 
-		err = nfsMountConfigScanner.Err()
+		if err = nfsMountConfigScanner.Err(); err != nil {
+			return errors.Wrap(err, "failed to scan NFS mount config")
+		}
 	}
 	if err != nil && !os.IsNotExist(err) {
-		return errors.Wrap(err, "failed to check NFS4 default configurations")
+		return errors.Wrap(err, "failed to check NFS default mount configurations")
 	}
 
 	if !isKernelSupport {
 		local.collection.Log.Error = append(local.collection.Log.Error, "NFS4 is not supported")
 	} else if !isDefaultV4 {
-		local.collection.Log.Warn = append(local.collection.Log.Warn, "NFS4 is supported, but default protocol version is not 4. Please refer to the NFS mount configuration manual page for more information: man 5 nfsmount.conf")
+		local.collection.Log.Warn = append(local.collection.Log.Warn, "NFS4 is supported, but default protocol version is not 4, 4.1, or 4.2. Please refer to the NFS mount configuration manual page for more information: man 5 nfsmount.conf")
 	} else {
 		local.collection.Log.Info = append(local.collection.Log.Info, "NFS4 is supported")
 	}
