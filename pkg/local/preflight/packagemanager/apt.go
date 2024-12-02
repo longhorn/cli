@@ -1,6 +1,7 @@
 package packagemanager
 
 import (
+	"strings"
 	"time"
 
 	lhgons "github.com/longhorn/go-common-libs/ns"
@@ -64,6 +65,20 @@ func (c *AptPackageManager) GetServiceStatus(name string) (string, error) {
 }
 
 // CheckPackageInstalled checks if a package is installed
-func (c *AptPackageManager) CheckPackageInstalled(name string) (string, error) {
-	return c.executor.Execute([]string{}, "dpkg-query", []string{"-l", name}, lhgotypes.ExecuteNoTimeout)
+func (c *AptPackageManager) CheckPackageInstalled(name string) (output string, err error) {
+	// Check man 1 dpkg-query for status flags.
+	// example for an installed package:
+	// $ dpkg-query -f='${binary:Package} ${db:Status-Abbrev}' -W nfs-common
+	// nfs-common ii
+	output, err = c.executor.Execute([]string{}, "dpkg-query", []string{"-f=${binary:Package} ${db:Status-Abbrev}", "-W", name}, lhgotypes.ExecuteNoTimeout)
+	if err != nil {
+		return
+	}
+	fields := strings.Fields(strings.TrimSpace(output))
+	if len(fields) == 2 {
+		if fields[0] == name && fields[1] == "ii" {
+			return output, nil
+		}
+	}
+	return output, packageNotInstalledError
 }
