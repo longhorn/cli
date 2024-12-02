@@ -1,6 +1,7 @@
 package packagemanager
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -18,6 +19,8 @@ const (
 	PackageManagerPacman              = PackageManagerType("pacman")
 	// PackageManagerQlist            = PackageManagerType("qlist")
 )
+
+var packageNotInstalledError = errors.New("package not installed")
 
 type PackageManager interface {
 	UpdatePackageList() (string, error)
