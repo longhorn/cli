@@ -97,6 +97,7 @@ jobs:
         tags: longhornio/longhorn-cli:${{ env.branch }}-head
         file: package/Dockerfile
         sbom: true
+        provenance: mode=max
 
     - name: docker-publish-with-tag
       if: ${{ startsWith(github.ref, 'refs/tags/') }}
@@ -108,3 +109,4 @@ jobs:
         tags: longhornio/longhorn-cli:${{ github.ref_name }}
         file: package/Dockerfile
         sbom: true
+        provenance: mode=max
