@@ -2,7 +2,7 @@ module github.com/longhorn/cli
 
 go 1.23.0
 
-toolchain go1.23.4
+toolchain go1.23.5
 
 require (
 	github.com/longhorn/go-common-libs v0.0.0-20250107022351-ec79818ce8db
@@ -12,11 +12,11 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.1
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/api v0.32.0
-	k8s.io/apimachinery v0.32.0
-	k8s.io/cli-runtime v0.32.0
-	k8s.io/client-go v0.32.0
-	k8s.io/kubectl v0.32.0
+	k8s.io/api v0.32.1
+	k8s.io/apimachinery v0.32.1
+	k8s.io/cli-runtime v0.32.1
+	k8s.io/client-go v0.32.1
+	k8s.io/kubectl v0.32.1
 	k8s.io/utils v0.0.0-20241210054802-24370beab758
 	sigs.k8s.io/kustomize/kyaml v0.18.1
 )
@@ -93,7 +93,7 @@ require (
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	k8s.io/component-base v0.32.0 // indirect
+	k8s.io/component-base v0.32.1 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20241105132330-32ad38e42d3f // indirect
 	k8s.io/mount-utils v0.31.3 // indirect
@@ -105,6 +105,6 @@ require (
 )
 
 replace (
-	k8s.io/cloud-provider => k8s.io/cloud-provider v0.32.0
-	k8s.io/kubelet => k8s.io/kubelet v0.32.0
+	k8s.io/cloud-provider => k8s.io/cloud-provider v0.32.1
+	k8s.io/kubelet => k8s.io/kubelet v0.32.1
 )
