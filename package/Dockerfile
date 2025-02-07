@@ -1,6 +1,19 @@
 # syntax=docker/dockerfile:1.13.0
+FROM registry.suse.com/bci/golang:1.23 AS app_builder
 
-FROM  registry.suse.com/bci/golang:1.23 AS builder
+WORKDIR /app
+
+# Copy the build script and source code
+COPY . /app
+
+# Make the build script executable
+RUN chmod +x /app/dapper/build
+
+# Run the build script
+RUN /app/dapper/build
+
+
+FROM  registry.suse.com/bci/golang:1.23 AS spdk_builder
 
 ARG ARCH=amd64
 
@@ -14,7 +27,7 @@ RUN cd /usr/src && \
     git checkout ${SPDK_COMMIT_ID} && \
     rm -rf .git
 
-FROM registry.suse.com/bci/bci-base:15.6
+FROM registry.suse.com/bci/bci-base:15.6 AS release
 
 ARG TARGETPLATFORM
 RUN if [ "$TARGETPLATFORM" != "linux/amd64" ] && [ "$TARGETPLATFORM" != "linux/arm64" ]; then \
@@ -30,10 +43,10 @@ RUN zypper -n ref && \
 RUN zypper -n install jq && \
     rm -rf /var/cache/zypp/*
 
-COPY bin/longhornctl-linux-${ARCH} /usr/local/bin/longhornctl
-COPY bin/longhornctl-local-linux-${ARCH} /usr/local/bin/longhornctl-local
+COPY --from=app_builder /app/bin/longhornctl-linux-${ARCH} /usr/local/bin/longhornctl
+COPY --from=app_builder /app/bin/longhornctl-local-linux-${ARCH} /usr/local/bin/longhornctl-local
 
-COPY --from=builder \
+COPY --from=spdk_builder \
    /spdk \
    /spdk
 
