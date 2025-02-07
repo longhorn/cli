@@ -3,24 +3,52 @@ set -e
 
 ROOT_DIR=$(cd "$(dirname "$0")"/.. && pwd)
 
-ARCH=${ARCH:-amd64}
-SUFFIX=""
-[ "${ARCH}" != "amd64" ] && SUFFIX="_${ARCH}"
-
-TAG=${TAG:-v$(date -u +%Y%m%d)}
-REPO=${REPO:-longhornio}
-IMAGE=${IMAGE:-${REPO}/longhorn-cli:${TAG}}
-
 source "${ROOT_DIR}/dapper/version"
 cd "${ROOT_DIR}"
 
-if [ ! -e ./bin/longhornctl ]; then
-    ./dapper/build
+command -v buildx >/dev/null && BUILD_CMD=(buildx) || BUILD_CMD=(docker buildx)
+
+# read configurable parameters
+REPO=${REPO:-'longhornio'}
+IMAGE_NAME=${IMAGE_NAME:-'longhorn-cli'}
+TAG=${TAG:-v$(date -u +%Y%m%d)}
+PUSH=${PUSH:-'false'}
+IS_SECURE=${IS_SECURE:-'false'}
+MACHINE=${MACHINE:-''}
+TARGET_PLATFORMS=${TARGET_PLATFORMS:-''}
+IID_FILE=${IID_FILE:-''}
+IID_FILE_FLAG=${IID_FILE_FLAG:-''}
+
+IMAGE="${REPO}/${IMAGE_NAME}:${TAG}"
+
+BUILDER_ARGS=()
+[[ ${MACHINE} ]] && BUILDER_ARGS+=('--builder' "${MACHINE}")
+
+IFS=' ' read -r -a IID_FILE_ARGS <<<"${IID_FILE_FLAG}"
+[[ -n "$IID_FILE" && ${#IID_FILE_ARGS} == 0 ]] && IID_FILE_ARGS=('--iidfile' "${IID_FILE}")
+
+BUILDX_ARGS=()
+
+if [[ "${PUSH}" == 'true' ]]; then
+    BUILDX_ARGS+=('--push')
+else
+    BUILDX_ARGS+=('--load')
 fi
 
-# Build image
-buildx build --load -t ${IMAGE} -f package/Dockerfile .
+[[ $IS_SECURE == 'true' ]] && BUILDX_ARGS+=('--sbom=true' '--attest' 'type=provenance,mode=max')
+[[ $TARGET_PLATFORMS ]] && BUILDX_ARGS+=('--platform' "${TARGET_PLATFORMS}")
 
-echo Built "${IMAGE}"
-# shellcheck disable=SC2086
-echo ${IMAGE} > ./bin/latest_image
+IMAGE_BUILD_CMD_ARGS=(
+    build --no-cache \
+    "${BUILDER_ARGS[@]}" \
+    "${IID_FILE_ARGS[@]}" \
+    "${BUILDX_ARGS[@]}" \
+    -t "${IMAGE}" -f package/Dockerfile .
+)
+echo "${BUILD_CMD[@]}" "${IMAGE_BUILD_CMD_ARGS[@]}"
+"${BUILD_CMD[@]}" "${IMAGE_BUILD_CMD_ARGS[@]}"
+
+echo "Built ${IMAGE}"
+
+mkdir ./bin || true
+echo "${IMAGE}" > ./bin/latest_image
