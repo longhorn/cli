@@ -139,7 +139,7 @@ github.com/json-iterator/go
 # github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de
 ## explicit
 github.com/liggitt/tabwriter
-# github.com/longhorn/go-common-libs v0.0.0-20250204050409-8ebd4432fd70
+# github.com/longhorn/go-common-libs v0.0.0-20250214070119-c86a06c781f5
 ## explicit; go 1.22.7
 github.com/longhorn/go-common-libs/exec
 github.com/longhorn/go-common-libs/io
@@ -271,7 +271,7 @@ go.starlark.net/resolve
 go.starlark.net/starlark
 go.starlark.net/starlarkstruct
 go.starlark.net/syntax
-# golang.org/x/exp v0.0.0-20250128182459-e0ece0dbea4c
+# golang.org/x/exp v0.0.0-20250207012021-f9890c6ad9f3
 ## explicit; go 1.22.0
 golang.org/x/exp/constraints
 # golang.org/x/net v0.34.0
