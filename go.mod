@@ -5,18 +5,18 @@ go 1.23.1
 toolchain go1.23.6
 
 require (
-	github.com/longhorn/go-common-libs v0.0.0-20250204050409-8ebd4432fd70
+	github.com/longhorn/go-common-libs v0.0.0-20250214070119-c86a06c781f5
 	github.com/longhorn/longhorn-manager v1.8.1-dev-20250209
 	github.com/otiai10/copy v1.14.1
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.1
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/api v0.32.1
-	k8s.io/apimachinery v0.32.1
-	k8s.io/cli-runtime v0.32.1
-	k8s.io/client-go v0.32.1
-	k8s.io/kubectl v0.32.1
+	k8s.io/api v0.32.2
+	k8s.io/apimachinery v0.32.2
+	k8s.io/cli-runtime v0.32.2
+	k8s.io/client-go v0.32.2
+	k8s.io/kubectl v0.32.2
 	k8s.io/utils v0.0.0-20241210054802-24370beab758
 	sigs.k8s.io/kustomize/kyaml v0.18.1
 )
@@ -78,7 +78,7 @@ require (
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xlab/treeprint v1.2.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
-	golang.org/x/exp v0.0.0-20250128182459-e0ece0dbea4c // indirect
+	golang.org/x/exp v0.0.0-20250207012021-f9890c6ad9f3 // indirect
 	golang.org/x/net v0.34.0 // indirect
 	golang.org/x/oauth2 v0.24.0 // indirect
 	golang.org/x/sync v0.11.0 // indirect
@@ -90,7 +90,7 @@ require (
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	k8s.io/component-base v0.32.1 // indirect
+	k8s.io/component-base v0.32.2 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20241212222426-2c72e554b1e7 // indirect
 	k8s.io/mount-utils v0.32.1 // indirect
@@ -102,6 +102,6 @@ require (
 )
 
 replace (
-	k8s.io/cloud-provider => k8s.io/cloud-provider v0.32.1
-	k8s.io/kubelet => k8s.io/kubelet v0.32.1
+	k8s.io/cloud-provider => k8s.io/cloud-provider v0.32.2
+	k8s.io/kubelet => k8s.io/kubelet v0.32.2
 )
