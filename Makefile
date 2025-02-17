@@ -1,3 +1,4 @@
+PROJECT := longhorn-cli
 TARGETS := $(shell ls dapper)
 MACHINE := longhorn
 # Define the target platforms that can be used across the ecosystem.
@@ -27,9 +28,9 @@ buildx-machine:
 # - IID_FILE_FLAG: optional, options to generate image ID file
 .PHONY: workflow-image-build-push workflow-image-build-push-secure
 workflow-image-build-push: buildx-machine
-	MACHINE=$(MACHINE) PUSH='true' bash dapper/package
+	MACHINE=$(MACHINE) PUSH='true' IMAGE_NAME=$(PROJECT) bash dapper/package
 workflow-image-build-push-secure: buildx-machine
-	MACHINE=$(MACHINE) PUSH='true' IS_SECURE=true bash dapper/package
+	MACHINE=$(MACHINE) PUSH='true' IMAGE_NAME=$(PROJECT) IS_SECURE=true bash dapper/package
 
 .DEFAULT_GOAL := ci
 
