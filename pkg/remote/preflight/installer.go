@@ -1,21 +1,28 @@
 package preflight
 
 import (
+	"encoding/json"
+	"path/filepath"
+	"reflect"
+
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/utils/ptr"
+	"sigs.k8s.io/kustomize/kyaml/yaml"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeclient "k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/utils/ptr"
+
+	"github.com/longhorn/cli/pkg/consts"
+	"github.com/longhorn/cli/pkg/types"
 
 	commonkube "github.com/longhorn/go-common-libs/kubernetes"
 	commonutils "github.com/longhorn/go-common-libs/utils"
 
-	"github.com/longhorn/cli/pkg/consts"
-	"github.com/longhorn/cli/pkg/types"
 	kubeutils "github.com/longhorn/cli/pkg/utils/kubernetes"
 )
 
@@ -69,29 +76,30 @@ func (remote *Installer) Init() error {
 // Run creates the DaemonSet for the preflight install.
 // It checks if the operating system is specified, and installs the dependencies accordingly.
 // If the operating system is not specified, it installs the dependencies with package manager.
-func (remote *Installer) Run() error {
+func (remote *Installer) Run() (string, error) {
 	operatingSystem := consts.OperatingSystem(remote.OperatingSystem)
 	switch operatingSystem {
 	case consts.OperatingSystemContainerOptimizedOS:
 		logrus.Infof("Installing dependencies on Container Optimized OS (%v)", operatingSystem)
 
 		if err := remote.InstallByContainerOptimizedOS(); err != nil {
-			return errors.Wrapf(err, "failed to install dependencies on Container Optimized OS (%v)", operatingSystem)
+			return "", errors.Wrapf(err, "failed to install dependencies on Container Optimized OS (%v)", operatingSystem)
 		}
 
 		logrus.Infof("Installed dependencies on Container Optimized OS (%v)", operatingSystem)
+		return "", nil
 
 	default:
 		logrus.Info("Installing dependencies with package manager")
 
-		if err := remote.InstallByPackageManager(); err != nil {
-			return errors.Wrapf(err, "failed to install dependencies with package manager")
+		output, err := remote.InstallByPackageManager()
+		if err != nil {
+			return "", errors.Wrapf(err, "failed to install dependencies with package manager")
 		}
 
 		logrus.Info("Installed dependencies with package manager")
+		return output, nil
 	}
-
-	return nil
 }
 
 // Cleanup deletes the DaemonSet created for the preflight install when it's installed with package manager.
@@ -118,15 +126,63 @@ func (remote *Installer) InstallByContainerOptimizedOS() error {
 }
 
 // InstallByPackageManager installs the dependencies with package manager.
-// It creates a DaemonSet. Then it waits for the DaemonSet to complete.
-func (remote *Installer) InstallByPackageManager() error {
+// It creates a DaemonSet. Then it waits for the DaemonSet to complete and return the logs of output container within the DaemonSet, for example:
+// ip-192-168-208-117:
+//
+//	info:
+//	- Successfully installed package nfs-client
+//	- Successfully installed package open-iscsi
+//	- Successfully installed package cryptsetup
+//	- Successfully probed module nfs
+//	- Successfully probed module iscsi_tcp
+//	- Successfully probed module dm_crypt
+//	- Successfully started service iscsid
+func (remote *Installer) InstallByPackageManager() (string, error) {
 	newDaemonSet := remote.NewDaemonSetForPackageManager()
 	daemonSet, err := commonkube.CreateDaemonSet(remote.kubeClient, newDaemonSet)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	return kubeutils.MonitorDaemonSetContainer(remote.kubeClient, daemonSet, consts.ContainerNameInit, kubeutils.WaitForDaemonSetContainersExit, ptr.To(consts.ContainerConditionMaxTolerationLong))
+	err = kubeutils.MonitorDaemonSetContainer(remote.kubeClient, daemonSet, consts.ContainerNameInit, kubeutils.WaitForDaemonSetContainersExit, ptr.To(consts.ContainerConditionMaxTolerationLong))
+	if err != nil {
+		return "", err
+	}
+
+	err = kubeutils.MonitorDaemonSetContainer(remote.kubeClient, daemonSet, consts.ContainerNameOutput, kubeutils.WaitForDaemonSetContainersExit, ptr.To(consts.ContainerConditionMaxTolerationShort))
+	if err != nil {
+		return "", err
+	}
+
+	podCollections, err := kubeutils.GetDaemonSetPodCollections(remote.kubeClient, daemonSet, consts.ContainerNameOutput, false, false, nil)
+	if err != nil {
+		return "", err
+	}
+
+	nodeCollections := map[string]*types.LogCollection{}
+	for _, collection := range podCollections.Pods {
+		var resultMap types.NodeCollection
+		if err := json.Unmarshal([]byte(collection.Log), &resultMap); err != nil {
+			return "", err
+		}
+
+		if reflect.DeepEqual(resultMap, types.NodeCollection{}) {
+			continue
+		}
+
+		nodeCollections[collection.Node] = resultMap.Log
+	}
+
+	if reflect.DeepEqual(nodeCollections, map[string]types.LogCollection{}) {
+		return "", nil
+	}
+
+	yamlData, err := yaml.Marshal(nodeCollections)
+	if err != nil {
+		return "", err
+	}
+
+	return string(yamlData), nil
 }
 
 // newConfigMapForContainerOptimizedOS prepares a ConfigMap for installing the dependencies on Container Optimized OS.
@@ -355,6 +411,7 @@ func (remote *Installer) newDaemonSetForContainerOptimizedOS() *appsv1.DaemonSet
 
 // NewDaemonSetForPackageManager prepares a DaemonSet for installing dependencies with the package manager.
 func (remote *Installer) NewDaemonSetForPackageManager() *appsv1.DaemonSet {
+	outputFilePath := filepath.Join(consts.VolumeMountSharedDirectory, consts.FileNameOutputJSON)
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      remote.appName,
@@ -391,6 +448,10 @@ func (remote *Installer) NewDaemonSetForPackageManager() *appsv1.DaemonSet {
 									Value: remote.LogLevel,
 								},
 								{
+									Name:  consts.EnvOutputFilePath,
+									Value: outputFilePath,
+								},
+								{
 									Name:  consts.EnvUpdatePackageList,
 									Value: commonutils.ConvertTypeToString(remote.UpdatePackages),
 								},
@@ -423,6 +484,22 @@ func (remote *Installer) NewDaemonSetForPackageManager() *appsv1.DaemonSet {
 									Name:      consts.VolumeMountHostName,
 									MountPath: consts.VolumeMountHostDirectory,
 								},
+								{
+									Name:      consts.VolumeMountSharedName,
+									MountPath: consts.VolumeMountSharedDirectory,
+								},
+							},
+						},
+						{
+							Name:    consts.ContainerNameOutput,
+							Image:   remote.Image,
+							Command: []string{"cat", outputFilePath},
+							Env:     []corev1.EnvVar{},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      consts.VolumeMountSharedName,
+									MountPath: consts.VolumeMountSharedDirectory,
+								},
 							},
 						},
 					},
@@ -439,6 +516,12 @@ func (remote *Installer) NewDaemonSetForPackageManager() *appsv1.DaemonSet {
 								HostPath: &corev1.HostPathVolumeSource{
 									Path: "/",
 								},
+							},
+						},
+						{
+							Name: consts.VolumeMountSharedName,
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{},
 							},
 						},
 					},

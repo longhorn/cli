@@ -23,6 +23,11 @@ func (c *AptPackageManager) UpdatePackageList() (string, error) {
 	return c.executor.Execute([]string{}, "apt", []string{"update", "-y"}, commontypes.ExecuteNoTimeout)
 }
 
+// StartPackageSession start a session to install/uninstall packages in a unique transaction
+func (c *AptPackageManager) StartPackageSession() (string, error) {
+	return "", nil
+}
+
 // InstallPackage executes the installation command
 func (c *AptPackageManager) InstallPackage(name string) (string, error) {
 	return c.executor.Execute([]string{}, "apt", []string{"install", name, "-y"}, commontypes.ExecuteNoTimeout)
@@ -81,4 +86,9 @@ func (c *AptPackageManager) CheckPackageInstalled(name string) (output string, e
 		}
 	}
 	return output, packageNotInstalledError
+}
+
+// NeedReboot tells if a reboot is needed after package installation
+func (c *AptPackageManager) NeedReboot() bool {
+	return false
 }

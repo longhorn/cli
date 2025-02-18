@@ -24,6 +24,7 @@ var packageNotInstalledError = errors.New("package not installed")
 
 type PackageManager interface {
 	UpdatePackageList() (string, error)
+	StartPackageSession() (string, error)
 	InstallPackage(name string) (string, error)
 	UninstallPackage(name string) (string, error)
 	Modprobe(module string) (string, error)
@@ -32,6 +33,7 @@ type PackageManager interface {
 	GetServiceStatus(name string) (string, error)
 	CheckPackageInstalled(name string) (string, error)
 	Execute(envs []string, binary string, args []string, timeout time.Duration) (string, error)
+	NeedReboot() bool
 }
 
 func New(pkgMgrType PackageManagerType, executor *commonns.Executor) (PackageManager, error) {

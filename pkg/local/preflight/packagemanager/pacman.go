@@ -22,6 +22,11 @@ func (c *PacmanPackageManager) UpdatePackageList() (string, error) {
 	return c.executor.Execute([]string{}, "pacman", []string{"-Syu", "--noconfirm"}, commontypes.ExecuteNoTimeout)
 }
 
+// StartPackageSession start a session to install/uninstall packages in a unique transaction
+func (c *PacmanPackageManager) StartPackageSession() (string, error) {
+	return "", nil
+}
+
 // InstallPackage executes the installation command
 func (c *PacmanPackageManager) InstallPackage(name string) (string, error) {
 	return c.executor.Execute([]string{}, "pacman", []string{"-S", "--noconfirm", name}, commontypes.ExecuteNoTimeout)
@@ -66,4 +71,9 @@ func (c *PacmanPackageManager) GetServiceStatus(name string) (string, error) {
 // CheckPackageInstalled checks if a package is installed
 func (c *PacmanPackageManager) CheckPackageInstalled(name string) (string, error) {
 	return c.executor.Execute([]string{}, "pacman", []string{"-Q", name}, commontypes.ExecuteNoTimeout)
+}
+
+// NeedReboot tells if a reboot is needed after package installation
+func (c *PacmanPackageManager) NeedReboot() bool {
+	return false
 }

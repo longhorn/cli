@@ -1,21 +1,26 @@
 package preflight
 
 import (
+	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
-	cp "github.com/otiai10/copy"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
+	cp "github.com/otiai10/copy"
 
 	commonns "github.com/longhorn/go-common-libs/ns"
 	commontypes "github.com/longhorn/go-common-libs/types"
 
 	"github.com/longhorn/cli/pkg/consts"
+	"github.com/longhorn/cli/pkg/types"
+	"github.com/longhorn/cli/pkg/utils"
+
 	pkgmgr "github.com/longhorn/cli/pkg/local/preflight/packagemanager"
 	remote "github.com/longhorn/cli/pkg/remote/preflight"
-	"github.com/longhorn/cli/pkg/utils"
 )
 
 // Installer provide functions for the preflight installer.
@@ -23,6 +28,8 @@ type Installer struct {
 	remote.InstallerCmdOptions
 
 	logger *logrus.Entry
+
+	OutputFilePath string
 
 	osRelease      string
 	packageManager pkgmgr.PackageManager
@@ -32,10 +39,14 @@ type Installer struct {
 	services        []string
 	spdkDepPackages []string
 	spdkDepModules  []string
+
+	collection types.NodeCollection
 }
 
 // Init initializes the Installer.
 func (local *Installer) Init() error {
+	local.collection.Log = &types.LogCollection{}
+
 	osRelease, err := utils.GetOSRelease()
 	if err != nil {
 		return errors.Wrap(err, "failed to get OS release")
@@ -155,17 +166,27 @@ func (local *Installer) Init() error {
 }
 
 func (local *Installer) Run() error {
+	var rebootRequired bool
+	var err error
+
 	if local.UpdatePackages {
 		if err := local.updatePackageList(); err != nil {
 			return err
 		}
 	}
 
-	if err := local.probeModules(consts.DependencyModuleDefault); err != nil {
+	rebootRequired, err = local.checkAndinstallPackages(local.EnableSpdk)
+	if err != nil {
 		return err
 	}
 
-	if err := local.installPackages(false); err != nil {
+	if rebootRequired {
+		logrus.Warn("Need to reboot the system and execute longhornctl install preflight again")
+		local.collection.Log.Warn = append(local.collection.Log.Warn, "Need to reboot the system and execute longhornctl install preflight again")
+		return nil
+	}
+
+	if err := local.probeModules(consts.DependencyModuleDefault); err != nil {
 		return err
 	}
 
@@ -174,10 +195,6 @@ func (local *Installer) Run() error {
 	}
 
 	if local.EnableSpdk {
-		if err := local.installPackages(true); err != nil {
-			return err
-		}
-
 		if err := local.probeModules(consts.DependencyModuleSpdk); err != nil {
 			return err
 		}
@@ -188,6 +205,18 @@ func (local *Installer) Run() error {
 	}
 
 	return nil
+}
+
+// Output converts the collection to JSON and output to stdout or the output file.
+func (local *Installer) Output() error {
+	local.logger.Trace("Outputting preflight checks results")
+
+	jsonBytes, err := json.Marshal(local.collection)
+	if err != nil {
+		return errors.Wrap(err, "failed to convert collection to JSON")
+	}
+
+	return utils.HandleResult(jsonBytes, local.OutputFilePath, local.logger)
 }
 
 // startServices starts services.
@@ -201,6 +230,7 @@ func (local *Installer) startServices() error {
 		}
 
 		logrus.Infof("Successfully started service %s", svc)
+		local.collection.Log.Info = append(local.collection.Log.Info, fmt.Sprintf("Successfully started service %s", svc))
 	}
 
 	return nil
@@ -226,29 +256,49 @@ func (local *Installer) probeModules(dependencyModule consts.DependencyModuleTyp
 		}
 
 		logrus.Infof("Successfully probed module %s", mod)
+		local.collection.Log.Info = append(local.collection.Log.Info, fmt.Sprintf("Successfully probed module %s", mod))
 	}
 
 	return nil
 }
 
-// installPackages installs packages with a package manager.
-func (local *Installer) installPackages(spdkDependent bool) error {
+// checkAndinstallPackages check and installs packages with a package manager.
+func (local *Installer) checkAndinstallPackages(spdkDependent bool) (bool, error) {
+	var rebootRequired = false
+
+	_, err := local.packageManager.StartPackageSession()
+	if err != nil {
+		return false, errors.Wrap(err, "failed to start package session")
+	}
+
 	packages := local.packages
 	if spdkDependent {
-		packages = local.spdkDepPackages
+		packages = append(packages, local.spdkDepPackages...)
 	}
 	for _, pkg := range packages {
-		logrus.Infof("Installing package %s", pkg)
+		logrus.Infof("Checking package %s", pkg)
 
-		_, err := local.packageManager.InstallPackage(pkg)
+		_, err := local.packageManager.CheckPackageInstalled(pkg)
 		if err != nil {
-			return errors.Wrapf(err, "failed to install package %s", pkg)
+			logrus.Infof("Installing package %s", pkg)
+
+			_, err := local.packageManager.InstallPackage(pkg)
+			if err != nil {
+				return false, errors.Wrapf(err, "failed to install package %s", pkg)
+			} else {
+				logrus.Infof("Successfully installed package %s", pkg)
+				local.collection.Log.Info = append(local.collection.Log.Info, fmt.Sprintf("Successfully installed package %s", pkg))
+
+				if local.packageManager.NeedReboot() {
+					rebootRequired = true
+				}
+			}
 		} else {
-			logrus.Infof("Successfully installed package %s", pkg)
+			logrus.Infof("Package %s already installed", pkg)
 		}
 	}
 
-	return nil
+	return rebootRequired, nil
 }
 
 // updatePackageList updates list of available packages.
@@ -284,6 +334,7 @@ func (local *Installer) configureSPDKEnv() error {
 		logrus.WithError(err).Error("Failed to configure SPDK environment")
 	} else {
 		logrus.Info("Successfully configured SPDK environment")
+		local.collection.Log.Info = append(local.collection.Log.Info, "Successfully configured SPDK environment")
 	}
 
 	return nil
