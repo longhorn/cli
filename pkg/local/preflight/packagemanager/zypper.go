@@ -22,6 +22,11 @@ func (c *ZypperPackageManager) UpdatePackageList() (string, error) {
 	return c.executor.Execute([]string{}, "zypper", []string{"update", "-y"}, commontypes.ExecuteNoTimeout)
 }
 
+// StartPackageSession start a session to install/uninstall packages in a unique transaction
+func (c *ZypperPackageManager) StartPackageSession() (string, error) {
+	return "", nil
+}
+
 // InstallPackage executes the installation command
 func (c *ZypperPackageManager) InstallPackage(name string) (string, error) {
 	return c.executor.Execute([]string{}, "zypper", []string{"--non-interactive", "install", name}, commontypes.ExecuteNoTimeout)
@@ -66,4 +71,9 @@ func (c *ZypperPackageManager) GetServiceStatus(name string) (string, error) {
 // CheckPackageInstalled checks if a package is installed
 func (c *ZypperPackageManager) CheckPackageInstalled(name string) (string, error) {
 	return c.executor.Execute([]string{}, "rpm", []string{"-q", name}, commontypes.ExecuteNoTimeout)
+}
+
+// NeedReboot tells if a reboot is needed after package installation
+func (c *ZypperPackageManager) NeedReboot() bool {
+	return false
 }

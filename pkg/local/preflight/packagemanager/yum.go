@@ -22,6 +22,11 @@ func (c *YumPackageManager) UpdatePackageList() (string, error) {
 	return c.executor.Execute([]string{}, "yum", []string{"update", "-y"}, commontypes.ExecuteNoTimeout)
 }
 
+// StartPackageSession start a session to install/uninstall packages in a unique transaction
+func (c *YumPackageManager) StartPackageSession() (string, error) {
+	return "", nil
+}
+
 // InstallPackage executes the installation command
 func (c *YumPackageManager) InstallPackage(name string) (string, error) {
 	return c.executor.Execute([]string{}, "yum", []string{"install", name, "-y"}, commontypes.ExecuteNoTimeout)
@@ -66,4 +71,9 @@ func (c *YumPackageManager) GetServiceStatus(name string) (string, error) {
 // CheckPackageInstalled checks if a package is installed
 func (c *YumPackageManager) CheckPackageInstalled(name string) (string, error) {
 	return c.executor.Execute([]string{}, "rpm", []string{"-q", name}, commontypes.ExecuteNoTimeout)
+}
+
+// NeedReboot tells if a reboot is needed after package installation
+func (c *YumPackageManager) NeedReboot() bool {
+	return false
 }
