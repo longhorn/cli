@@ -61,10 +61,12 @@ INFO[2024-07-16T17:09:08+08:00] Completed preflight installer. Use 'longhornctl 
 
 		Run: func(cmd *cobra.Command, args []string) {
 			logrus.Info("Running preflight installer")
-			err := preflightInstaller.Run()
+			output, err := preflightInstaller.Run()
 			if err != nil {
 				utils.CheckErr(errors.Wrap(err, "Failed to run preflight installer"))
 			}
+
+			logrus.Infof("Retrieved preflight installer result:\n%v", output)
 		},
 
 		PostRun: func(cmd *cobra.Command, args []string) {
@@ -75,7 +77,7 @@ INFO[2024-07-16T17:09:08+08:00] Completed preflight installer. Use 'longhornctl 
 				}
 			}
 
-			logrus.Infof("Completed preflight installer. Use '%s %s %s' to check the result.", consts.CmdLonghornctlRemote, consts.SubCmdCheck, consts.SubCmdPreflight)
+			logrus.Infof("Completed preflight installer. Use '%s %s %s' to check the result (on some os a reboot and a new install execution is required first)", consts.CmdLonghornctlRemote, consts.SubCmdCheck, consts.SubCmdPreflight)
 		},
 	}
 
