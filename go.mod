@@ -6,7 +6,7 @@ toolchain go1.23.6
 
 require (
 	github.com/longhorn/go-common-libs v0.0.0-20250215052214-151615b29f8e
-	github.com/longhorn/longhorn-manager v1.8.1-dev-20250209
+	github.com/longhorn/longhorn-manager v1.8.1-rc1
 	github.com/otiai10/copy v1.14.1
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.3
@@ -93,7 +93,7 @@ require (
 	k8s.io/component-base v0.32.2 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20241212222426-2c72e554b1e7 // indirect
-	k8s.io/mount-utils v0.32.1 // indirect
+	k8s.io/mount-utils v0.32.2 // indirect
 	sigs.k8s.io/controller-runtime v0.20.1 // indirect
 	sigs.k8s.io/json v0.0.0-20241014173422-cfa47c3a1cc8 // indirect
 	sigs.k8s.io/kustomize/api v0.18.0 // indirect
