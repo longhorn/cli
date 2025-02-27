@@ -26,14 +26,20 @@ func (c *TransactionalUpdatePackageManager) UpdatePackageList() (string, error) 
 	return c.executor.Execute([]string{}, packageCommand, []string{"pkg", "update", "-y"}, commontypes.ExecuteNoTimeout)
 }
 
+// StartPackageSession start a session to install/uninstall packages in a unique transaction
+// Note: with this command we create a layer so that each following package installation can use the --continue option
+func (c *TransactionalUpdatePackageManager) StartPackageSession() (string, error) {
+	return c.executor.Execute([]string{}, packageCommand, []string{"--drop-if-no-change"}, commontypes.ExecuteNoTimeout)
+}
+
 // InstallPackage executes the installation command
 func (c *TransactionalUpdatePackageManager) InstallPackage(name string) (string, error) {
-	return c.executor.Execute([]string{}, packageCommand, []string{"--non-interactive", "pkg", "install", name}, commontypes.ExecuteNoTimeout)
+	return c.executor.Execute([]string{}, packageCommand, []string{"--continue", "--non-interactive", "pkg", "install", name}, commontypes.ExecuteNoTimeout)
 }
 
 // UninstallPackage executes the uninstallation command
 func (c *TransactionalUpdatePackageManager) UninstallPackage(name string) (string, error) {
-	return c.executor.Execute([]string{}, packageCommand, []string{"--non-interactive", "pkg", "remove", name}, commontypes.ExecuteNoTimeout)
+	return c.executor.Execute([]string{}, packageCommand, []string{"--continue", "--non-interactive", "pkg", "remove", name}, commontypes.ExecuteNoTimeout)
 }
 
 // Execute executes the given command with the specified environment variables, binary, and arguments.
@@ -70,4 +76,12 @@ func (c *TransactionalUpdatePackageManager) GetServiceStatus(name string) (strin
 // CheckPackageInstalled checks if a package is installed
 func (c *TransactionalUpdatePackageManager) CheckPackageInstalled(name string) (string, error) {
 	return c.executor.Execute([]string{}, "rpm", []string{"-q", name}, commontypes.ExecuteNoTimeout)
+}
+
+// NeedReboot tells if a reboot is needed after package installation
+// Note: SLE Micro OS always requires a reboot after package installation
+// to ensure newly installed packages are properly integrated into the
+// system's operational environment
+func (c *TransactionalUpdatePackageManager) NeedReboot() bool {
+	return true
 }

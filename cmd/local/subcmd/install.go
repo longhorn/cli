@@ -52,10 +52,19 @@ This can help to ensure that your Kubernetes cluster is properly configured and 
 
 			logrus.Info("Successfully completed preflight installation")
 		},
+
+		PostRun: func(cmd *cobra.Command, args []string) {
+			if err := localInstaller.Output(); err != nil {
+				utils.CheckErr(errors.Wrap(err, "Failed to output preflight checker collection"))
+			}
+
+			logrus.Info("Successfully output preflight installer collection")
+		},
 	}
 
 	utils.SetGlobalOptionsLocal(cmd, globalOpts)
 
+	cmd.Flags().StringVarP(&localInstaller.OutputFilePath, consts.CmdOptOutputFile, "o", os.Getenv(consts.EnvOutputFilePath), "Output the result to a file, default to stdout.")
 	cmd.Flags().BoolVar(&localInstaller.UpdatePackages, consts.CmdOptUpdatePackages, utils.ConvertStringToTypeOrDefault(os.Getenv(consts.EnvUpdatePackageList), true), "Update packages before installing required dependencies.")
 	cmd.Flags().BoolVar(&localInstaller.EnableSpdk, consts.CmdOptEnableSpdk, utils.ConvertStringToTypeOrDefault(os.Getenv(consts.EnvEnableSpdk), false), "Enable installation of SPDK required packages, modules, and setup.")
 	cmd.Flags().StringVar(&localInstaller.SpdkOptions, consts.CmdOptSpdkOptions, os.Getenv(consts.EnvSpdkOptions), fmt.Sprintf("Specify a comma-separated (%s) list of custom options for configuring SPDK environment.", consts.CmdOptSeperator))
