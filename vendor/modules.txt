@@ -130,7 +130,7 @@ github.com/longhorn/go-common-libs/sync
 github.com/longhorn/go-common-libs/sys
 github.com/longhorn/go-common-libs/types
 github.com/longhorn/go-common-libs/utils
-# github.com/longhorn/longhorn-manager v1.8.1-rc1
+# github.com/longhorn/longhorn-manager v1.8.1-rc2
 ## explicit; go 1.23.1
 github.com/longhorn/longhorn-manager/k8s/pkg/apis/longhorn
 github.com/longhorn/longhorn-manager/k8s/pkg/apis/longhorn/v1beta1
