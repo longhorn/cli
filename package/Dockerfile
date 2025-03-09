@@ -1,5 +1,5 @@
-# syntax=docker/dockerfile:1.13.0
-FROM registry.suse.com/bci/golang:1.23 AS app_builder
+# syntax=docker/dockerfile:1.14.0
+FROM registry.suse.com/bci/golang:1.24 AS app_builder
 
 WORKDIR /app
 
@@ -13,7 +13,7 @@ RUN chmod +x /app/dapper/build
 RUN /app/dapper/build
 
 
-FROM  registry.suse.com/bci/golang:1.23 AS spdk_builder
+FROM  registry.suse.com/bci/golang:1.24 AS spdk_builder
 
 ARG ARCH=amd64
 
@@ -27,7 +27,7 @@ RUN cd /usr/src && \
     git checkout ${SPDK_COMMIT_ID} && \
     rm -rf .git
 
-FROM registry.suse.com/bci/bci-base:15.6 AS release
+FROM registry.suse.com/bci/bci-base:15.7 AS release
 
 ARG TARGETPLATFORM
 RUN if [ "$TARGETPLATFORM" != "linux/amd64" ] && [ "$TARGETPLATFORM" != "linux/arm64" ]; then \
