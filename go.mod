@@ -5,7 +5,7 @@ go 1.23.1
 toolchain go1.24.1
 
 require (
-	github.com/longhorn/go-common-libs v0.0.0-20250312065002-72871a09bee0
+	github.com/longhorn/go-common-libs v0.0.0-20250319033109-764d1dea35f3
 	github.com/longhorn/longhorn-manager v1.9.0-dev-20250309
 	github.com/otiai10/copy v1.14.1
 	github.com/pkg/errors v0.9.1
@@ -17,7 +17,7 @@ require (
 	k8s.io/cli-runtime v0.32.3
 	k8s.io/client-go v0.32.3
 	k8s.io/kubectl v0.32.3
-	k8s.io/utils v0.0.0-20241210054802-24370beab758
+	k8s.io/utils v0.0.0-20250321185631-1f6e0b77f77e
 	sigs.k8s.io/kustomize/kyaml v0.19.0
 )
 

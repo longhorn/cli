@@ -117,7 +117,7 @@ github.com/json-iterator/go
 # github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de
 ## explicit
 github.com/liggitt/tabwriter
-# github.com/longhorn/go-common-libs v0.0.0-20250312065002-72871a09bee0
+# github.com/longhorn/go-common-libs v0.0.0-20250319033109-764d1dea35f3
 ## explicit; go 1.23.0
 github.com/longhorn/go-common-libs/exec
 github.com/longhorn/go-common-libs/io
@@ -811,7 +811,7 @@ k8s.io/kubectl/pkg/validation
 # k8s.io/mount-utils v0.32.2
 ## explicit; go 1.23.0
 k8s.io/mount-utils
-# k8s.io/utils v0.0.0-20241210054802-24370beab758
+# k8s.io/utils v0.0.0-20250321185631-1f6e0b77f77e
 ## explicit; go 1.18
 k8s.io/utils/buffer
 k8s.io/utils/clock
