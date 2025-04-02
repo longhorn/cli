@@ -21,7 +21,7 @@ func GetPackageManagerType(osRelease string) (pkgmgr.PackageManagerType, error) 
 		return pkgmgr.PackageManagerZypper, nil
 	case "sl-micro":
 		return pkgmgr.PackageManagerTransactionalUpdate, nil
-	case "ubuntu", "debian":
+	case "ubuntu", "debian", "raspbian":
 		return pkgmgr.PackageManagerApt, nil
 	case "rhel", "ol", "rocky", "centos", "fedora", "amzn":
 		return pkgmgr.PackageManagerYum, nil
