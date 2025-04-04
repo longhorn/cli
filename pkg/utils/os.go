@@ -59,15 +59,13 @@ func GetOSRelease() (string, error) {
 }
 
 func parseOSreleaseFile(lines []string) (string, error) {
-	var platform string
-
-	platformRexp := regexp.MustCompile(`^ID=["']?(.+?)["']?\n?$`)
-
-	for _, line := range lines {
-		match := platformRexp.FindStringSubmatch(line)
-		if len(match) > 0 {
-			platform = match[1]
-		}
+	// First, try using ID_LIKE because some users might be using customized os distributions with customized ID
+	// making it difficult to determine things like proper package manager, if ID_LIKE is not found use ID.
+	platformRexp := regexp.MustCompile(`^ID_LIKE=["']?(.+?)["']?\n?$`)
+	platform := parsePlatform(lines, platformRexp)
+	if platform == "" {
+		platformRexp = regexp.MustCompile(`^ID=["']?(.+?)["']?\n?$`)
+		platform = parsePlatform(lines, platformRexp)
 	}
 
 	if platform == "" {
@@ -75,6 +73,21 @@ func parseOSreleaseFile(lines []string) (string, error) {
 	}
 
 	return platform, nil
+}
+
+func parsePlatform(lines []string, platformRexp *regexp.Regexp) (platforms string) {
+	for _, line := range lines {
+		match := platformRexp.FindStringSubmatch(line)
+		if len(match) > 0 {
+			platforms = match[1]
+			break
+		}
+	}
+	fields := strings.Fields(platforms)
+	if len(fields) > 0 {
+		return fields[0]
+	}
+	return ""
 }
 
 func readFileLines(path string) ([]string, error) {
