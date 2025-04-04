@@ -59,8 +59,8 @@ func GetOSRelease() (string, error) {
 }
 
 func parseOSreleaseFile(lines []string) (string, error) {
-	// First, try using ID_LIKE because some users might be using customized os distributions with customized ID
-	// making it difficult to determine things like proper package manager, if ID_LIKE is not found use ID.
+	// First, try using `ID_LIKE` because some users might be on customized OS with a modified `ID`,
+	// making it difficult to determine things like the proper package manager. If `ID_LIKE` is not found, use `ID`.
 	platformRexp := regexp.MustCompile(`^ID_LIKE=["']?(.+?)["']?\n?$`)
 	platform := parsePlatform(lines, platformRexp)
 	if platform == "" {
