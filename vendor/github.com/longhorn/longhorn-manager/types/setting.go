@@ -137,6 +137,7 @@ const (
 	SettingNameV2DataEngineFastReplicaRebuilding                        = SettingName("v2-data-engine-fast-replica-rebuilding")
 	SettingNameFreezeFilesystemForSnapshot                              = SettingName("freeze-filesystem-for-snapshot")
 	SettingNameAutoCleanupSnapshotWhenDeleteBackup                      = SettingName("auto-cleanup-when-delete-backup")
+	SettingNameAutoCleanupSnapshotAfterOnDemandBackupCompleted          = SettingName("auto-cleanup-snapshot-after-on-demand-backup-completed")
 	SettingNameDefaultMinNumberOfBackingImageCopies                     = SettingName("default-min-number-of-backing-image-copies")
 	SettingNameBackupExecutionTimeout                                   = SettingName("backup-execution-timeout")
 	SettingNameRWXVolumeFastFailover                                    = SettingName("rwx-volume-fast-failover")
@@ -236,6 +237,7 @@ var (
 		SettingNameDisableSnapshotPurge,
 		SettingNameFreezeFilesystemForSnapshot,
 		SettingNameAutoCleanupSnapshotWhenDeleteBackup,
+		SettingNameAutoCleanupSnapshotAfterOnDemandBackupCompleted,
 		SettingNameDefaultMinNumberOfBackingImageCopies,
 		SettingNameBackupExecutionTimeout,
 		SettingNameRWXVolumeFastFailover,
@@ -357,6 +359,7 @@ var (
 		SettingNameDisableSnapshotPurge:                                     SettingDefinitionDisableSnapshotPurge,
 		SettingNameFreezeFilesystemForSnapshot:                              SettingDefinitionFreezeFilesystemForSnapshot,
 		SettingNameAutoCleanupSnapshotWhenDeleteBackup:                      SettingDefinitionAutoCleanupSnapshotWhenDeleteBackup,
+		SettingNameAutoCleanupSnapshotAfterOnDemandBackupCompleted:          SettingDefinitionAutoCleanupSnapshotAfterOnDemandBackupCompleted,
 		SettingNameDefaultMinNumberOfBackingImageCopies:                     SettingDefinitionDefaultMinNumberOfBackingImageCopies,
 		SettingNameBackupExecutionTimeout:                                   SettingDefinitionBackupExecutionTimeout,
 		SettingNameRWXVolumeFastFailover:                                    SettingDefinitionRWXVolumeFastFailover,
@@ -1376,7 +1379,7 @@ var (
 		Description: "Number of millicpus on each node to be reserved for each instance manager pod when the V2 Data Engine is enabled. The Storage Performance Development Kit (SPDK) target daemon within each instance manager pod uses 1 or multiple CPU cores. Configuring a minimum CPU usage value is essential for maintaining engine and replica stability, especially during periods of high node workload. \n\n" +
 			"WARNING: \n\n" +
 			"  - Value 0 means unsetting CPU requests for instance manager pods for v2 data engine. \n\n" +
-			"  - This integer value is range from 1000 to 8000. \n\n" +
+			"  - The smallest acceptable integer value is 1000. \n\n" +
 			"  - After this setting is changed, the v2 instance manager pod using this global setting will be automatically restarted without instances running on the v2 instance manager. \n\n",
 		Category: SettingCategoryDangerZone,
 		Type:     SettingTypeInt,
@@ -1385,7 +1388,6 @@ var (
 		Default:  "1250",
 		ValueIntRange: map[string]int{
 			ValueIntRangeMinimum: 1000,
-			ValueIntRangeMaximum: 8000,
 		},
 	}
 
@@ -1473,6 +1475,16 @@ var (
 	SettingDefinitionAutoCleanupSnapshotWhenDeleteBackup = SettingDefinition{
 		DisplayName: "Automatically Cleanup Snapshot When Deleting Backup",
 		Description: "This setting enables Longhorn to automatically cleanup snapshots when removing backup.",
+		Category:    SettingCategorySnapshot,
+		Type:        SettingTypeBool,
+		Required:    true,
+		ReadOnly:    false,
+		Default:     "false",
+	}
+
+	SettingDefinitionAutoCleanupSnapshotAfterOnDemandBackupCompleted = SettingDefinition{
+		DisplayName: "Automatically Cleanup Snapshot After On-Demand Backup Completed",
+		Description: "This setting allows users to trigger automatically delete the backup snapshot after the on-demand backup is completed.",
 		Category:    SettingCategorySnapshot,
 		Type:        SettingTypeBool,
 		Required:    true,
