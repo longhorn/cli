@@ -48,9 +48,6 @@ type InstanceProcess struct {
 type InstanceProcessSpec struct {
 	// +optional
 	Name string `json:"name"`
-	// Deprecated:Replaced by field `dataEngine`.
-	// +optional
-	BackendStoreDriver BackendStoreDriverType `json:"backendStoreDriver"`
 	// +optional
 	DataEngine DataEngineType `json:"dataEngine"`
 }
@@ -74,9 +71,6 @@ type InstanceSpec struct {
 	VolumeSize int64 `json:"volumeSize,string"`
 	// +optional
 	NodeID string `json:"nodeID"`
-	// Deprecated: Replaced by field `image`.
-	// +optional
-	EngineImage string `json:"engineImage"`
 	// +optional
 	Image string `json:"image"`
 	// +optional
@@ -85,9 +79,6 @@ type InstanceSpec struct {
 	LogRequested bool `json:"logRequested"`
 	// +optional
 	SalvageRequested bool `json:"salvageRequested"`
-	// Deprecated:Replaced by field `dataEngine`.
-	// +optional
-	BackendStoreDriver BackendStoreDriverType `json:"backendStoreDriver"`
 	// +kubebuilder:validation:Enum=v1;v2
 	// +optional
 	DataEngine DataEngineType `json:"dataEngine"`
@@ -117,6 +108,8 @@ type InstanceStatus struct {
 	// +optional
 	// +nullable
 	Conditions []Condition `json:"conditions"`
+	// +optional
+	UblkID int32 `json:"ublkID,omitempty"`
 }
 
 type InstanceProcessStatus struct {
@@ -143,6 +136,8 @@ type InstanceProcessStatus struct {
 	Type InstanceType `json:"type"`
 	// +optional
 	ResourceVersion int64 `json:"resourceVersion"`
+	// +optional
+	UblkID int32 `json:"ublkID,omitempty"`
 }
 
 type V2DataEngineSpec struct {
