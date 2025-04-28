@@ -35,7 +35,7 @@ func newCmdInstallPreflight(globalOpts *types.GlobalCmdOptions) *cobra.Command {
 		Use:   consts.SubCmdPreflight,
 		Short: "Install and configure prerequisites",
 		Long: `This command prepares your system for Longhorn deployment by installing the necessary dependencies.
-This can help to ensure that your Kubernetes cluster is properly configured and meets the necessary requirements for Longhorn.`,
+These dependencies ensure your Kubernetes cluster meets the requirements for successful Longhorn operation.`,
 
 		PreRun: func(cmd *cobra.Command, args []string) {
 			localInstaller.LogLevel = globalOpts.LogLevel
