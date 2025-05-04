@@ -100,6 +100,7 @@ const (
 	SettingNameGuaranteedInstanceManagerCPU                             = SettingName("guaranteed-instance-manager-cpu")
 	SettingNameKubernetesClusterAutoscalerEnabled                       = SettingName("kubernetes-cluster-autoscaler-enabled")
 	SettingNameOrphanAutoDeletion                                       = SettingName("orphan-auto-deletion")
+	SettingNameOrphanResourceAutoDeletion                               = SettingName("orphan-resource-auto-deletion")
 	SettingNameStorageNetwork                                           = SettingName("storage-network")
 	SettingNameStorageNetworkForRWXVolumeEnabled                        = SettingName("storage-network-for-rwx-volume-enabled")
 	SettingNameFailedBackupTTL                                          = SettingName("failed-backup-ttl")
@@ -142,6 +143,7 @@ const (
 	SettingNameDefaultMinNumberOfBackingImageCopies                     = SettingName("default-min-number-of-backing-image-copies")
 	SettingNameBackupExecutionTimeout                                   = SettingName("backup-execution-timeout")
 	SettingNameRWXVolumeFastFailover                                    = SettingName("rwx-volume-fast-failover")
+	SettingNameOfflineReplicaRebuilding                                 = SettingName("offline-replica-rebuilding")
 	// These three backup target parameters are used in the "longhorn-default-resource" ConfigMap
 	// to update the default BackupTarget resource.
 	// Longhorn won't create the Setting resources for these three parameters.
@@ -201,6 +203,7 @@ var (
 		SettingNameGuaranteedInstanceManagerCPU,
 		SettingNameKubernetesClusterAutoscalerEnabled,
 		SettingNameOrphanAutoDeletion,
+		SettingNameOrphanResourceAutoDeletion,
 		SettingNameStorageNetwork,
 		SettingNameStorageNetworkForRWXVolumeEnabled,
 		SettingNameFailedBackupTTL,
@@ -243,6 +246,7 @@ var (
 		SettingNameDefaultMinNumberOfBackingImageCopies,
 		SettingNameBackupExecutionTimeout,
 		SettingNameRWXVolumeFastFailover,
+		SettingNameOfflineReplicaRebuilding,
 	}
 )
 
@@ -324,6 +328,7 @@ var (
 		SettingNameGuaranteedInstanceManagerCPU:                             SettingDefinitionGuaranteedInstanceManagerCPU,
 		SettingNameKubernetesClusterAutoscalerEnabled:                       SettingDefinitionKubernetesClusterAutoscalerEnabled,
 		SettingNameOrphanAutoDeletion:                                       SettingDefinitionOrphanAutoDeletion,
+		SettingNameOrphanResourceAutoDeletion:                               SettingDefinitionOrphanResourceAutoDeletion,
 		SettingNameStorageNetwork:                                           SettingDefinitionStorageNetwork,
 		SettingNameStorageNetworkForRWXVolumeEnabled:                        SettingDefinitionStorageNetworkForRWXVolumeEnabled,
 		SettingNameFailedBackupTTL:                                          SettingDefinitionFailedBackupTTL,
@@ -366,6 +371,7 @@ var (
 		SettingNameDefaultMinNumberOfBackingImageCopies:                     SettingDefinitionDefaultMinNumberOfBackingImageCopies,
 		SettingNameBackupExecutionTimeout:                                   SettingDefinitionBackupExecutionTimeout,
 		SettingNameRWXVolumeFastFailover:                                    SettingDefinitionRWXVolumeFastFailover,
+		SettingNameOfflineReplicaRebuilding:                                 SettingDefinitionOfflineReplicaRebuilding,
 	}
 
 	SettingDefinitionAllowRecurringJobWhileVolumeDetached = SettingDefinition{
@@ -1052,12 +1058,29 @@ var (
 	SettingDefinitionOrphanAutoDeletion = SettingDefinition{
 		DisplayName: "Orphan Auto-Deletion",
 		Description: "This setting allows Longhorn to delete the orphan resource and its corresponding orphaned data automatically. \n\n" +
-			"Orphan resources on down or unknown nodes will not be cleaned up automatically. \n\n",
+			"Orphan resources on down or unknown nodes will not be cleaned up automatically. \n\n" +
+			fmt.Sprintf("Deprecated: enable \"%s\" in %s instead. \n\n", OrphanResourceTypeReplicaData, SettingNameOrphanResourceAutoDeletion),
 		Category: SettingCategoryOrphan,
 		Type:     SettingTypeBool,
 		Required: true,
-		ReadOnly: false,
+		ReadOnly: true,
 		Default:  "false",
+	}
+
+	SettingDefinitionOrphanResourceAutoDeletion = SettingDefinition{
+		DisplayName: "Orphan Resource Auto-Deletion",
+		Description: "This setting allows Longhorn to automatically delete orphan resources and their corresponding orphaned resources. \n\n" +
+			"Orphan resources located on nodes that are in down or unknown state will not be cleaned up automatically. \n\n" +
+			"List the enabled resource types in a semicolon-separated list. \n\n" +
+			"Available items are: \n\n" +
+			"- **replicaData**: replica data store \n\n" +
+			"- **engineInstance**: engine runtime instance \n\n" +
+			"- **replicaInstance**: replica runtime instance \n\n",
+		Category: SettingCategoryOrphan,
+		Type:     SettingTypeString,
+		Required: false,
+		ReadOnly: false,
+		Default:  "",
 	}
 
 	SettingDefinitionStorageNetwork = SettingDefinition{
@@ -1534,6 +1557,20 @@ var (
 		ReadOnly:    false,
 		Default:     "false",
 	}
+
+	SettingDefinitionOfflineReplicaRebuilding = SettingDefinition{
+		DisplayName: "Offline Replica Rebuilding",
+		Description: "Enables automatic rebuilding of degraded replicas while the volume is detached. This setting only takes effect if the individual volume setting is set to `ignored` or `enabled`. \n\n" +
+			"Available options: \n\n" +
+			"- **true**: Enables offline replica rebuilding for all detached volumes, unless overridden by individual volume settings. \n\n" +
+			"- **false**: Disables offline replica rebuilding globally, unless overridden by individual volume settings. \n\n" +
+			"**Note:** Offline rebuilding applies only when a volume is detached. Volumes in a faulted state will not trigger offline rebuilding.",
+		Category: SettingCategoryGeneral,
+		Type:     SettingTypeBool,
+		Required: true,
+		ReadOnly: false,
+		Default:  "false",
+	}
 )
 
 type NodeDownPodDeletionPolicy string
@@ -1573,6 +1610,14 @@ const (
 	// This exists to support older Multus versions.
 	// Ref: https://github.com/longhorn/longhorn/issues/6953
 	CNIAnnotationNetworksStatus = CNIAnnotation("k8s.v1.cni.cncf.io/networks-status")
+)
+
+type OrphanResourceType string
+
+const (
+	OrphanResourceTypeReplicaData     = OrphanResourceType("replicaData")
+	OrphanResourceTypeEngineInstance  = OrphanResourceType("engineInstance")
+	OrphanResourceTypeReplicaInstance = OrphanResourceType("replicaInstance")
 )
 
 func ValidateSetting(name, value string) (err error) {
@@ -1754,6 +1799,32 @@ func UnmarshalNodeSelector(nodeSelectorSetting string) (map[string]string, error
 	return nodeSelector, nil
 }
 
+func UnmarshalOrphanResourceTypes(resourceTypesSetting string) (map[OrphanResourceType]bool, error) {
+	resourceTypes := map[OrphanResourceType]bool{
+		OrphanResourceTypeReplicaData:     false,
+		OrphanResourceTypeEngineInstance:  false,
+		OrphanResourceTypeReplicaInstance: false,
+	}
+
+	resourceTypesSetting = strings.Trim(resourceTypesSetting, " ")
+	invalidItems := make([]string, 0, len(resourceTypesSetting))
+	if resourceTypesSetting != "" {
+		resourceTypeList := strings.Split(resourceTypesSetting, ";")
+		for _, item := range resourceTypeList {
+			resourceType := OrphanResourceType(strings.Trim(item, " "))
+			if _, ok := resourceTypes[resourceType]; ok {
+				resourceTypes[resourceType] = true
+			} else {
+				invalidItems = append(invalidItems, item)
+			}
+		}
+	}
+	if len(invalidItems) > 0 {
+		return nil, fmt.Errorf("invalid orphan resource types: %s", strings.Join(invalidItems, ", "))
+	}
+	return resourceTypes, nil
+}
+
 // GetSettingDefinition gets the setting definition in `settingDefinitions` by the parameter `name`
 func GetSettingDefinition(name SettingName) (SettingDefinition, bool) {
 	settingDefinitionsLock.RLock()
@@ -1858,6 +1929,11 @@ func validateString(sName SettingName, definition SettingDefinition, value strin
 	case SettingNameV2DataEngineLogFlags:
 		if err := ValidateV2DataEngineLogFlags(value); err != nil {
 			return errors.Wrapf(err, "failed to validate v2 data engine log flags %v", value)
+		}
+
+	case SettingNameOrphanResourceAutoDeletion:
+		if _, err := UnmarshalOrphanResourceTypes(value); err != nil {
+			return errors.Wrapf(err, "the value of %v is invalid", sName)
 		}
 	}
 
