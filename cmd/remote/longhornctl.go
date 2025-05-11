@@ -26,8 +26,8 @@ func newCmdLonghornctl() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   consts.CmdLonghornctlRemote,
-		Short: "Longhorn commandline interface.",
-		Long:  "CLI for Longhorn troubleshooting and operations.",
+		Short: "Command-line interface for Longhorn.",
+		Long:  "A CLI tool for troubleshooting and managing Longhorn operations.",
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			err := utils.SetLog(globalOpts.LogLevel)
 			if err != nil {
