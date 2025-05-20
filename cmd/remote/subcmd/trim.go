@@ -30,7 +30,7 @@ func newCmdTrimVolume(globalOpts *types.GlobalCmdOptions) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   consts.SubCmdVolume,
 		Short: "Trim a Longhorn volume",
-		Long: `This command helps reclaim storage space on a Longhorn volume by removing unused data blocks that are associated with data deleted from the volume.
+		Long: `This command helps to reclaim storage space on a Longhorn volume by removing unused data blocks that are associated with data deleted from the volume.
 It is particularly useful when you have deleted files or applications from the volume but have not noticed a corresponding reduction in storage usage.
 
 To use this command, specify the following option:
