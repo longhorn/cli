@@ -30,7 +30,7 @@ func newCmdCheckPreflight(globalOpts *types.GlobalCmdOptions) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   consts.SubCmdPreflight,
 		Short: "Run a preflight check for Longhorn",
-		Long: `This command verifies your Kubernetes cluster environment to ensure it meets Longhorn's requirements. It performs a series of checks that can help identify potential issues that may prevent Longhorn from functioning correctly.`,
+		Long:  `This command verifies your Kubernetes cluster environment to ensure it meets Longhorn's requirements. It performs a series of checks that can help identify potential issues that may prevent Longhorn from functioning correctly.`,
 		Example: `$ longhornctl check preflight
 INFO[2024-07-16T17:17:38+08:00] Initializing preflight checker
 INFO[2024-07-16T17:17:38+08:00] Cleaning up preflight checker
