@@ -32,7 +32,7 @@ func newCmdCheckPreflight(globalOpts *types.GlobalCmdOptions) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   consts.SubCmdPreflight,
 		Short: "Run a preflight check for Longhorn",
-		Long: `This command verifies your Kubernetes cluster environment to ensure it meets Longhorn's requirements. It performs a series of checks that can help identify potential issues that may prevent Longhorn from functioning correctly.`,
+		Long:  `This command verifies your Kubernetes cluster environment to ensure it meets Longhorn's requirements. It performs a series of checks that can help identify potential issues that may prevent Longhorn from functioning correctly.`,
 
 		PreRun: func(cmd *cobra.Command, args []string) {
 			localChecker.LogLevel = globalOpts.LogLevel
