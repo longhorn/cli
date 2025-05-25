@@ -101,6 +101,7 @@ const (
 	SettingNameKubernetesClusterAutoscalerEnabled                       = SettingName("kubernetes-cluster-autoscaler-enabled")
 	SettingNameOrphanAutoDeletion                                       = SettingName("orphan-auto-deletion") // replaced by SettingNameOrphanResourceAutoDeletion
 	SettingNameOrphanResourceAutoDeletion                               = SettingName("orphan-resource-auto-deletion")
+	SettingNameOrphanResourceAutoDeletionGracePeriod                    = SettingName("orphan-resource-auto-deletion-grace-period")
 	SettingNameStorageNetwork                                           = SettingName("storage-network")
 	SettingNameStorageNetworkForRWXVolumeEnabled                        = SettingName("storage-network-for-rwx-volume-enabled")
 	SettingNameFailedBackupTTL                                          = SettingName("failed-backup-ttl")
@@ -203,6 +204,7 @@ var (
 		SettingNameGuaranteedInstanceManagerCPU,
 		SettingNameKubernetesClusterAutoscalerEnabled,
 		SettingNameOrphanResourceAutoDeletion,
+		SettingNameOrphanResourceAutoDeletionGracePeriod,
 		SettingNameStorageNetwork,
 		SettingNameStorageNetworkForRWXVolumeEnabled,
 		SettingNameFailedBackupTTL,
@@ -331,6 +333,7 @@ var (
 		SettingNameGuaranteedInstanceManagerCPU:                             SettingDefinitionGuaranteedInstanceManagerCPU,
 		SettingNameKubernetesClusterAutoscalerEnabled:                       SettingDefinitionKubernetesClusterAutoscalerEnabled,
 		SettingNameOrphanResourceAutoDeletion:                               SettingDefinitionOrphanResourceAutoDeletion,
+		SettingNameOrphanResourceAutoDeletionGracePeriod:                    SettingDefinitionOrphanResourceAutoDeletionGracePeriod,
 		SettingNameStorageNetwork:                                           SettingDefinitionStorageNetwork,
 		SettingNameStorageNetworkForRWXVolumeEnabled:                        SettingDefinitionStorageNetworkForRWXVolumeEnabled,
 		SettingNameFailedBackupTTL:                                          SettingDefinitionFailedBackupTTL,
@@ -1063,14 +1066,27 @@ var (
 			"Orphan resources located on nodes that are in down or unknown state will not be cleaned up automatically. \n\n" +
 			"List the enabled resource types in a semicolon-separated list. \n\n" +
 			"Available items are: \n\n" +
-			"- **replicaData**: replica data store \n\n" +
-			"- **engineInstance**: engine runtime instance \n\n" +
-			"- **replicaInstance**: replica runtime instance \n\n",
+			"- **replica-data**: replica data store \n\n" +
+			"- **instance**: engine and replica runtime instance \n\n",
 		Category: SettingCategoryOrphan,
 		Type:     SettingTypeString,
 		Required: false,
 		ReadOnly: false,
 		Default:  "",
+	}
+
+	SettingDefinitionOrphanResourceAutoDeletionGracePeriod = SettingDefinition{
+		DisplayName: "Orphan Resource Auto-Deletion Grace Period",
+		Description: "Specifies the wait time, in seconds, before Longhorn automatically deletes an orphaned Custom Resource (CR) and its associated resources. \n\n" +
+			"**Note:** If a user manually deletes an orphaned CR, the deletion occurs immediately and does not respect this grace period. \n\n",
+		Category: SettingCategoryGeneral,
+		Type:     SettingTypeInt,
+		Required: true,
+		ReadOnly: false,
+		Default:  "300",
+		ValueIntRange: map[string]int{
+			ValueIntRangeMinimum: 0,
+		},
 	}
 
 	SettingDefinitionStorageNetwork = SettingDefinition{
@@ -1605,9 +1621,8 @@ const (
 type OrphanResourceType string
 
 const (
-	OrphanResourceTypeReplicaData     = OrphanResourceType("replicaData")
-	OrphanResourceTypeEngineInstance  = OrphanResourceType("engineInstance")
-	OrphanResourceTypeReplicaInstance = OrphanResourceType("replicaInstance")
+	OrphanResourceTypeReplicaData = OrphanResourceType("replica-data")
+	OrphanResourceTypeInstance    = OrphanResourceType("instance")
 )
 
 func ValidateSetting(name, value string) (err error) {
@@ -1791,9 +1806,8 @@ func UnmarshalNodeSelector(nodeSelectorSetting string) (map[string]string, error
 
 func UnmarshalOrphanResourceTypes(resourceTypesSetting string) (map[OrphanResourceType]bool, error) {
 	resourceTypes := map[OrphanResourceType]bool{
-		OrphanResourceTypeReplicaData:     false,
-		OrphanResourceTypeEngineInstance:  false,
-		OrphanResourceTypeReplicaInstance: false,
+		OrphanResourceTypeReplicaData: false,
+		OrphanResourceTypeInstance:    false,
 	}
 
 	resourceTypesSetting = strings.Trim(resourceTypesSetting, " ")
