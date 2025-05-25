@@ -5,8 +5,8 @@ go 1.24.0
 toolchain go1.24.3
 
 require (
-	github.com/longhorn/go-common-libs v0.0.0-20250510103049-801acb30430c
-	github.com/longhorn/longhorn-manager v1.9.0-rc2
+	github.com/longhorn/go-common-libs v0.0.0-20250524033713-74041234ac93
+	github.com/longhorn/longhorn-manager v1.9.0-rc3
 	github.com/otiai10/copy v1.14.1
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.3
@@ -27,7 +27,7 @@ require (
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/c9s/goprocinfo v0.0.0-20210130143923-c95fcf8c64a8 // indirect
 	github.com/chai2010/gettext-go v1.0.2 // indirect
-	github.com/cpuguy83/go-md2man/v2 v2.0.6 // indirect
+	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/emicklei/go-restful/v3 v3.12.1 // indirect
 	github.com/exponent-io/jsonpath v0.0.0-20210407135951-1de76d718b3f // indirect
@@ -87,10 +87,10 @@ require (
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	k8s.io/component-base v0.33.0 // indirect
+	k8s.io/component-base v0.33.1 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20250318190949-c8a335a9a2ff // indirect
-	k8s.io/mount-utils v0.33.0 // indirect
+	k8s.io/mount-utils v0.33.1 // indirect
 	sigs.k8s.io/controller-runtime v0.20.4 // indirect
 	sigs.k8s.io/json v0.0.0-20241014173422-cfa47c3a1cc8 // indirect
 	sigs.k8s.io/kustomize/api v0.19.0 // indirect
