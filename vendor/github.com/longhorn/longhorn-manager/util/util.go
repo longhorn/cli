@@ -224,7 +224,9 @@ func WaitForAPI(url string, timeout int) error {
 	for i := 0; i < timeout; i++ {
 		resp, err := http.Get(url)
 		if err == nil {
-			resp.Body.Close()
+			if closeErr := resp.Body.Close(); closeErr != nil {
+				logrus.WithError(closeErr).WithField("url", url).Warnf("Failed to close response body after wait")
+			}
 			return nil
 		}
 		time.Sleep(1 * time.Second)
@@ -830,7 +832,11 @@ func EncodeToYAMLFile(obj interface{}, path string) (err error) {
 	if err != nil {
 		return
 	}
-	defer f.Close()
+	defer func() {
+		if closeErr := f.Close(); closeErr != nil {
+			logrus.WithError(closeErr).Warnf("Failed to close YAML file %s", path)
+		}
+	}()
 
 	encoder := yaml.NewEncoder(f)
 	if err = encoder.Encode(obj); err != nil {
@@ -854,7 +860,7 @@ func VerifySnapshotLabels(labels map[string]string) error {
 }
 
 func RemoveNewlines(input string) string {
-	return strings.Replace(input, "\n", "", -1)
+	return strings.ReplaceAll(input, "\n", "")
 }
 
 type ResourceGetFunc func(kubeClient *clientset.Clientset, name, namespace string) (runtime.Object, error)
@@ -889,4 +895,21 @@ func GetDataContentFromYAML(configMapYAMLData []byte) (map[string]string, error)
 	}
 
 	return customizedDataMap, nil
+}
+
+// IsHigherPriorityVATicketExisting checks if there is a higher priority volume attachment ticket
+// existing in the volume attachment
+func IsHigherPriorityVATicketExisting(va *longhorn.VolumeAttachment, ticketType longhorn.AttacherType) bool {
+	if va == nil || len(va.Spec.AttachmentTickets) == 0 {
+		return false
+	}
+
+	ticketPriorityLevel := longhorn.GetAttacherPriorityLevel(ticketType)
+	for _, ticket := range va.Spec.AttachmentTickets {
+		existVAPriorityLevel := longhorn.GetAttacherPriorityLevel(ticket.Type)
+		if existVAPriorityLevel > ticketPriorityLevel {
+			return true
+		}
+	}
+	return false
 }
