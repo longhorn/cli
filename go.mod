@@ -5,7 +5,7 @@ go 1.23.1
 toolchain go1.23.6
 
 require (
-	github.com/longhorn/go-common-libs v0.0.0-20250524033713-74041234ac93
+	github.com/longhorn/go-common-libs v0.0.0-20250604144850-3295fad1e72f
 	github.com/longhorn/longhorn-manager v1.8.1
 	github.com/otiai10/copy v1.14.1
 	github.com/pkg/errors v0.9.1
@@ -17,7 +17,7 @@ require (
 	k8s.io/cli-runtime v0.32.3
 	k8s.io/client-go v0.32.3
 	k8s.io/kubectl v0.32.3
-	k8s.io/utils v0.0.0-20250502105355-0f33e8f1c979
+	k8s.io/utils v0.0.0-20250604170112-4c0f3b243397
 	sigs.k8s.io/kustomize/kyaml v0.18.1
 )
 
@@ -78,7 +78,7 @@ require (
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xlab/treeprint v1.2.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
-	golang.org/x/exp v0.0.0-20250506013437-ce4c2cf36ca6 // indirect
+	golang.org/x/exp v0.0.0-20250531010427-b6e5de432a8b // indirect
 	golang.org/x/net v0.34.0 // indirect
 	golang.org/x/oauth2 v0.24.0 // indirect
 	golang.org/x/sync v0.14.0 // indirect
