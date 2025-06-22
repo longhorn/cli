@@ -5,17 +5,17 @@ go 1.24.0
 toolchain go1.24.4
 
 require (
-	github.com/longhorn/go-common-libs v0.0.0-20250604144850-3295fad1e72f
+	github.com/longhorn/go-common-libs v0.0.0-20250615123925-72e27d7660fa
 	github.com/longhorn/longhorn-manager v1.9.0
 	github.com/otiai10/copy v1.14.1
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.1
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/api v0.33.1
-	k8s.io/apimachinery v0.33.1
-	k8s.io/cli-runtime v0.33.1
-	k8s.io/client-go v0.33.1
+	k8s.io/api v0.33.2
+	k8s.io/apimachinery v0.33.2
+	k8s.io/cli-runtime v0.33.2
+	k8s.io/client-go v0.33.2
 	k8s.io/kubectl v0.29.3
 	k8s.io/utils v0.0.0-20250604170112-4c0f3b243397
 	sigs.k8s.io/kustomize/kyaml v0.19.0
@@ -77,10 +77,10 @@ require (
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xlab/treeprint v1.2.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
-	golang.org/x/exp v0.0.0-20250531010427-b6e5de432a8b // indirect
+	golang.org/x/exp v0.0.0-20250606033433-dcc06ee1d476 // indirect
 	golang.org/x/net v0.40.0 // indirect
 	golang.org/x/oauth2 v0.27.0 // indirect
-	golang.org/x/sync v0.14.0 // indirect
+	golang.org/x/sync v0.15.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/term v0.32.0 // indirect
 	golang.org/x/text v0.25.0 // indirect
