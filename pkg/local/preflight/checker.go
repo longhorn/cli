@@ -179,53 +179,40 @@ func (local *Checker) Init() error {
 func (local *Checker) Run() error {
 	local.checkKubeDNS()
 
+	checkTasks := []func() error{}
+
 	switch local.osRelease {
 	case fmt.Sprint(consts.OperatingSystemContainerOptimizedOS):
 		logrus.Infof("Checking preflight for %v", consts.OperatingSystemContainerOptimizedOS)
-		if err := local.checkContainerOptimizedOS(); err != nil {
-			return err
-		}
+		checkTasks = append(checkTasks,
+			local.checkContainerOptimizedOS,
+		)
 	default:
-		if err := local.checkIscsidService(); err != nil {
-			return err
-		}
-
-		if err := local.checkMultipathService(); err != nil {
-			return err
-		}
-
-		if err := local.checkNFSv4Support(); err != nil {
-			return err
-		}
-
-		if err := local.checkPackagesInstalled(false); err != nil {
-			return err
-		}
-
-		if err := local.checkModulesLoaded(false); err != nil {
-			return err
-		}
+		checkTasks = append(checkTasks,
+			local.checkIscsidService,
+			local.checkMultipathService,
+			local.checkNFSv4Support,
+			func() error { return local.checkPackagesInstalled(false) },
+			func() error { return local.checkModulesLoaded(false) },
+		)
 
 		if local.EnableSpdk {
 			instructionSets := map[string][]string{
 				"amd64": {"sse4_2"},
 			}
 
-			if err := local.checkCpuInstructionSet(instructionSets); err != nil {
-				return err
-			}
+			checkTasks = append(checkTasks,
+				local.checkHugePages,
+				func() error { return local.checkCpuInstructionSet(instructionSets) },
+				func() error { return local.checkPackagesInstalled(true) },
+				func() error { return local.checkModulesLoaded(true) },
+			)
+		}
+	}
 
-			if err := local.checkHugePages(); err != nil {
-				return err
-			}
-
-			if err := local.checkPackagesInstalled(true); err != nil {
-				return err
-			}
-
-			if err := local.checkModulesLoaded(true); err != nil {
-				return err
-			}
+	for _, checkTaskFn := range checkTasks {
+		if err := checkTaskFn(); err != nil {
+			local.collection.Log.Error = append(local.collection.Log.Error, err.Error())
 		}
 	}
 
