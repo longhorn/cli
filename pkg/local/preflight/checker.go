@@ -177,9 +177,9 @@ func (local *Checker) Init() error {
 
 // Run executes the preflight checks.
 func (local *Checker) Run() error {
-	local.checkKubeDNS()
-
-	checkTasks := []func() error{}
+	checkTasks := []func() error{
+		local.checkKubeDNS,
+	}
 
 	switch local.osRelease {
 	case fmt.Sprint(consts.OperatingSystemContainerOptimizedOS):
@@ -233,13 +233,19 @@ func (local *Checker) Output() error {
 
 // checkContainerOptimizedOS checks if the node-agent DaemonSet is running.
 func (local *Checker) checkContainerOptimizedOS() error {
+	const topic = consts.PreflightCheckTopicContainerOptimizedOS
+
 	daemonSet, err := commonkube.GetDaemonSet(local.kubeClient, metav1.NamespaceDefault, consts.AppNamePreflightContainerOptimizedOS)
 	if err != nil {
-		return errors.Wrapf(err, "failed to get DaemonSet %v", consts.AppNamePreflightContainerOptimizedOS)
+		return wrapErrorWithTopic(topic, errors.Wrapf(err,
+			"failed to retrieve DaemonSet %q in namespace %q. Please ensure the preflight DaemonSet is deployed correctly",
+			consts.AppNamePreflightContainerOptimizedOS, metav1.NamespaceDefault))
 	}
 
 	if !commonkube.IsDaemonSetReady(daemonSet) {
-		return errors.Errorf("DaemonSet %v is not ready", consts.AppNamePreflightContainerOptimizedOS)
+		return wrapErrorWithTopic(topic, errors.Errorf(
+			"daemonSet %q is not ready in namespace %q.\nPlease check its pod status",
+			consts.AppNamePreflightContainerOptimizedOS, metav1.NamespaceDefault))
 	}
 	return nil
 }
@@ -247,16 +253,19 @@ func (local *Checker) checkContainerOptimizedOS() error {
 // checkMultipathService checks if the multipathd service is running.
 func (local *Checker) checkMultipathService() error {
 	logrus.Info("Checking multipathd service status")
+	const topic = consts.PreflightCheckTopicMultipathService
 
 	_, err := local.packageManager.GetServiceStatus("multipathd.service")
 	if err == nil {
-		local.collection.Log.Warn = append(local.collection.Log.Warn, "multipathd.service is running. Please refer to https://longhorn.io/kb/troubleshooting-volume-with-multipath/ for more information.")
+		msg := "multipathd.service is running. Please refer to https://longhorn.io/kb/troubleshooting-volume-with-multipath/ for more information."
+		local.collection.Log.Warn = append(local.collection.Log.Warn, wrapMsgWithTopic(topic, msg))
 		return nil
 	}
 
 	_, err = local.packageManager.GetServiceStatus("multipathd.socket")
 	if err == nil {
-		local.collection.Log.Warn = append(local.collection.Log.Warn, "multipathd.service is inactive, but it can still be activated by multipathd.socket")
+		msg := "multipathd.service is inactive, but it can still be activated by multipathd.socket."
+		local.collection.Log.Warn = append(local.collection.Log.Warn, wrapMsgWithTopic(topic, msg))
 		return nil
 	}
 
@@ -266,26 +275,29 @@ func (local *Checker) checkMultipathService() error {
 // checkIscsidService checks if the iscsid service is running.
 func (local *Checker) checkIscsidService() error {
 	logrus.Info("Checking iscsid service status")
+	const topic = consts.PreflightCheckTopicIscsidService
 
 	_, err := local.packageManager.GetServiceStatus("iscsid.service")
 	if err == nil {
-		local.collection.Log.Info = append(local.collection.Log.Info, "Service iscsid is running")
+		local.collection.Log.Info = append(local.collection.Log.Info,
+			wrapMsgWithTopic(topic, "Service iscsid is running"))
 		return nil
 	}
 
 	_, err = local.packageManager.GetServiceStatus("iscsid.socket")
 	if err == nil {
-		local.collection.Log.Info = append(local.collection.Log.Info, "Service iscsid is inactive, but it can still be activated by iscsid.socket")
+		local.collection.Log.Info = append(local.collection.Log.Info,
+			wrapMsgWithTopic(topic, "Service iscsid is inactive, but it can still be activated by iscsid.socket"))
 		return nil
 	}
 
-	local.collection.Log.Error = append(local.collection.Log.Error, "Neither iscsid.service nor iscsid.socket is running")
-	return nil
+	return wrapErrorWithTopic(topic, fmt.Errorf("neither iscsid.service nor iscsid.socket is running"))
 }
 
 // checkHugePages checks if HugePages is enabled.
 func (local *Checker) checkHugePages() error {
 	logrus.Info("Checking if HugePages is enabled")
+	const topic = consts.PreflightCheckTopicHugePages
 
 	if local.HugePageSize == 0 {
 		logrus.Error("HUGEMEM environment variable is not set")
@@ -296,15 +308,13 @@ func (local *Checker) checkHugePages() error {
 
 	ok, hugePagesTotalNum, requiredHugePages, err := local.isHugePagesTotalEqualOrLargerThan(pages)
 	if err != nil {
-		return errors.Wrapf(err, "failed to check HugePages")
+		return wrapErrorWithTopic(topic, errors.Wrap(err, "failed to check HugePages"))
 	}
 	if !ok {
-		local.collection.Log.Error = append(local.collection.Log.Error,
-			fmt.Sprintf("HugePages is insufficient. Required 2MiB HugePages: %v pages, Total 2MiB HugePages: %v pages", requiredHugePages, hugePagesTotalNum))
-		return nil
+		return wrapErrorWithTopic(topic, fmt.Errorf("HugePages are insufficient. Required 2MiB HugePages: %v pages, Available: %v pages", requiredHugePages, hugePagesTotalNum))
 	}
 
-	local.collection.Log.Info = append(local.collection.Log.Info, "HugePages is enabled")
+	local.collection.Log.Info = append(local.collection.Log.Info, wrapMsgWithTopic(topic, "HugePages is enabled"))
 	return nil
 }
 
@@ -327,23 +337,34 @@ func (local *Checker) isHugePagesTotalEqualOrLargerThan(requiredHugePages int) (
 // CheckCpuInstructionSet checks if the CPU instruction set is supported.
 func (local *Checker) checkCpuInstructionSet(instructionSets map[string][]string) error {
 	logrus.Info("Checking CPU instruction set")
+	topic := consts.PreflightCheckTopicSPDK + consts.PreflightCheckTopicCpuInstructionSet
 
 	arch := runtime.GOARCH
 	logrus.Infof("Detected CPU architecture: %v", arch)
 
 	sets, ok := instructionSets[arch]
 	if !ok {
-		local.collection.Log.Error = append(local.collection.Log.Error, fmt.Sprintf("CPU model is not supported: %v", arch))
-		return nil
+		return wrapErrorWithTopic(topic, fmt.Errorf("CPU model is not supported: %v", arch))
 	}
 
+	unsupported := map[string]interface{}{}
+	supported := map[string]interface{}{}
 	for _, set := range sets {
 		_, err := local.packageManager.Execute([]string{}, "grep", []string{set, "/proc/cpuinfo"}, commontypes.ExecuteNoTimeout)
 		if err != nil {
-			local.collection.Log.Error = append(local.collection.Log.Error, fmt.Sprintf("CPU instruction set %v is not supported: %s", set, err))
+			unsupported[set] = err
 		} else {
-			local.collection.Log.Info = append(local.collection.Log.Info, fmt.Sprintf("CPU instruction set %v is supported", set))
+			supported[set] = nil
 		}
+	}
+
+	if len(supported) > 0 {
+		local.collection.Log.Info = append(local.collection.Log.Info,
+			wrapMultiInfos(topic, "The following CPU instruction sets are supported:", supported))
+	}
+
+	if len(unsupported) > 0 {
+		return wrapMultiErrors(topic, "The following CPU instruction sets are missing or unsupported:\n", unsupported)
 	}
 
 	return nil
@@ -351,8 +372,11 @@ func (local *Checker) checkCpuInstructionSet(instructionSets map[string][]string
 
 // checkPackagesInstalled checks if the packages are installed.
 func (local *Checker) checkPackagesInstalled(spdkDependent bool) error {
+	topic := consts.PreflightCheckTopicPackages
+
 	packages := local.packages
 	if spdkDependent {
+		topic = consts.PreflightCheckTopicSPDK + topic
 		packages = local.spdkDepPackages
 	}
 
@@ -362,22 +386,37 @@ func (local *Checker) checkPackagesInstalled(spdkDependent bool) error {
 
 	logrus.Info("Checking if required packages are installed")
 
+	nonInstalled := map[string]interface{}{}
+	installed := map[string]interface{}{}
 	for _, pkg := range packages {
 		_, err := local.packageManager.CheckPackageInstalled(pkg)
 		if err != nil {
-			local.collection.Log.Error = append(local.collection.Log.Error, fmt.Sprintf("Package %s is not installed: %s", pkg, err))
+			nonInstalled[pkg] = err
 		} else {
-			local.collection.Log.Info = append(local.collection.Log.Info, fmt.Sprintf("Package %s is installed", pkg))
+			installed[pkg] = nil
 		}
 	}
+
+	if len(installed) > 0 {
+		local.collection.Log.Info = append(local.collection.Log.Info,
+			wrapMultiInfos(topic, "The following packages are installed:", installed))
+	}
+
+	if len(nonInstalled) > 0 {
+		return wrapMultiErrors(topic, "The following packages are not installed:\n", nonInstalled)
+	}
+
 	return nil
 }
 
 // checkModulesLoaded checks if the modules are loaded.
 func (local *Checker) checkModulesLoaded(spdkDependent bool) error {
+	topic := consts.PreflightCheckTopicKernelModules
+
 	modules := local.modules
 	if spdkDependent {
 		modules = local.spdkDepModules
+		topic = consts.PreflightCheckTopicSPDK + topic
 
 		if local.UserspaceDriver != "" {
 			modules = append(modules, local.UserspaceDriver)
@@ -390,36 +429,53 @@ func (local *Checker) checkModulesLoaded(spdkDependent bool) error {
 
 	logrus.Info("Checking if required modules are loaded")
 
+	notLoaded := map[string]interface{}{}
+	loaded := map[string]interface{}{}
 	for _, mod := range modules {
 		logrus.Infof("Checking if module %s is loaded", mod)
 
 		err := local.packageManager.CheckModLoaded(mod)
 		if err != nil {
-			local.collection.Log.Error = append(local.collection.Log.Error, fmt.Sprintf("Module %s is not loaded: %s", mod, err))
+			notLoaded[mod] = err
 		} else {
-			local.collection.Log.Info = append(local.collection.Log.Info, fmt.Sprintf("Module %s is loaded", mod))
+			loaded[mod] = nil
 		}
 	}
+
+	if len(loaded) > 0 {
+		local.collection.Log.Info = append(local.collection.Log.Info,
+			wrapMultiInfos(topic, "The following kernel modules are loaded:", loaded))
+	}
+
+	if len(notLoaded) > 0 {
+		return wrapMultiErrors(topic, "The following kernel modules are not loaded:\n", notLoaded)
+	}
+
 	return nil
 }
 
 // checkNFSv4Support checks if NFS4 is supported on the host.
 func (local *Checker) checkNFSv4Support() error {
 	logrus.Info("Checking if NFS4 (either 4.0, 4.1 or 4.2) is supported")
+	const topic = consts.PreflightCheckTopicNFS
 
 	// check kernel capability
 	var isKernelSupport = false
 
 	kernelVersion, err := utils.GetKernelVersion()
 	if err != nil {
-		return err
+		return wrapErrorWithTopic(topic, fmt.Errorf("failed to detect kernel version: %v", err))
 	}
 	hostBootDir := filepath.Join(consts.VolumeMountHostDirectory, commontypes.SysBootDirectory)
 	kernelConfigMap, err := commonsys.GetBootKernelConfigMap(hostBootDir, kernelVersion)
 	if err != nil {
-		return err
+		return wrapErrorWithTopic(topic, fmt.Errorf("failed to read kernel config: %v", err))
 	}
-	for configItem, module := range map[string]string{"CONFIG_NFS_V4_2": "nfs", "CONFIG_NFS_V4_1": "nfs", "CONFIG_NFS_V4": "nfs"} {
+	for configItem, module := range map[string]string{
+		"CONFIG_NFS_V4_2": "nfs",
+		"CONFIG_NFS_V4_1": "nfs",
+		"CONFIG_NFS_V4":   "nfs",
+	} {
 		if configVal, exist := kernelConfigMap[configItem]; !exist {
 			continue
 		} else if configVal == "y" {
@@ -429,6 +485,7 @@ func (local *Checker) checkNFSv4Support() error {
 			// Check if the module is loaded
 			moduleLoaded, err := utils.IsModuleLoaded(module)
 			if err != nil {
+				logrus.Debugf("Failed to check if module %s is loaded: %v", module, err)
 				continue
 			}
 			if moduleLoaded {
@@ -439,8 +496,7 @@ func (local *Checker) checkNFSv4Support() error {
 	}
 
 	if !isKernelSupport {
-		local.collection.Log.Error = append(local.collection.Log.Error, "NFS4 is not supported")
-		return nil
+		return wrapErrorWithTopic(topic, fmt.Errorf("kernel does not support NFSv4 (4.0/4.1/4.2)"))
 	}
 
 	// check default NFS protocol version
@@ -454,15 +510,15 @@ func (local *Checker) checkNFSv4Support() error {
 		// NFSv4 by default
 		isSupportedNFSVersion = true
 	} else {
-		local.collection.Log.Error = append(local.collection.Log.Error, "Failed to read NFS mount config")
-		return err
+		return wrapErrorWithTopic(topic, fmt.Errorf("failed to read NFS mount config: %v", err))
 	}
 
 	if !isSupportedNFSVersion {
-		local.collection.Log.Warn = append(local.collection.Log.Warn, "NFS4 is supported, but default protocol version is not 4, 4.1, or 4.2. Please refer to the NFS mount configuration manual page for more information: man 5 nfsmount.conf")
+		local.collection.Log.Warn = append(local.collection.Log.Warn,
+			wrapMsgWithTopic(topic, "NFSv4 is supported, but default protocol version is not 4, 4.1, or 4.2.  Please refer to the NFS mount configuration manual page for more information: man 5 nfsmount.conf"))
 	}
 
-	local.collection.Log.Info = append(local.collection.Log.Info, "NFS4 is supported")
+	local.collection.Log.Info = append(local.collection.Log.Info, wrapMsgWithTopic(topic, "NFS4 is supported"))
 	return nil
 }
 
@@ -477,31 +533,91 @@ func (local *Checker) checkNFSv4Support() error {
 // status and logs a warning if there are fewer than 2 ready replicas.
 //
 // https://github.com/longhorn/longhorn/issues/9752
-func (local *Checker) checkKubeDNS() {
+func (local *Checker) checkKubeDNS() error {
 	logrus.Info("Checking if CoreDNS has multiple replicas")
+	const topic = consts.PreflightCheckTopicKubeDNS
 
 	deployments, err := commonkube.ListDeployments(local.kubeClient, metav1.NamespaceSystem, map[string]string{consts.KubeAppLabel: consts.KubeAppValueDNS})
 	if err != nil {
-		local.collection.Log.Error = append(local.collection.Log.Error, fmt.Sprintf("Failed to list Kube DNS with label %s=%s: %v", consts.KubeAppLabel, consts.KubeAppValueDNS, err))
-		return
+		return wrapErrorWithTopic(topic,
+			fmt.Errorf("failed to list Kube DNS with label %s=%s: %v",
+				consts.KubeAppLabel, consts.KubeAppValueDNS, err))
+
 	}
 
 	if len(deployments.Items) != 1 {
-		local.collection.Log.Warn = append(local.collection.Log.Warn, fmt.Sprintf("Found %d deployments with label %s=%s; expected 1", len(deployments.Items), consts.KubeAppLabel, consts.KubeAppValueDNS))
-		return
+		local.collection.Log.Warn = append(local.collection.Log.Warn,
+			wrapMsgWithTopic(topic, fmt.Sprintf(
+				"found %d deployments with label %s=%s; expected exactly 1",
+				len(deployments.Items), consts.KubeAppLabel, consts.KubeAppValueDNS)))
+		return nil
 	}
 
 	deployment := deployments.Items[0]
 
 	if deployment.Spec.Replicas == nil || *deployment.Spec.Replicas < 2 {
-		local.collection.Log.Warn = append(local.collection.Log.Warn, fmt.Sprintf("Kube DNS %q is set with fewer than 2 replicas; consider increasing replica count for high availability", deployment.Name))
-		return
+		local.collection.Log.Warn = append(local.collection.Log.Warn,
+			wrapMsgWithTopic(topic, fmt.Sprintf("Kube DNS %q is set with fewer than 2 replicas; consider increasing replica count for high availability", deployment.Name)))
+		return nil
 	}
 
 	if deployment.Status.ReadyReplicas < 2 {
-		local.collection.Log.Warn = append(local.collection.Log.Warn, fmt.Sprintf("Kube DNS %q has fewer than 2 ready replicas; some replicas may not be running or ready", deployment.Name))
-		return
+		local.collection.Log.Warn = append(local.collection.Log.Warn,
+			wrapMsgWithTopic(topic, fmt.Sprintf("Kube DNS %q has fewer than 2 ready replicas; some replicas may not be running or ready", deployment.Name)))
+		return nil
 	}
 
-	local.collection.Log.Info = append(local.collection.Log.Info, fmt.Sprintf("Kube DNS %q is set with %d replicas and %d ready replicas", deployment.Name, *deployment.Spec.Replicas, deployment.Status.ReadyReplicas))
+	local.collection.Log.Info = append(local.collection.Log.Info,
+		wrapMsgWithTopic(topic,
+			fmt.Sprintf("Kube DNS %q is set with %d replicas and %d ready replicas", deployment.Name, *deployment.Spec.Replicas, deployment.Status.ReadyReplicas)))
+
+	return nil
+}
+
+func wrapMsgWithTopic(topic, msg string) string {
+	return fmt.Sprintf("%s %s", topic, msg)
+}
+
+func wrapErrorWithTopic(topic string, err error) error {
+	return fmt.Errorf("%s: %w", topic, err)
+}
+
+func wrapMultiErrors(topic, msg string, items map[string]interface{}) error {
+	return wrapErrorWithTopic(topic, errors.New(wrapMultItems(msg, items)))
+}
+
+func wrapMultiInfos(topic, msg string, items map[string]interface{}) string {
+	return wrapMsgWithTopic(topic, wrapMultItems(msg, items))
+}
+
+// wrapMultiErrors aggregates multiple related errors under a common topic.
+// It formats the errors into a user-friendly bullet list and returns a single wrapped error.
+func wrapMultItems(msg string, items map[string]interface{}) string {
+	// Example usage:
+	//
+	//	return wrapMultiErrors("[Packages]", "The following packages are not installed:\n", map[string]error{
+	//	    "nvme-cli": errors.New("command not found"),
+	//	    "sg3_utils": errors.New("exit status 1"),
+	//	})
+	//
+	// Sample output:
+	//
+	//	[Packages] The following packages are not installed:
+	//	  (1) nvme-cli: command not found
+	//	  (2) sg3_utils: exit status 1
+
+	var msgBuilder strings.Builder
+	msgBuilder.WriteString(msg)
+
+	index := 1
+	for set, content := range items {
+		if content == nil {
+			msgBuilder.WriteString(fmt.Sprintf("  (%d) %s", index, set))
+		} else {
+			msgBuilder.WriteString(fmt.Sprintf("  (%d) %s: %v\n", index, set, content))
+		}
+		index++
+	}
+
+	return msgBuilder.String()
 }

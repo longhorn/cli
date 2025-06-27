@@ -7,6 +7,19 @@ const (
 )
 
 const (
+	PreflightCheckTopicContainerOptimizedOS = "[ContainerOptimizedOS]"
+	PreflightCheckTopicMultipathService     = "[MultipathService]"
+	PreflightCheckTopicIscsidService        = "[IscsidService]"
+	PreflightCheckTopicHugePages            = "[HugePages]"
+	PreflightCheckTopicCpuInstructionSet    = "[CPUInstructionSet]"
+	PreflightCheckTopicPackages             = "[Packages]"
+	PreflightCheckTopicKernelModules        = "[KernelModules]"
+	PreflightCheckTopicKubeDNS              = "[KubeDNS]"
+	PreflightCheckTopicNFS                  = "[NFSv4]"
+	PreflightCheckTopicSPDK                 = "[SPDK]"
+)
+
+const (
 	KubeAppLabel    = "k8s-app"
 	KubeAppValueDNS = "kube-dns"
 )
