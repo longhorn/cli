@@ -3,6 +3,7 @@ package preflight
 import (
 	"encoding/json"
 	"fmt"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -211,8 +212,10 @@ func (local *Checker) Run() error {
 	}
 
 	for _, checkTaskFn := range checkTasks {
-		if err := checkTaskFn(); err != nil {
-			local.collection.Log.Error = append(local.collection.Log.Error, err.Error())
+		// collect application-level error
+		// [Topic][InternalError]: error msg
+		if internalErr := checkTaskFn(); internalErr != nil {
+			local.collection.Log.Error = append(local.collection.Log.Error, internalErr.Error())
 		}
 	}
 
@@ -233,19 +236,19 @@ func (local *Checker) Output() error {
 
 // checkContainerOptimizedOS checks if the node-agent DaemonSet is running.
 func (local *Checker) checkContainerOptimizedOS() error {
-	const topic = consts.PreflightCheckTopicContainerOptimizedOS
+	topic := formatTopic(consts.PreflightCheckTopicContainerOptimizedOS)
 
 	daemonSet, err := commonkube.GetDaemonSet(local.kubeClient, metav1.NamespaceDefault, consts.AppNamePreflightContainerOptimizedOS)
 	if err != nil {
-		return wrapErrorWithTopic(topic, errors.Wrapf(err,
+		return wrapInternalError(topic, errors.Wrapf(err,
 			"failed to retrieve DaemonSet %q in namespace %q. Please ensure the preflight DaemonSet is deployed correctly",
 			consts.AppNamePreflightContainerOptimizedOS, metav1.NamespaceDefault))
 	}
 
 	if !commonkube.IsDaemonSetReady(daemonSet) {
-		return wrapErrorWithTopic(topic, errors.Errorf(
+		local.collection.Log.Error = append(local.collection.Log.Error, wrapMsgWithTopic(topic, fmt.Sprintf(
 			"daemonSet %q is not ready in namespace %q.\nPlease check its pod status",
-			consts.AppNamePreflightContainerOptimizedOS, metav1.NamespaceDefault))
+			consts.AppNamePreflightContainerOptimizedOS, metav1.NamespaceDefault)))
 	}
 	return nil
 }
@@ -253,20 +256,40 @@ func (local *Checker) checkContainerOptimizedOS() error {
 // checkMultipathService checks if the multipathd service is running.
 func (local *Checker) checkMultipathService() error {
 	logrus.Info("Checking multipathd service status")
-	const topic = consts.PreflightCheckTopicMultipathService
+	topic := formatTopic(consts.PreflightCheckTopicMultipathService)
 
 	_, err := local.packageManager.GetServiceStatus("multipathd.service")
-	if err == nil {
+	switch {
+	case err == nil:
+		// Exit code 0: Service is running
 		msg := "multipathd.service is running. Please refer to https://longhorn.io/kb/troubleshooting-volume-with-multipath/ for more information."
 		local.collection.Log.Warn = append(local.collection.Log.Warn, wrapMsgWithTopic(topic, msg))
 		return nil
+
+	case isExitCode(err, 3), isExitCode(err, 4):
+		// systemctl
+		// Exit code 3: Inactive
+		// Exit code 4: Not found
+		local.collection.Log.Info = append(local.collection.Log.Info, wrapMsgWithTopic(topic, "multipathd.service is not running"))
+
+	default:
+		// Unexpected internal error
+		return wrapInternalError(topic, fmt.Errorf("failed to check multipathd.service: %w", err))
 	}
 
 	_, err = local.packageManager.GetServiceStatus("multipathd.socket")
-	if err == nil {
+	switch {
+	case err == nil:
 		msg := "multipathd.service is inactive, but it can still be activated by multipathd.socket."
 		local.collection.Log.Warn = append(local.collection.Log.Warn, wrapMsgWithTopic(topic, msg))
 		return nil
+
+	case isExitCode(err, 3), isExitCode(err, 4):
+		local.collection.Log.Info = append(local.collection.Log.Info,
+			wrapMsgWithTopic(topic, "neither multipathd.service nor multipathd.socket is running"))
+	default:
+		// Internal/systemctl failure
+		return wrapInternalError(topic, fmt.Errorf("failed to check multipathd.socket: %w", err))
 	}
 
 	return nil
@@ -275,29 +298,47 @@ func (local *Checker) checkMultipathService() error {
 // checkIscsidService checks if the iscsid service is running.
 func (local *Checker) checkIscsidService() error {
 	logrus.Info("Checking iscsid service status")
-	const topic = consts.PreflightCheckTopicIscsidService
+	topic := formatTopic(consts.PreflightCheckTopicIscsidService)
 
 	_, err := local.packageManager.GetServiceStatus("iscsid.service")
-	if err == nil {
+	switch {
+	case err == nil:
 		local.collection.Log.Info = append(local.collection.Log.Info,
 			wrapMsgWithTopic(topic, "Service iscsid is running"))
 		return nil
+	case isExitCode(err, 3), isExitCode(err, 4):
+		// systemctl
+		// Exit code 3: Inactive
+		// Exit code 4: Unit not found
+	default:
+		return wrapInternalError(topic, fmt.Errorf("failed to check iscsid.service: %w", err))
 	}
 
 	_, err = local.packageManager.GetServiceStatus("iscsid.socket")
-	if err == nil {
+	switch {
+	case err == nil:
 		local.collection.Log.Info = append(local.collection.Log.Info,
 			wrapMsgWithTopic(topic, "Service iscsid is inactive, but it can still be activated by iscsid.socket"))
 		return nil
+	case isExitCode(err, 3), isExitCode(err, 4):
+		// systemctl
+		// Exit code 3: Inactive
+		// Exit code 4: Unit not found
+		// These are considered expected results — proceed to check socket
+	default:
+		return wrapInternalError(topic, fmt.Errorf("failed to check iscsid.socket: %w", err))
 	}
 
-	return wrapErrorWithTopic(topic, fmt.Errorf("neither iscsid.service nor iscsid.socket is running"))
+	local.collection.Log.Error = append(local.collection.Log.Error,
+		wrapMsgWithTopic(topic, "neither iscsid.service nor iscsid.socket is running"))
+
+	return nil
 }
 
 // checkHugePages checks if HugePages is enabled.
 func (local *Checker) checkHugePages() error {
 	logrus.Info("Checking if HugePages is enabled")
-	const topic = consts.PreflightCheckTopicHugePages
+	topic := formatTopic(consts.PreflightCheckTopicHugePages)
 
 	if local.HugePageSize == 0 {
 		logrus.Error("HUGEMEM environment variable is not set")
@@ -308,10 +349,12 @@ func (local *Checker) checkHugePages() error {
 
 	ok, hugePagesTotalNum, requiredHugePages, err := local.isHugePagesTotalEqualOrLargerThan(pages)
 	if err != nil {
-		return wrapErrorWithTopic(topic, errors.Wrap(err, "failed to check HugePages"))
+		return wrapInternalError(topic, errors.Wrap(err, "failed to check HugePages"))
 	}
 	if !ok {
-		return wrapErrorWithTopic(topic, fmt.Errorf("HugePages are insufficient. Required 2MiB HugePages: %v pages, Available: %v pages", requiredHugePages, hugePagesTotalNum))
+		local.collection.Log.Error = append(local.collection.Log.Error,
+			wrapMsgWithTopic(topic, fmt.Sprintf("HugePages are insufficient. Required 2MiB HugePages: %v pages, Available: %v pages", requiredHugePages, hugePagesTotalNum)))
+		return nil
 	}
 
 	local.collection.Log.Info = append(local.collection.Log.Info, wrapMsgWithTopic(topic, "HugePages is enabled"))
@@ -337,22 +380,32 @@ func (local *Checker) isHugePagesTotalEqualOrLargerThan(requiredHugePages int) (
 // CheckCpuInstructionSet checks if the CPU instruction set is supported.
 func (local *Checker) checkCpuInstructionSet(instructionSets map[string][]string) error {
 	logrus.Info("Checking CPU instruction set")
-	topic := consts.PreflightCheckTopicSPDK + consts.PreflightCheckTopicCpuInstructionSet
+	topic := formatTopic(consts.PreflightCheckTopicSPDK, consts.PreflightCheckTopicCpuInstructionSet)
 
 	arch := runtime.GOARCH
 	logrus.Infof("Detected CPU architecture: %v", arch)
 
 	sets, ok := instructionSets[arch]
 	if !ok {
-		return wrapErrorWithTopic(topic, fmt.Errorf("CPU model is not supported: %v", arch))
+		local.collection.Log.Error = append(local.collection.Log.Error,
+			wrapMsgWithTopic(topic, fmt.Sprintf("CPU model is not supported: %v", arch)))
+		return nil
 	}
 
-	unsupported := map[string]interface{}{}
-	supported := map[string]interface{}{}
+	var (
+		internalError = map[string]any{}
+		unsupported   = map[string]any{}
+		supported     = map[string]any{}
+	)
+
 	for _, set := range sets {
 		_, err := local.packageManager.Execute([]string{}, "grep", []string{set, "/proc/cpuinfo"}, commontypes.ExecuteNoTimeout)
 		if err != nil {
-			unsupported[set] = err
+			if isExitCode(err, 1) { // expected not-installed case
+				unsupported[set] = err
+			} else {
+				internalError[set] = err
+			}
 		} else {
 			supported[set] = nil
 		}
@@ -364,7 +417,12 @@ func (local *Checker) checkCpuInstructionSet(instructionSets map[string][]string
 	}
 
 	if len(unsupported) > 0 {
-		return wrapMultiErrors(topic, "The following CPU instruction sets are missing or unsupported:\n", unsupported)
+		local.collection.Log.Error = append(local.collection.Log.Error,
+			wrapMultiInfos(topic, "The following CPU instruction sets are missing or unsupported:\n", unsupported))
+	}
+
+	if len(internalError) > 0 {
+		return wrapAggregatedInternalError(topic, "Failed to grep CPU instruction sets:\n", internalError)
 	}
 
 	return nil
@@ -372,12 +430,14 @@ func (local *Checker) checkCpuInstructionSet(instructionSets map[string][]string
 
 // checkPackagesInstalled checks if the packages are installed.
 func (local *Checker) checkPackagesInstalled(spdkDependent bool) error {
-	topic := consts.PreflightCheckTopicPackages
+	var topic string
 
 	packages := local.packages
 	if spdkDependent {
-		topic = consts.PreflightCheckTopicSPDK + topic
+		topic = formatTopic(consts.PreflightCheckTopicSPDK, consts.PreflightCheckTopicPackages)
 		packages = local.spdkDepPackages
+	} else {
+		topic = formatTopic(consts.PreflightCheckTopicPackages)
 	}
 
 	if len(packages) == 0 {
@@ -386,12 +446,20 @@ func (local *Checker) checkPackagesInstalled(spdkDependent bool) error {
 
 	logrus.Info("Checking if required packages are installed")
 
-	nonInstalled := map[string]interface{}{}
-	installed := map[string]interface{}{}
+	var (
+		internalError = map[string]any{}
+		nonInstalled  = map[string]any{}
+		installed     = map[string]any{}
+	)
+
 	for _, pkg := range packages {
 		_, err := local.packageManager.CheckPackageInstalled(pkg)
 		if err != nil {
-			nonInstalled[pkg] = err
+			if isExitCode(err, 1) || errors.Is(err, pkgmgr.PackageNotInstalledError) {
+				nonInstalled[pkg] = err // expected not-installed case
+			} else {
+				internalError[pkg] = err
+			}
 		} else {
 			installed[pkg] = nil
 		}
@@ -403,7 +471,12 @@ func (local *Checker) checkPackagesInstalled(spdkDependent bool) error {
 	}
 
 	if len(nonInstalled) > 0 {
-		return wrapMultiErrors(topic, "The following packages are not installed:\n", nonInstalled)
+		local.collection.Log.Error = append(local.collection.Log.Error,
+			wrapMultiInfos(topic, "The following packages are not installed:\n", nonInstalled))
+	}
+
+	if len(internalError) > 0 {
+		return wrapAggregatedInternalError(topic, "Failed to check packages:\n", internalError)
 	}
 
 	return nil
@@ -411,16 +484,18 @@ func (local *Checker) checkPackagesInstalled(spdkDependent bool) error {
 
 // checkModulesLoaded checks if the modules are loaded.
 func (local *Checker) checkModulesLoaded(spdkDependent bool) error {
-	topic := consts.PreflightCheckTopicKernelModules
+	var topic string
 
 	modules := local.modules
 	if spdkDependent {
 		modules = local.spdkDepModules
-		topic = consts.PreflightCheckTopicSPDK + topic
+		topic = formatTopic(consts.PreflightCheckTopicSPDK, consts.PreflightCheckTopicKernelModules)
 
 		if local.UserspaceDriver != "" {
 			modules = append(modules, local.UserspaceDriver)
 		}
+	} else {
+		topic = formatTopic(consts.PreflightCheckTopicKernelModules)
 	}
 
 	if len(modules) == 0 {
@@ -429,14 +504,22 @@ func (local *Checker) checkModulesLoaded(spdkDependent bool) error {
 
 	logrus.Info("Checking if required modules are loaded")
 
-	notLoaded := map[string]interface{}{}
-	loaded := map[string]interface{}{}
+	var (
+		internalError = map[string]any{}
+		notLoaded     = map[string]any{}
+		loaded        = map[string]any{}
+	)
+
 	for _, mod := range modules {
 		logrus.Infof("Checking if module %s is loaded", mod)
 
 		err := local.packageManager.CheckModLoaded(mod)
 		if err != nil {
-			notLoaded[mod] = err
+			if isExitCode(err, 1) { // expected not-installed case
+				notLoaded[mod] = err
+			} else {
+				internalError[mod] = err
+			}
 		} else {
 			loaded[mod] = nil
 		}
@@ -448,7 +531,12 @@ func (local *Checker) checkModulesLoaded(spdkDependent bool) error {
 	}
 
 	if len(notLoaded) > 0 {
-		return wrapMultiErrors(topic, "The following kernel modules are not loaded:\n", notLoaded)
+		local.collection.Log.Error = append(local.collection.Log.Error,
+			wrapMultiInfos(topic, "The following kernel modules are not loaded:\n", notLoaded))
+	}
+
+	if len(internalError) > 0 {
+		return wrapAggregatedInternalError(topic, "Failed to check packages:\n", internalError)
 	}
 
 	return nil
@@ -457,19 +545,19 @@ func (local *Checker) checkModulesLoaded(spdkDependent bool) error {
 // checkNFSv4Support checks if NFS4 is supported on the host.
 func (local *Checker) checkNFSv4Support() error {
 	logrus.Info("Checking if NFS4 (either 4.0, 4.1 or 4.2) is supported")
-	const topic = consts.PreflightCheckTopicNFS
+	topic := formatTopic(consts.PreflightCheckTopicNFS)
 
 	// check kernel capability
 	var isKernelSupport = false
 
 	kernelVersion, err := utils.GetKernelVersion()
 	if err != nil {
-		return wrapErrorWithTopic(topic, fmt.Errorf("failed to detect kernel version: %v", err))
+		return wrapInternalError(topic, fmt.Errorf("failed to detect kernel version: %v", err))
 	}
 	hostBootDir := filepath.Join(consts.VolumeMountHostDirectory, commontypes.SysBootDirectory)
 	kernelConfigMap, err := commonsys.GetBootKernelConfigMap(hostBootDir, kernelVersion)
 	if err != nil {
-		return wrapErrorWithTopic(topic, fmt.Errorf("failed to read kernel config: %v", err))
+		return wrapInternalError(topic, fmt.Errorf("failed to read kernel config: %v", err))
 	}
 	for configItem, module := range map[string]string{
 		"CONFIG_NFS_V4_2": "nfs",
@@ -496,7 +584,10 @@ func (local *Checker) checkNFSv4Support() error {
 	}
 
 	if !isKernelSupport {
-		return wrapErrorWithTopic(topic, fmt.Errorf("kernel does not support NFSv4 (4.0/4.1/4.2)"))
+		local.collection.Log.Error = append(local.collection.Log.Error,
+			wrapMsgWithTopic(topic, "kernel does not support NFSv4 (4.0/4.1/4.2)"))
+		return nil
+
 	}
 
 	// check default NFS protocol version
@@ -510,7 +601,7 @@ func (local *Checker) checkNFSv4Support() error {
 		// NFSv4 by default
 		isSupportedNFSVersion = true
 	} else {
-		return wrapErrorWithTopic(topic, fmt.Errorf("failed to read NFS mount config: %v", err))
+		return wrapInternalError(topic, fmt.Errorf("failed to read NFS mount config: %v", err))
 	}
 
 	if !isSupportedNFSVersion {
@@ -535,14 +626,12 @@ func (local *Checker) checkNFSv4Support() error {
 // https://github.com/longhorn/longhorn/issues/9752
 func (local *Checker) checkKubeDNS() error {
 	logrus.Info("Checking if CoreDNS has multiple replicas")
-	const topic = consts.PreflightCheckTopicKubeDNS
+	topic := formatTopic(consts.PreflightCheckTopicKubeDNS)
 
 	deployments, err := commonkube.ListDeployments(local.kubeClient, metav1.NamespaceSystem, map[string]string{consts.KubeAppLabel: consts.KubeAppValueDNS})
 	if err != nil {
-		return wrapErrorWithTopic(topic,
-			fmt.Errorf("failed to list Kube DNS with label %s=%s: %v",
-				consts.KubeAppLabel, consts.KubeAppValueDNS, err))
-
+		return wrapInternalError(topic, fmt.Errorf("failed to list Kube DNS with label %s=%s: %v",
+			consts.KubeAppLabel, consts.KubeAppValueDNS, err))
 	}
 
 	if len(deployments.Items) != 1 {
@@ -575,27 +664,27 @@ func (local *Checker) checkKubeDNS() error {
 }
 
 func wrapMsgWithTopic(topic, msg string) string {
-	return fmt.Sprintf("%s %s", topic, msg)
+	return fmt.Sprintf("%s%s", topic, msg)
 }
 
-func wrapErrorWithTopic(topic string, err error) error {
-	return fmt.Errorf("%s: %w", topic, err)
+func wrapInternalError(topic string, err error) error {
+	return fmt.Errorf("%s%s: %w", topic, formatTopic(consts.PreflightCheckTopicInternalError), err)
 }
 
-func wrapMultiErrors(topic, msg string, items map[string]interface{}) error {
-	return wrapErrorWithTopic(topic, errors.New(wrapMultItems(msg, items)))
-}
-
-func wrapMultiInfos(topic, msg string, items map[string]interface{}) string {
+func wrapMultiInfos(topic, msg string, items map[string]any) string {
 	return wrapMsgWithTopic(topic, wrapMultItems(msg, items))
 }
 
-// wrapMultiErrors aggregates multiple related errors under a common topic.
+func wrapAggregatedInternalError(topic, msg string, items map[string]any) error {
+	return wrapInternalError(topic, errors.New(wrapMultItems(msg, items)))
+}
+
+// wrapMultItems aggregates multiple related errors under a common topic.
 // It formats the errors into a user-friendly bullet list and returns a single wrapped error.
-func wrapMultItems(msg string, items map[string]interface{}) string {
+func wrapMultItems(msg string, items map[string]any) string {
 	// Example usage:
 	//
-	//	return wrapMultiErrors("[Packages]", "The following packages are not installed:\n", map[string]error{
+	//	return wrapMultItems("[Packages]", "The following packages are not installed:\n", map[string]error{
 	//	    "nvme-cli": errors.New("command not found"),
 	//	    "sg3_utils": errors.New("exit status 1"),
 	//	})
@@ -620,4 +709,20 @@ func wrapMultItems(msg string, items map[string]interface{}) string {
 	}
 
 	return msgBuilder.String()
+}
+
+func isExitCode(err error, code int) bool {
+	var exitErr *exec.ExitError
+	if errors.As(err, &exitErr) {
+		return exitErr.ExitCode() == code
+	}
+	return false
+}
+
+func formatTopic(topics ...string) string {
+	s := ""
+	for _, topic := range topics {
+		s += "[" + topic + "]"
+	}
+	return s
 }
