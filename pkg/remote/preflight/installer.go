@@ -47,6 +47,7 @@ type InstallerCmdOptions struct {
 	HugePageSize   int
 	AllowPci       string
 	DriverOverride string
+	NodeSelector   string
 }
 
 // Init initializes the Installer.
@@ -117,6 +118,11 @@ func (remote *Installer) InstallByContainerOptimizedOS() error {
 	}
 
 	newDaemonSet := remote.newDaemonSetForContainerOptimizedOS()
+	nodeSelector, err := kubeutils.ParseNodeSelector(remote.NodeSelector)
+	if err != nil {
+		return errors.Wrapf(err, "failed to parse %q argument", consts.CmdOptNodeSelector)
+	}
+	newDaemonSet.Spec.Template.Spec.NodeSelector = nodeSelector
 	daemonSet, err := commonkube.CreateDaemonSet(remote.kubeClient, newDaemonSet)
 	if err != nil {
 		return err
@@ -139,6 +145,11 @@ func (remote *Installer) InstallByContainerOptimizedOS() error {
 //	- Successfully started service iscsid
 func (remote *Installer) InstallByPackageManager() (string, error) {
 	newDaemonSet := remote.NewDaemonSetForPackageManager()
+	nodeSelector, err := kubeutils.ParseNodeSelector(remote.NodeSelector)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to parse %q argument", consts.CmdOptNodeSelector)
+	}
+	newDaemonSet.Spec.Template.Spec.NodeSelector = nodeSelector
 	daemonSet, err := commonkube.CreateDaemonSet(remote.kubeClient, newDaemonSet)
 	if err != nil {
 		return "", err
@@ -436,7 +447,6 @@ func (remote *Installer) NewDaemonSetForPackageManager() *appsv1.DaemonSet {
 					// Required for running systemd tasks.
 					HostNetwork: true,
 					HostPID:     true,
-
 					InitContainers: []corev1.Container{
 						{
 							Name:    consts.ContainerNameInit,

@@ -92,6 +92,7 @@ INFO[2024-07-16T17:09:08+08:00] Completed preflight installer. Use 'longhornctl 
 	cmd.Flags().IntVar(&preflightInstaller.HugePageSize, consts.CmdOptHugePageSize, 2048, "Specify the huge page size in MiB for SPDK.")
 	cmd.Flags().StringVar(&preflightInstaller.AllowPci, consts.CmdOptAllowPci, "none", fmt.Sprintf("Specify a comma-separated (%s) list of allowed PCI devices. By default, all PCI devices are blocked by a non-valid address.", consts.CmdOptSeperator))
 	cmd.Flags().StringVar(&preflightInstaller.DriverOverride, consts.CmdOptDriverOverride, "", "Userspace driver for device bindings. Override default driver for PCI devices.")
+	cmd.Flags().StringVar(&preflightInstaller.NodeSelector, consts.CmdOptNodeSelector, "", "Comma-separated list of key=value pairs to match against node labels, selecting the nodes the DaemonSet will run on (e.g. env=prod,zone=us-west).")
 
 	return cmd
 }

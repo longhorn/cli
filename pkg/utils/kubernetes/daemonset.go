@@ -3,6 +3,7 @@ package kubernetes
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -108,4 +109,31 @@ func GetDaemonSetPodCollections(kubeClient *kubeclient.Clientset, daemonSet *app
 	}
 
 	return collections, nil
+}
+
+func ParseNodeSelector(nodeSelectorRaw string) (map[string]string, error) {
+	if strings.TrimSpace(nodeSelectorRaw) == "" {
+		return nil, nil
+	}
+
+	nodeSelector := make(map[string]string)
+	pairs := strings.Split(nodeSelectorRaw, ",")
+
+	for _, pair := range pairs {
+		kv := strings.Split(pair, "=")
+		if len(kv) != 2 {
+			return nil, fmt.Errorf("invalid key-value pair: %q (expected format key=value)", pair)
+		}
+
+		key := strings.TrimSpace(kv[0])
+		value := strings.TrimSpace(kv[1])
+
+		if key == "" || value == "" {
+			return nil, fmt.Errorf("key and value must be non-empty in pair: %q", pair)
+		}
+
+		nodeSelector[key] = value
+	}
+
+	return nodeSelector, nil
 }
