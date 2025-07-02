@@ -2,6 +2,7 @@ package preflight
 
 import (
 	"encoding/json"
+	"github.com/pkg/errors"
 	"path/filepath"
 
 	"sigs.k8s.io/kustomize/kyaml/yaml"
@@ -41,6 +42,7 @@ type CheckerCmdOptions struct {
 	EnableSpdk      bool
 	HugePageSize    int
 	UserspaceDriver string
+	NodeSelector    string
 }
 
 // Init initializes the Checker.
@@ -69,6 +71,11 @@ func (remote *Checker) Run() (string, error) {
 	}
 
 	newDaemonSet := remote.newDaemonSet()
+	nodeSelector, err := kubeutils.ParseNodeSelector(remote.NodeSelector)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to parse %q argument", consts.CmdOptNodeSelector)
+	}
+	newDaemonSet.Spec.Template.Spec.NodeSelector = nodeSelector
 	daemonSet, err := commonkube.CreateDaemonSet(remote.kubeClient, newDaemonSet)
 	if err != nil {
 		return "", err

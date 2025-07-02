@@ -83,8 +83,9 @@ func waitForDaemonSetContainers(ctx context.Context, logger *logrus.Entry, kubeC
 			}
 
 			desiredNumberScheduled := daemonSet.Status.DesiredNumberScheduled
+			// Return true and consider the desired condition satisfied if there are no nodes to run DaemonSet pods; otherwise, this function will hang indefinitely.
 			if desiredNumberScheduled == 0 {
-				return false, nil
+				return true, nil
 			}
 
 			// Check if pod count is equal to DaemonSet pod count

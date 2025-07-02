@@ -39,6 +39,7 @@ const (
 	CmdOptOutputFile      = "output-file"
 	CmdOptTargetDirectory = "target-dir"
 	CmdOptUpdatePackages  = "update-packages"
+	CmdOptNodeSelector    = "node-selector"
 
 	// SPDK options
 	CmdOptAllowPci        = "allow-pci"
