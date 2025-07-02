@@ -111,6 +111,9 @@ func GetDaemonSetPodCollections(kubeClient *kubeclient.Clientset, daemonSet *app
 	return collections, nil
 }
 
+// ParseNodeSelector parses a node selector string (e.g., "key1=value1,key2=value2")
+// and returns it as a map[string]string. This map can be used directly in a DaemonSet spec.
+// It returns an error if the input is malformed (e.g., missing '=' or empty key/value).
 func ParseNodeSelector(nodeSelectorRaw string) (map[string]string, error) {
 	if strings.TrimSpace(nodeSelectorRaw) == "" {
 		return nil, nil

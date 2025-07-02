@@ -47,6 +47,7 @@ INFO[2024-07-16T17:32:01+08:00] Completed volume trimmer                      vo
 		PreRun: func(cmd *cobra.Command, args []string) {
 			volumeTrimmer.Image = globalOpts.Image
 			volumeTrimmer.KubeConfigPath = globalOpts.KubeConfigPath
+			volumeTrimmer.NodeSelector = globalOpts.NodeSelector
 
 			utils.CheckErr(volumeTrimmer.Validate())
 
