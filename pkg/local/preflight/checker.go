@@ -215,7 +215,8 @@ func (local *Checker) Run() error {
 		// collect application-level error
 		// [Topic][InternalError]: error msg
 		if internalErr := checkTaskFn(); internalErr != nil {
-			local.collection.Log.Error = append(local.collection.Log.Error, internalErr.Error())
+			local.collection.Log.Error = append(local.collection.Log.Error,
+				strings.ReplaceAll(internalErr.Error(), "\n", " "))
 		}
 	}
 
@@ -392,37 +393,25 @@ func (local *Checker) checkCpuInstructionSet(instructionSets map[string][]string
 		return nil
 	}
 
-	var (
-		internalError = map[string]any{}
-		unsupported   = map[string]any{}
-		supported     = map[string]any{}
-	)
+	var internalError = map[string]any{}
 
 	for _, set := range sets {
 		_, err := local.packageManager.Execute([]string{}, "grep", []string{set, "/proc/cpuinfo"}, commontypes.ExecuteNoTimeout)
 		if err != nil {
 			if isExitCode(err, 1) { // expected not-installed case
-				unsupported[set] = err
+				local.collection.Log.Error = append(local.collection.Log.Error,
+					wrapMsgWithTopic(topic, fmt.Sprintf("%s is unsupported. %v", set, err)))
 			} else {
 				internalError[set] = err
 			}
 		} else {
-			supported[set] = nil
+			local.collection.Log.Info = append(local.collection.Log.Info,
+				wrapMsgWithTopic(topic, fmt.Sprintf("%s is supported", set)))
 		}
 	}
 
-	if len(supported) > 0 {
-		local.collection.Log.Info = append(local.collection.Log.Info,
-			wrapMultiInfos(topic, "The following CPU instruction sets are supported:", supported))
-	}
-
-	if len(unsupported) > 0 {
-		local.collection.Log.Error = append(local.collection.Log.Error,
-			wrapMultiInfos(topic, "The following CPU instruction sets are missing or unsupported:\n", unsupported))
-	}
-
 	if len(internalError) > 0 {
-		return wrapAggregatedInternalError(topic, "Failed to grep CPU instruction sets:\n", internalError)
+		return wrapAggregatedInternalError(topic, "Failed to grep CPU instruction sets:", internalError)
 	}
 
 	return nil
@@ -446,37 +435,25 @@ func (local *Checker) checkPackagesInstalled(spdkDependent bool) error {
 
 	logrus.Info("Checking if required packages are installed")
 
-	var (
-		internalError = map[string]any{}
-		nonInstalled  = map[string]any{}
-		installed     = map[string]any{}
-	)
+	var internalError = map[string]any{}
 
 	for _, pkg := range packages {
 		_, err := local.packageManager.CheckPackageInstalled(pkg)
 		if err != nil {
 			if isExitCode(err, 1) || errors.Is(err, pkgmgr.PackageNotInstalledError) {
-				nonInstalled[pkg] = err // expected not-installed case
+				local.collection.Log.Error = append(local.collection.Log.Error,
+					wrapMsgWithTopic(topic, fmt.Sprintf("%s is not installed. %v", pkg, err)))
 			} else {
 				internalError[pkg] = err
 			}
 		} else {
-			installed[pkg] = nil
+			local.collection.Log.Info = append(local.collection.Log.Info,
+				wrapMsgWithTopic(topic, fmt.Sprintf("%s is installed", pkg)))
 		}
 	}
 
-	if len(installed) > 0 {
-		local.collection.Log.Info = append(local.collection.Log.Info,
-			wrapMultiInfos(topic, "The following packages are installed:", installed))
-	}
-
-	if len(nonInstalled) > 0 {
-		local.collection.Log.Error = append(local.collection.Log.Error,
-			wrapMultiInfos(topic, "The following packages are not installed:\n", nonInstalled))
-	}
-
 	if len(internalError) > 0 {
-		return wrapAggregatedInternalError(topic, "Failed to check packages:\n", internalError)
+		return wrapAggregatedInternalError(topic, "Failed to check packages:", internalError)
 	}
 
 	return nil
@@ -504,39 +481,27 @@ func (local *Checker) checkModulesLoaded(spdkDependent bool) error {
 
 	logrus.Info("Checking if required modules are loaded")
 
-	var (
-		internalError = map[string]any{}
-		notLoaded     = map[string]any{}
-		loaded        = map[string]any{}
-	)
+	var internalError = map[string]any{}
 
 	for _, mod := range modules {
 		logrus.Infof("Checking if module %s is loaded", mod)
 
 		err := local.packageManager.CheckModLoaded(mod)
 		if err != nil {
-			if isExitCode(err, 1) { // expected not-installed case
-				notLoaded[mod] = err
+			if isExitCode(err, 1) || errors.Is(err, pkgmgr.PackageNotInstalledError) {
+				local.collection.Log.Error = append(local.collection.Log.Error,
+					wrapMsgWithTopic(topic, fmt.Sprintf("%s is not loaded. %v", mod, err)))
 			} else {
 				internalError[mod] = err
 			}
 		} else {
-			loaded[mod] = nil
+			local.collection.Log.Info = append(local.collection.Log.Info,
+				wrapMsgWithTopic(topic, fmt.Sprintf("%s is loaded", mod)))
 		}
 	}
 
-	if len(loaded) > 0 {
-		local.collection.Log.Info = append(local.collection.Log.Info,
-			wrapMultiInfos(topic, "The following kernel modules are loaded:", loaded))
-	}
-
-	if len(notLoaded) > 0 {
-		local.collection.Log.Error = append(local.collection.Log.Error,
-			wrapMultiInfos(topic, "The following kernel modules are not loaded:\n", notLoaded))
-	}
-
 	if len(internalError) > 0 {
-		return wrapAggregatedInternalError(topic, "Failed to check packages:\n", internalError)
+		return wrapAggregatedInternalError(topic, "Failed to check packages:", internalError)
 	}
 
 	return nil
@@ -664,15 +629,11 @@ func (local *Checker) checkKubeDNS() error {
 }
 
 func wrapMsgWithTopic(topic, msg string) string {
-	return fmt.Sprintf("%s%s", topic, msg)
+	return fmt.Sprintf("%s %s", topic, msg)
 }
 
 func wrapInternalError(topic string, err error) error {
-	return fmt.Errorf("%s%s: %w", topic, formatTopic(consts.PreflightCheckTopicInternalError), err)
-}
-
-func wrapMultiInfos(topic, msg string, items map[string]any) string {
-	return wrapMsgWithTopic(topic, wrapMultItems(msg, items))
+	return fmt.Errorf("%s%s %w", topic, formatTopic(consts.PreflightCheckTopicInternalError), err)
 }
 
 func wrapAggregatedInternalError(topic, msg string, items map[string]any) error {
@@ -684,7 +645,7 @@ func wrapAggregatedInternalError(topic, msg string, items map[string]any) error 
 func wrapMultItems(msg string, items map[string]any) string {
 	// Example usage:
 	//
-	//	return wrapMultItems("[Packages]", "The following packages are not installed:\n", map[string]error{
+	//	return wrapMultItems("[Packages]", "The following packages are not installed:", map[string]error{
 	//	    "nvme-cli": errors.New("command not found"),
 	//	    "sg3_utils": errors.New("exit status 1"),
 	//	})
@@ -703,7 +664,7 @@ func wrapMultItems(msg string, items map[string]any) string {
 		if content == nil {
 			msgBuilder.WriteString(fmt.Sprintf("  (%d) %s", index, set))
 		} else {
-			msgBuilder.WriteString(fmt.Sprintf("  (%d) %s: %v\n", index, set, content))
+			msgBuilder.WriteString(fmt.Sprintf("  (%d) %s: %v", index, set, content))
 		}
 		index++
 	}
