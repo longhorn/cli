@@ -95,7 +95,11 @@ func (remote *Exporter) Init() error {
 // before collecting volume information and returning it as a YAML string.
 func (remote *Exporter) Run() (string, error) {
 	newConfigMap := remote.newConfigMapForSimpleLonghorn()
-	newDaemonSet := remote.newDaemonSet()
+	nodeSelector, err := kubeutils.ParseNodeSelector(remote.NodeSelector)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to parse %q argument", consts.CmdOptNodeSelector)
+	}
+	newDaemonSet := remote.newDaemonSet(nodeSelector)
 
 	configMap, err := commonkube.GetConfigMap(remote.kubeClient, newConfigMap.Namespace, newConfigMap.Name)
 	if err == nil {
@@ -387,7 +391,7 @@ sleep infinity
 }
 
 // newDaemonSet prepares the DaemonSet for the replica exporter.
-func (remote *Exporter) newDaemonSet() *appsv1.DaemonSet {
+func (remote *Exporter) newDaemonSet(nodeSelector map[string]string) *appsv1.DaemonSet {
 	outputFilePath := filepath.Join(consts.VolumeMountSharedDirectory, consts.FileNameOutputJSON)
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -567,6 +571,7 @@ func (remote *Exporter) newDaemonSet() *appsv1.DaemonSet {
 							},
 						},
 					},
+					NodeSelector: nodeSelector,
 				},
 			},
 			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{

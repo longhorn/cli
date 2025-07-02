@@ -47,7 +47,6 @@ type InstallerCmdOptions struct {
 	HugePageSize   int
 	AllowPci       string
 	DriverOverride string
-	NodeSelector   string
 }
 
 // Init initializes the Installer.
@@ -117,12 +116,11 @@ func (remote *Installer) InstallByContainerOptimizedOS() error {
 		return err
 	}
 
-	newDaemonSet := remote.newDaemonSetForContainerOptimizedOS()
 	nodeSelector, err := kubeutils.ParseNodeSelector(remote.NodeSelector)
 	if err != nil {
 		return errors.Wrapf(err, "failed to parse %q argument", consts.CmdOptNodeSelector)
 	}
-	newDaemonSet.Spec.Template.Spec.NodeSelector = nodeSelector
+	newDaemonSet := remote.newDaemonSetForContainerOptimizedOS(nodeSelector)
 	daemonSet, err := commonkube.CreateDaemonSet(remote.kubeClient, newDaemonSet)
 	if err != nil {
 		return err
@@ -144,12 +142,11 @@ func (remote *Installer) InstallByContainerOptimizedOS() error {
 //	- Successfully probed module dm_crypt
 //	- Successfully started service iscsid
 func (remote *Installer) InstallByPackageManager() (string, error) {
-	newDaemonSet := remote.NewDaemonSetForPackageManager()
 	nodeSelector, err := kubeutils.ParseNodeSelector(remote.NodeSelector)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to parse %q argument", consts.CmdOptNodeSelector)
 	}
-	newDaemonSet.Spec.Template.Spec.NodeSelector = nodeSelector
+	newDaemonSet := remote.NewDaemonSetForPackageManager(nodeSelector)
 	daemonSet, err := commonkube.CreateDaemonSet(remote.kubeClient, newDaemonSet)
 	if err != nil {
 		return "", err
@@ -295,7 +292,7 @@ sleep infinity
 }
 
 // newDaemonSetForContainerOptimizedOS prepares a DaemonSet for installing the dependencies on Container Optimized OS.
-func (remote *Installer) newDaemonSetForContainerOptimizedOS() *appsv1.DaemonSet {
+func (remote *Installer) newDaemonSetForContainerOptimizedOS(nodeSelector map[string]string) *appsv1.DaemonSet {
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      remote.appName,
@@ -411,6 +408,7 @@ func (remote *Installer) newDaemonSetForContainerOptimizedOS() *appsv1.DaemonSet
 							},
 						},
 					},
+					NodeSelector: nodeSelector,
 				},
 			},
 			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
@@ -421,7 +419,7 @@ func (remote *Installer) newDaemonSetForContainerOptimizedOS() *appsv1.DaemonSet
 }
 
 // NewDaemonSetForPackageManager prepares a DaemonSet for installing dependencies with the package manager.
-func (remote *Installer) NewDaemonSetForPackageManager() *appsv1.DaemonSet {
+func (remote *Installer) NewDaemonSetForPackageManager(nodeSelector map[string]string) *appsv1.DaemonSet {
 	outputFilePath := filepath.Join(consts.VolumeMountSharedDirectory, consts.FileNameOutputJSON)
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -447,6 +445,7 @@ func (remote *Installer) NewDaemonSetForPackageManager() *appsv1.DaemonSet {
 					// Required for running systemd tasks.
 					HostNetwork: true,
 					HostPID:     true,
+
 					InitContainers: []corev1.Container{
 						{
 							Name:    consts.ContainerNameInit,
@@ -535,6 +534,7 @@ func (remote *Installer) NewDaemonSetForPackageManager() *appsv1.DaemonSet {
 							},
 						},
 					},
+					NodeSelector: nodeSelector,
 				},
 			},
 			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{

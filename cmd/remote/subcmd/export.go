@@ -66,6 +66,7 @@ lost+found`,
 		PreRun: func(cmd *cobra.Command, args []string) {
 			replicaExporter.Image = globalOpts.Image
 			replicaExporter.KubeConfigPath = globalOpts.KubeConfigPath
+			replicaExporter.NodeSelector = globalOpts.NodeSelector
 
 			utils.CheckErr(replicaExporter.Validate())
 

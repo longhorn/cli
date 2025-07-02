@@ -64,6 +64,7 @@ INFO[2024-07-16T17:23:51+08:00] Completed replica getter`,
 		PreRun: func(cmd *cobra.Command, args []string) {
 			replicaGetter.Image = globalOpts.Image
 			replicaGetter.KubeConfigPath = globalOpts.KubeConfigPath
+			replicaGetter.NodeSelector = globalOpts.NodeSelector
 
 			logrus.Info("Initializing replica getter")
 			if err := replicaGetter.Init(); err != nil {

@@ -67,7 +67,11 @@ func (remote *Trimmer) Init() error {
 
 // Run creates the DaemonSet for the volume trimmer, and waits for it to complete.
 func (remote *Trimmer) Run() error {
-	newDaemonSet := remote.newDaemonSet()
+	nodeSelector, err := kubeutils.ParseNodeSelector(remote.NodeSelector)
+	if err != nil {
+		return errors.Wrapf(err, "failed to parse %q argument", consts.CmdOptNodeSelector)
+	}
+	newDaemonSet := remote.newDaemonSet(nodeSelector)
 	daemonSet, err := commonkube.CreateDaemonSet(remote.kubeClient, newDaemonSet)
 	if err != nil {
 		return err
@@ -82,7 +86,7 @@ func (remote *Trimmer) Cleanup() error {
 }
 
 // NewDaemonSet prepares the DaemonSet for the volume trimmer.
-func (remote *Trimmer) newDaemonSet() *appsv1.DaemonSet {
+func (remote *Trimmer) newDaemonSet(nodeSelector map[string]string) *appsv1.DaemonSet {
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      remote.appName,
@@ -159,6 +163,7 @@ func (remote *Trimmer) newDaemonSet() *appsv1.DaemonSet {
 							},
 						},
 					},
+					NodeSelector: nodeSelector,
 				},
 			},
 			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{

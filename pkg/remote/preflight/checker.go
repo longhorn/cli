@@ -2,9 +2,9 @@ package preflight
 
 import (
 	"encoding/json"
-	"github.com/pkg/errors"
 	"path/filepath"
 
+	"github.com/pkg/errors"
 	"sigs.k8s.io/kustomize/kyaml/yaml"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -42,7 +42,6 @@ type CheckerCmdOptions struct {
 	EnableSpdk      bool
 	HugePageSize    int
 	UserspaceDriver string
-	NodeSelector    string
 }
 
 // Init initializes the Checker.
@@ -70,12 +69,11 @@ func (remote *Checker) Run() (string, error) {
 		return "", err
 	}
 
-	newDaemonSet := remote.newDaemonSet()
 	nodeSelector, err := kubeutils.ParseNodeSelector(remote.NodeSelector)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to parse %q argument", consts.CmdOptNodeSelector)
 	}
-	newDaemonSet.Spec.Template.Spec.NodeSelector = nodeSelector
+	newDaemonSet := remote.newDaemonSet(nodeSelector)
 	daemonSet, err := commonkube.CreateDaemonSet(remote.kubeClient, newDaemonSet)
 	if err != nil {
 		return "", err
@@ -209,7 +207,7 @@ func (remote *Checker) newServiceAccount() *corev1.ServiceAccount {
 }
 
 // NewDaemonSet prepares a DaemonSet for the preflight check.
-func (remote *Checker) newDaemonSet() *appsv1.DaemonSet {
+func (remote *Checker) newDaemonSet(nodeSelector map[string]string) *appsv1.DaemonSet {
 	outputFilePath := filepath.Join(consts.VolumeMountSharedDirectory, consts.FileNameOutputJSON)
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -311,6 +309,7 @@ func (remote *Checker) newDaemonSet() *appsv1.DaemonSet {
 							},
 						},
 					},
+					NodeSelector: nodeSelector,
 				},
 			},
 			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
