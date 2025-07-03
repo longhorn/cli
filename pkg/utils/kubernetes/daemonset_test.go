@@ -71,7 +71,7 @@ func TestParseNodeSelector(t *testing.T) {
 				t.Errorf("unexpected error: %v", err)
 			}
 			if !reflect.DeepEqual(got, test.want) {
-				t.Errorf("expected output: %v, but got:  %v", test.expectedErr, got)
+				t.Errorf("expected output: %v, but got:  %v", test.want, got)
 			}
 		}
 
