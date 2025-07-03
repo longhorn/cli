@@ -33,15 +33,34 @@ func newCmdInstallPreflight(globalOpts *types.GlobalCmdOptions) *cobra.Command {
 		Use:   consts.SubCmdPreflight,
 		Short: "Install Longhorn preflight",
 		Long: `This command prepares your system for Longhorn deployment. It automates the installation of the necessary dependencies.
-These dependencies ensure your cluster meets the necessary requirements for successful Longhorn operation.`,
+These dependencies ensure your cluster meets the necessary requirements for successful Longhorn operation.
+
+On some OS, like for example SLE Micro, after having installed the needed packages, ` + "`longhornctl`" + ` asks to the user to reboot the machine and
+to execute the install command again. During the first execution ` + "`longhornctl`" + ` install needed packages, during the second one it probes modules, start services and configure tools.`,
 		Example: `$ longhornctl install preflight
 INFO[2024-07-16T17:06:55+08:00] Initializing preflight installer
 INFO[2024-07-16T17:06:55+08:00] Cleaning up preflight installer
 INFO[2024-07-16T17:06:55+08:00] Running preflight installer
 INFO[2024-07-16T17:06:55+08:00] Installing dependencies with package manager
 INFO[2024-07-16T17:09:08+08:00] Installed dependencies with package manager
+INFO[2024-07-16T17:09:08+08:00] Retrieved preflight installer result:
+ip-192-168-208-117:
+  info:
+  - Successfully installed package nfs-client
+  - Successfully installed package open-iscsi
+  - Successfully installed package cryptsetup
+  - Successfully probed module nfs
+  - Successfully probed module iscsi_tcp
+  - Successfully probed module dm_crypt
+  - Successfully started service iscsid
 INFO[2024-07-16T17:09:08+08:00] Cleaning up preflight installer
-INFO[2024-07-16T17:09:08+08:00] Completed preflight installer. Use 'longhornctl check preflight' to check the result.`,
+INFO[2024-07-16T17:09:08+08:00] Completed preflight installer. Use 'longhornctl check preflight' to check the result (on some os a reboot is required first)
+` + "```" + `
+
+If a reboot is required, the following message will be displayed:
+` + "```" + `
+  warn:
+  - Need to reboot the system and execute longhornctl install preflight again`,
 
 		PreRun: func(cmd *cobra.Command, args []string) {
 			preflightInstaller.Image = globalOpts.Image
