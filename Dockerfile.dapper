@@ -9,8 +9,6 @@ ENV DAPPER_SOURCE /cli
 ENV DAPPER_OUTPUT ./bin ./docs coverage.out
 ENV DAPPER_DOCKER_SOCKET true
 
-ENV GOLANGCI_LINT_VERSION="v1.60.3"
-
 WORKDIR ${DAPPER_SOURCE}
 ENTRYPOINT ["./dapper/entry"]
 CMD ["ci"]
@@ -18,7 +16,7 @@ CMD ["ci"]
 RUN zypper -n install curl awk docker && \
     rm -rf /var/cache/zypp/*
 
-RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin ${GOLANGCI_LINT_VERSION}
+RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin latest
 
 
 # Docker Buildx: The docker version in dapper is too old to have buildx. Install it manually.

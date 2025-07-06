@@ -80,5 +80,5 @@ func (c *AptPackageManager) CheckPackageInstalled(name string) (output string, e
 			return output, nil
 		}
 	}
-	return output, packageNotInstalledError
+	return output, errPackageNotInstalled
 }
