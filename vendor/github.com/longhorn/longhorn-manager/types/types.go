@@ -119,8 +119,11 @@ const (
 
 	DefaultBackupTargetName = "default"
 
-	LonghornNodeKey     = "longhornnode"
-	LonghornDiskUUIDKey = "longhorndiskuuid"
+	LonghornNodeKey            = "longhornnode"
+	LonghornInstanceManagerKey = "longhorninstancemanager"
+	LonghornEngineKey          = "longhornengine"
+	LonghornReplicaKey         = "longhornreplica"
+	LonghornDiskUUIDKey        = "longhorndiskuuid"
 
 	NodeCreateDefaultDiskLabelKey             = "node.longhorn.io/create-default-disk"
 	NodeCreateDefaultDiskLabelValueTrue       = "true"
@@ -235,7 +238,8 @@ const (
 )
 
 const (
-	RecurringJobBackupParameterFullBackupInterval = "full-backup-interval"
+	RecurringJobParameterFullBackupInterval = "full-backup-interval"
+	RecurringJobParameterVolumeBackupPolicy = "volume-backup-policy"
 )
 
 const (
@@ -378,7 +382,7 @@ func GetDefaultManagerURL() string {
 }
 
 func GetImageCanonicalName(image string) string {
-	return strings.Replace(strings.Replace(image, ":", "-", -1), "/", "-", -1)
+	return strings.ReplaceAll(strings.ReplaceAll(image, ":", "-"), "/", "-")
 }
 
 func GetEngineBinaryDirectoryOnHostForImage(image string) string {
@@ -653,7 +657,27 @@ func GetOrphanLabelsForOrphanedDirectory(nodeID, diskUUID string) map[string]str
 	labels := GetBaseLabelsForSystemManagedComponent()
 	labels[GetLonghornLabelComponentKey()] = LonghornLabelOrphan
 	labels[LonghornNodeKey] = nodeID
-	labels[GetLonghornLabelKey(LonghornLabelOrphanType)] = string(longhorn.OrphanTypeReplica)
+	labels[GetLonghornLabelKey(LonghornLabelOrphanType)] = string(longhorn.OrphanTypeReplicaData)
+	return labels
+}
+
+func GetOrphanLabelsForOrphanedEngineInstance(nodeID, instanceManager, engineName string) map[string]string {
+	labels := GetBaseLabelsForSystemManagedComponent()
+	labels[GetLonghornLabelComponentKey()] = LonghornLabelOrphan
+	labels[LonghornNodeKey] = nodeID
+	labels[LonghornInstanceManagerKey] = instanceManager
+	labels[LonghornEngineKey] = engineName
+	labels[GetLonghornLabelKey(LonghornLabelOrphanType)] = string(longhorn.OrphanTypeEngineInstance)
+	return labels
+}
+
+func GetOrphanLabelsForOrphanedReplicaInstance(nodeID, instanceManager, replicaName string) map[string]string {
+	labels := GetBaseLabelsForSystemManagedComponent()
+	labels[GetLonghornLabelComponentKey()] = LonghornLabelOrphan
+	labels[LonghornNodeKey] = nodeID
+	labels[LonghornInstanceManagerKey] = instanceManager
+	labels[LonghornReplicaKey] = replicaName
+	labels[GetLonghornLabelKey(LonghornLabelOrphanType)] = string(longhorn.OrphanTypeReplicaInstance)
 	return labels
 }
 
@@ -723,6 +747,10 @@ func GetShareManagerImageChecksumName(image string) string {
 
 func GetOrphanChecksumNameForOrphanedDataStore(nodeID, diskName, diskPath, diskUUID, dataStore string) string {
 	return orphanPrefix + util.GetStringChecksumSHA256(strings.TrimSpace(fmt.Sprintf("%s-%s-%s-%s-%s", nodeID, diskName, diskPath, diskUUID, dataStore)))
+}
+
+func GetOrphanChecksumNameForOrphanedInstance(instanceName, instanceUUID, instanceManager, dataEngine string) string {
+	return orphanPrefix + util.GetStringChecksumSHA256(strings.TrimSpace(fmt.Sprintf("%s-%s-%s-%s", instanceName, instanceUUID, instanceManager, dataEngine)))
 }
 
 func GetShareManagerPodNameFromShareManagerName(smName string) string {
@@ -984,6 +1012,15 @@ func ValidateFreezeFilesystemForSnapshot(value longhorn.FreezeFilesystemForSnaps
 	return nil
 }
 
+func ValidateOfflineRebuild(value longhorn.VolumeOfflineRebuilding) error {
+	if value != longhorn.VolumeOfflineRebuildingDisabled &&
+		value != longhorn.VolumeOfflineRebuildingEnabled &&
+		value != longhorn.VolumeOfflineRebuildingIgnored {
+		return fmt.Errorf("invalid OfflineRebuilding setting: %v", value)
+	}
+	return nil
+}
+
 func GetDaemonSetNameFromEngineImageName(engineImageName string) string {
 	return "engine-image-" + engineImageName
 }
@@ -1076,7 +1113,11 @@ func getBlockDeviceSize(devicePath string) (uint64, error) {
 	if err != nil {
 		return 0, fmt.Errorf("failed to open block device at %s: %w", devicePath, err)
 	}
-	defer file.Close()
+	defer func() {
+		if closeErr := file.Close(); closeErr != nil {
+			logrus.WithError(closeErr).Warnf("Failed to close block device %s", devicePath)
+		}
+	}()
 	var size uint64
 	_, _, errno := unix.Syscall(unix.SYS_IOCTL, file.Fd(), 0x80081272, uintptr(unsafe.Pointer(&size)))
 	if errno != 0 {
@@ -1203,9 +1244,8 @@ func ValidateCPUReservationValues(settingName SettingName, instanceManagerCPUStr
 	switch settingName {
 	case SettingNameGuaranteedInstanceManagerCPU, SettingNameV2DataEngineGuaranteedInstanceManagerCPU:
 		isUnderLimit := instanceManagerCPU < valueIntRange[ValueIntRangeMinimum]
-		isOverLimit := instanceManagerCPU > valueIntRange[ValueIntRangeMaximum]
-		if isUnderLimit || isOverLimit {
-			return fmt.Errorf("invalid requested instance manager CPUs. Valid instance manager CPU range between %v - %v millicpu", valueIntRange[ValueIntRangeMinimum], valueIntRange[ValueIntRangeMaximum])
+		if isUnderLimit {
+			return fmt.Errorf("invalid requested instance manager CPUs. Valid instance manager CPU range is larger than %v millicpu", valueIntRange[ValueIntRangeMinimum])
 		}
 	}
 	return nil

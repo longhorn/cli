@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.13.0
-FROM registry.suse.com/bci/golang:1.23 AS app_builder
+FROM registry.suse.com/bci/golang:1.24 AS app_builder
 
 WORKDIR /app
 
@@ -13,7 +13,7 @@ RUN chmod +x /app/dapper/build
 RUN /app/dapper/build
 
 
-FROM  registry.suse.com/bci/golang:1.23 AS spdk_builder
+FROM  registry.suse.com/bci/golang:1.24 AS spdk_builder
 
 ARG ARCH=amd64
 

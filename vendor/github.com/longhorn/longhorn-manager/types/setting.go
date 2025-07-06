@@ -99,7 +99,9 @@ const (
 	SettingNameBackingImageRecoveryWaitInterval                         = SettingName("backing-image-recovery-wait-interval")
 	SettingNameGuaranteedInstanceManagerCPU                             = SettingName("guaranteed-instance-manager-cpu")
 	SettingNameKubernetesClusterAutoscalerEnabled                       = SettingName("kubernetes-cluster-autoscaler-enabled")
-	SettingNameOrphanAutoDeletion                                       = SettingName("orphan-auto-deletion")
+	SettingNameOrphanAutoDeletion                                       = SettingName("orphan-auto-deletion") // replaced by SettingNameOrphanResourceAutoDeletion
+	SettingNameOrphanResourceAutoDeletion                               = SettingName("orphan-resource-auto-deletion")
+	SettingNameOrphanResourceAutoDeletionGracePeriod                    = SettingName("orphan-resource-auto-deletion-grace-period")
 	SettingNameStorageNetwork                                           = SettingName("storage-network")
 	SettingNameStorageNetworkForRWXVolumeEnabled                        = SettingName("storage-network-for-rwx-volume-enabled")
 	SettingNameFailedBackupTTL                                          = SettingName("failed-backup-ttl")
@@ -135,11 +137,14 @@ const (
 	SettingNameV2DataEngineLogLevel                                     = SettingName("v2-data-engine-log-level")
 	SettingNameV2DataEngineLogFlags                                     = SettingName("v2-data-engine-log-flags")
 	SettingNameV2DataEngineFastReplicaRebuilding                        = SettingName("v2-data-engine-fast-replica-rebuilding")
+	SettingNameV2DataEngineSnapshotDataIntegrity                        = SettingName("v2-data-engine-snapshot-data-integrity")
 	SettingNameFreezeFilesystemForSnapshot                              = SettingName("freeze-filesystem-for-snapshot")
 	SettingNameAutoCleanupSnapshotWhenDeleteBackup                      = SettingName("auto-cleanup-when-delete-backup")
+	SettingNameAutoCleanupSnapshotAfterOnDemandBackupCompleted          = SettingName("auto-cleanup-snapshot-after-on-demand-backup-completed")
 	SettingNameDefaultMinNumberOfBackingImageCopies                     = SettingName("default-min-number-of-backing-image-copies")
 	SettingNameBackupExecutionTimeout                                   = SettingName("backup-execution-timeout")
 	SettingNameRWXVolumeFastFailover                                    = SettingName("rwx-volume-fast-failover")
+	SettingNameOfflineReplicaRebuilding                                 = SettingName("offline-replica-rebuilding")
 	// These three backup target parameters are used in the "longhorn-default-resource" ConfigMap
 	// to update the default BackupTarget resource.
 	// Longhorn won't create the Setting resources for these three parameters.
@@ -198,7 +203,8 @@ var (
 		SettingNameBackingImageRecoveryWaitInterval,
 		SettingNameGuaranteedInstanceManagerCPU,
 		SettingNameKubernetesClusterAutoscalerEnabled,
-		SettingNameOrphanAutoDeletion,
+		SettingNameOrphanResourceAutoDeletion,
+		SettingNameOrphanResourceAutoDeletionGracePeriod,
 		SettingNameStorageNetwork,
 		SettingNameStorageNetworkForRWXVolumeEnabled,
 		SettingNameFailedBackupTTL,
@@ -230,17 +236,24 @@ var (
 		SettingNameV2DataEngineLogLevel,
 		SettingNameV2DataEngineLogFlags,
 		SettingNameV2DataEngineFastReplicaRebuilding,
+		SettingNameV2DataEngineSnapshotDataIntegrity,
 		SettingNameReplicaDiskSoftAntiAffinity,
 		SettingNameAllowEmptyNodeSelectorVolume,
 		SettingNameAllowEmptyDiskSelectorVolume,
 		SettingNameDisableSnapshotPurge,
 		SettingNameFreezeFilesystemForSnapshot,
 		SettingNameAutoCleanupSnapshotWhenDeleteBackup,
+		SettingNameAutoCleanupSnapshotAfterOnDemandBackupCompleted,
 		SettingNameDefaultMinNumberOfBackingImageCopies,
 		SettingNameBackupExecutionTimeout,
 		SettingNameRWXVolumeFastFailover,
+		SettingNameOfflineReplicaRebuilding,
 	}
 )
+
+var replacedSettingNames = map[SettingName]bool{
+	SettingNameOrphanAutoDeletion: true, // SettingNameOrphanResourceAutoDeletion
+}
 
 type SettingCategory string
 
@@ -319,7 +332,8 @@ var (
 		SettingNameBackingImageRecoveryWaitInterval:                         SettingDefinitionBackingImageRecoveryWaitInterval,
 		SettingNameGuaranteedInstanceManagerCPU:                             SettingDefinitionGuaranteedInstanceManagerCPU,
 		SettingNameKubernetesClusterAutoscalerEnabled:                       SettingDefinitionKubernetesClusterAutoscalerEnabled,
-		SettingNameOrphanAutoDeletion:                                       SettingDefinitionOrphanAutoDeletion,
+		SettingNameOrphanResourceAutoDeletion:                               SettingDefinitionOrphanResourceAutoDeletion,
+		SettingNameOrphanResourceAutoDeletionGracePeriod:                    SettingDefinitionOrphanResourceAutoDeletionGracePeriod,
 		SettingNameStorageNetwork:                                           SettingDefinitionStorageNetwork,
 		SettingNameStorageNetworkForRWXVolumeEnabled:                        SettingDefinitionStorageNetworkForRWXVolumeEnabled,
 		SettingNameFailedBackupTTL:                                          SettingDefinitionFailedBackupTTL,
@@ -351,15 +365,18 @@ var (
 		SettingNameV2DataEngineLogLevel:                                     SettingDefinitionV2DataEngineLogLevel,
 		SettingNameV2DataEngineLogFlags:                                     SettingDefinitionV2DataEngineLogFlags,
 		SettingNameV2DataEngineFastReplicaRebuilding:                        SettingDefinitionV2DataEngineFastReplicaRebuilding,
+		SettingNameV2DataEngineSnapshotDataIntegrity:                        SettingDefinitionV2DataEngineSnapshotDataIntegrity,
 		SettingNameReplicaDiskSoftAntiAffinity:                              SettingDefinitionReplicaDiskSoftAntiAffinity,
 		SettingNameAllowEmptyNodeSelectorVolume:                             SettingDefinitionAllowEmptyNodeSelectorVolume,
 		SettingNameAllowEmptyDiskSelectorVolume:                             SettingDefinitionAllowEmptyDiskSelectorVolume,
 		SettingNameDisableSnapshotPurge:                                     SettingDefinitionDisableSnapshotPurge,
 		SettingNameFreezeFilesystemForSnapshot:                              SettingDefinitionFreezeFilesystemForSnapshot,
 		SettingNameAutoCleanupSnapshotWhenDeleteBackup:                      SettingDefinitionAutoCleanupSnapshotWhenDeleteBackup,
+		SettingNameAutoCleanupSnapshotAfterOnDemandBackupCompleted:          SettingDefinitionAutoCleanupSnapshotAfterOnDemandBackupCompleted,
 		SettingNameDefaultMinNumberOfBackingImageCopies:                     SettingDefinitionDefaultMinNumberOfBackingImageCopies,
 		SettingNameBackupExecutionTimeout:                                   SettingDefinitionBackupExecutionTimeout,
 		SettingNameRWXVolumeFastFailover:                                    SettingDefinitionRWXVolumeFastFailover,
+		SettingNameOfflineReplicaRebuilding:                                 SettingDefinitionOfflineReplicaRebuilding,
 	}
 
 	SettingDefinitionAllowRecurringJobWhileVolumeDetached = SettingDefinition{
@@ -1043,15 +1060,33 @@ var (
 		Default:  "false",
 	}
 
-	SettingDefinitionOrphanAutoDeletion = SettingDefinition{
-		DisplayName: "Orphan Auto-Deletion",
-		Description: "This setting allows Longhorn to delete the orphan resource and its corresponding orphaned data automatically. \n\n" +
-			"Orphan resources on down or unknown nodes will not be cleaned up automatically. \n\n",
+	SettingDefinitionOrphanResourceAutoDeletion = SettingDefinition{
+		DisplayName: "Orphan Resource Auto-Deletion",
+		Description: "This setting allows Longhorn to automatically delete orphan resources and their corresponding orphaned resources. \n\n" +
+			"Orphan resources located on nodes that are in down or unknown state will not be cleaned up automatically. \n\n" +
+			"List the enabled resource types in a semicolon-separated list. \n\n" +
+			"Available items are: \n\n" +
+			"- **replica-data**: replica data store \n\n" +
+			"- **instance**: engine and replica runtime instance \n\n",
 		Category: SettingCategoryOrphan,
-		Type:     SettingTypeBool,
+		Type:     SettingTypeString,
+		Required: false,
+		ReadOnly: false,
+		Default:  "",
+	}
+
+	SettingDefinitionOrphanResourceAutoDeletionGracePeriod = SettingDefinition{
+		DisplayName: "Orphan Resource Auto-Deletion Grace Period",
+		Description: "Specifies the wait time, in seconds, before Longhorn automatically deletes an orphaned Custom Resource (CR) and its associated resources. \n\n" +
+			"**Note:** If a user manually deletes an orphaned CR, the deletion occurs immediately and does not respect this grace period. \n\n",
+		Category: SettingCategoryOrphan,
+		Type:     SettingTypeInt,
 		Required: true,
 		ReadOnly: false,
-		Default:  "false",
+		Default:  "300",
+		ValueIntRange: map[string]int{
+			ValueIntRangeMinimum: 0,
+		},
 	}
 
 	SettingDefinitionStorageNetwork = SettingDefinition{
@@ -1361,7 +1396,7 @@ var (
 	SettingDefinitionV2DataEngineHugepageLimit = SettingDefinition{
 		DisplayName: "Hugepage Size for V2 Data Engine",
 		Description: "Hugepage size in MiB for v2 data engine",
-		Category:    SettingCategoryV2DataEngine,
+		Category:    SettingCategoryDangerZone,
 		Type:        SettingTypeInt,
 		Required:    true,
 		ReadOnly:    true,
@@ -1376,7 +1411,7 @@ var (
 		Description: "Number of millicpus on each node to be reserved for each instance manager pod when the V2 Data Engine is enabled. The Storage Performance Development Kit (SPDK) target daemon within each instance manager pod uses 1 or multiple CPU cores. Configuring a minimum CPU usage value is essential for maintaining engine and replica stability, especially during periods of high node workload. \n\n" +
 			"WARNING: \n\n" +
 			"  - Value 0 means unsetting CPU requests for instance manager pods for v2 data engine. \n\n" +
-			"  - This integer value is range from 1000 to 8000. \n\n" +
+			"  - The smallest acceptable integer value is 1000. \n\n" +
 			"  - After this setting is changed, the v2 instance manager pod using this global setting will be automatically restarted without instances running on the v2 instance manager. \n\n",
 		Category: SettingCategoryDangerZone,
 		Type:     SettingTypeInt,
@@ -1385,7 +1420,6 @@ var (
 		Default:  "1250",
 		ValueIntRange: map[string]int{
 			ValueIntRangeMinimum: 1000,
-			ValueIntRangeMaximum: 8000,
 		},
 	}
 
@@ -1470,9 +1504,36 @@ var (
 		Default:     "false",
 	}
 
+	SettingDefinitionV2DataEngineSnapshotDataIntegrity = SettingDefinition{
+		DisplayName: "V2 Data Engine Snapshot Data Integrity",
+		Description: "This setting allows users to enable or disable snapshot hashing and data integrity checking for v2 data engine. \n\n" +
+			"Available options are: \n\n" +
+			"- **disabled**: Disable snapshot logical volume data hashing and data integrity checking. \n\n" +
+			"- **fast-check**: Enable snapshot logical volume data hashing and fast data integrity checking. Longhorn system only hashes snapshot that are not hashed. In this mode, filesystem-unaware corruption cannot be detected, but the impact on system performance can be minimized.",
+		Category: SettingCategoryV2DataEngine,
+		Type:     SettingTypeString,
+		Required: true,
+		ReadOnly: false,
+		Default:  string(longhorn.SnapshotDataIntegrityFastCheck),
+		Choices: []string{
+			string(longhorn.SnapshotDataIntegrityDisabled),
+			string(longhorn.SnapshotDataIntegrityFastCheck),
+		},
+	}
+
 	SettingDefinitionAutoCleanupSnapshotWhenDeleteBackup = SettingDefinition{
 		DisplayName: "Automatically Cleanup Snapshot When Deleting Backup",
 		Description: "This setting enables Longhorn to automatically cleanup snapshots when removing backup.",
+		Category:    SettingCategorySnapshot,
+		Type:        SettingTypeBool,
+		Required:    true,
+		ReadOnly:    false,
+		Default:     "false",
+	}
+
+	SettingDefinitionAutoCleanupSnapshotAfterOnDemandBackupCompleted = SettingDefinition{
+		DisplayName: "Automatically Cleanup Snapshot After On-Demand Backup Completed",
+		Description: "This setting allows users to trigger automatically delete the backup snapshot after the on-demand backup is completed.",
 		Category:    SettingCategorySnapshot,
 		Type:        SettingTypeBool,
 		Required:    true,
@@ -1501,6 +1562,20 @@ var (
 		Required:    true,
 		ReadOnly:    false,
 		Default:     "false",
+	}
+
+	SettingDefinitionOfflineReplicaRebuilding = SettingDefinition{
+		DisplayName: "Offline Replica Rebuilding",
+		Description: "Enables automatic rebuilding of degraded replicas while the volume is detached. This setting only takes effect if the individual volume setting is set to `ignored` or `enabled`. \n\n" +
+			"Available options: \n\n" +
+			"- **true**: Enables offline replica rebuilding for all detached volumes, unless overridden by individual volume settings. \n\n" +
+			"- **false**: Disables offline replica rebuilding globally, unless overridden by individual volume settings. \n\n" +
+			"**Note:** Offline rebuilding applies only when a volume is detached. Volumes in a faulted state will not trigger offline rebuilding.",
+		Category: SettingCategoryGeneral,
+		Type:     SettingTypeBool,
+		Required: true,
+		ReadOnly: false,
+		Default:  "false",
 	}
 )
 
@@ -1541,6 +1616,13 @@ const (
 	// This exists to support older Multus versions.
 	// Ref: https://github.com/longhorn/longhorn/issues/6953
 	CNIAnnotationNetworksStatus = CNIAnnotation("k8s.v1.cni.cncf.io/networks-status")
+)
+
+type OrphanResourceType string
+
+const (
+	OrphanResourceTypeReplicaData = OrphanResourceType("replica-data")
+	OrphanResourceTypeInstance    = OrphanResourceType("instance")
 )
 
 func ValidateSetting(name, value string) (err error) {
@@ -1722,6 +1804,35 @@ func UnmarshalNodeSelector(nodeSelectorSetting string) (map[string]string, error
 	return nodeSelector, nil
 }
 
+func UnmarshalOrphanResourceTypes(resourceTypesSetting string) (map[OrphanResourceType]bool, error) {
+	resourceTypes := map[OrphanResourceType]bool{
+		OrphanResourceTypeReplicaData: false,
+		OrphanResourceTypeInstance:    false,
+	}
+
+	resourceTypesSetting = strings.Trim(resourceTypesSetting, " ")
+	invalidItems := make([]string, 0, len(resourceTypesSetting))
+	if resourceTypesSetting != "" {
+		resourceTypeList := strings.Split(resourceTypesSetting, ";")
+		for _, item := range resourceTypeList {
+			resourceType := OrphanResourceType(strings.Trim(item, " "))
+			if _, ok := resourceTypes[resourceType]; ok {
+				resourceTypes[resourceType] = true
+			} else {
+				invalidItems = append(invalidItems, item)
+			}
+		}
+	}
+	if len(invalidItems) > 0 {
+		return nil, fmt.Errorf("invalid orphan resource types: %s", strings.Join(invalidItems, ", "))
+	}
+	return resourceTypes, nil
+}
+
+func IsSettingReplaced(name SettingName) bool {
+	return replacedSettingNames[name]
+}
+
 // GetSettingDefinition gets the setting definition in `settingDefinitions` by the parameter `name`
 func GetSettingDefinition(name SettingName) (SettingDefinition, bool) {
 	settingDefinitionsLock.RLock()
@@ -1826,6 +1937,11 @@ func validateString(sName SettingName, definition SettingDefinition, value strin
 	case SettingNameV2DataEngineLogFlags:
 		if err := ValidateV2DataEngineLogFlags(value); err != nil {
 			return errors.Wrapf(err, "failed to validate v2 data engine log flags %v", value)
+		}
+
+	case SettingNameOrphanResourceAutoDeletion:
+		if _, err := UnmarshalOrphanResourceTypes(value); err != nil {
+			return errors.Wrapf(err, "the value of %v is invalid", sName)
 		}
 	}
 
