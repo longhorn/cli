@@ -5,15 +5,12 @@ import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 type OrphanType string
 
 const (
-	OrphanTypeReplicaData     = OrphanType("replica")
-	OrphanTypeEngineInstance  = OrphanType("engine-instance")
-	OrphanTypeReplicaInstance = OrphanType("replica-instance")
+	OrphanTypeReplica = OrphanType("replica")
 )
 
 const (
 	OrphanConditionTypeError         = "Error"
 	OrphanConditionTypeDataCleanable = "DataCleanable"
-	OrphanConditionTypeInstanceExist = "InstanceExist"
 
 	OrphanConditionTypeDataCleanableReasonNodeUnavailable = "NodeUnavailable"
 	OrphanConditionTypeDataCleanableReasonNodeEvicted     = "NodeEvicted"
@@ -23,10 +20,6 @@ const (
 )
 
 const (
-	OrphanInstanceName    = "InstanceName"
-	OrphanInstanceUUID    = "InstanceUUID"
-	OrphanInstanceManager = "InstanceManager"
-
 	OrphanDataName = "DataName"
 	OrphanDiskName = "DiskName"
 	OrphanDiskUUID = "DiskUUID"
@@ -43,11 +36,6 @@ type OrphanSpec struct {
 	// Can be "replica".
 	// +optional
 	Type OrphanType `json:"orphanType"`
-	// The type of data engine for instance orphan.
-	// Can be "v1", "v2".
-	// +optional
-	// +kubebuilder:validation:Enum=v1;v2
-	DataEngine DataEngineType `json:"dataEngine,omitempty"`
 
 	// The parameters of the orphaned data
 	// +optional

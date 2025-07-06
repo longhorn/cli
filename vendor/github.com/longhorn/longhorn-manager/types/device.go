@@ -3,7 +3,6 @@ package types
 import (
 	"bufio"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
 	"strings"
@@ -42,11 +41,7 @@ func getDevicePathOf(mountPath, procMountPath string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer func() {
-		if closeErr := mountFile.Close(); closeErr != nil {
-			logrus.WithError(closeErr).Warnf("Failed to close mount file %s", procMountPath)
-		}
-	}()
+	defer mountFile.Close()
 
 	// Scan the file lines
 	mountPath = filepath.Clean(mountPath)

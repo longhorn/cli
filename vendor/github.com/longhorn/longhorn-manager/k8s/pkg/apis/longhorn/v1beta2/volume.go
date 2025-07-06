@@ -24,14 +24,13 @@ const (
 	VolumeRobustnessUnknown  = VolumeRobustness("unknown")
 )
 
-// +kubebuilder:validation:Enum=blockdev;iscsi;nvmf;ublk;""
+// +kubebuilder:validation:Enum=blockdev;iscsi;nvmf;""
 type VolumeFrontend string
 
 const (
 	VolumeFrontendBlockDev = VolumeFrontend("blockdev")
 	VolumeFrontendISCSI    = VolumeFrontend("iscsi")
 	VolumeFrontendNvmf     = VolumeFrontend("nvmf")
-	VolumeFrontendUblk     = VolumeFrontend("ublk")
 	VolumeFrontendEmpty    = VolumeFrontend("")
 )
 
@@ -79,14 +78,6 @@ const (
 	UnmapMarkSnapChainRemovedIgnored  = UnmapMarkSnapChainRemoved("ignored")
 	UnmapMarkSnapChainRemovedDisabled = UnmapMarkSnapChainRemoved("disabled")
 	UnmapMarkSnapChainRemovedEnabled  = UnmapMarkSnapChainRemoved("enabled")
-)
-
-type VolumeOfflineRebuilding string
-
-const (
-	VolumeOfflineRebuildingEnabled  = VolumeOfflineRebuilding("enabled")
-	VolumeOfflineRebuildingDisabled = VolumeOfflineRebuilding("disabled")
-	VolumeOfflineRebuildingIgnored  = VolumeOfflineRebuilding("ignored")
 )
 
 type VolumeCloneState string
@@ -182,6 +173,15 @@ const (
 	FreezeFilesystemForSnapshotDisabled = FreezeFilesystemForSnapshot("disabled")
 )
 
+// Deprecated.
+type BackendStoreDriverType string
+
+const (
+	BackendStoreDriverTypeV1  = BackendStoreDriverType("v1")
+	BackendStoreDriverTypeV2  = BackendStoreDriverType("v2")
+	BackendStoreDriverTypeAll = BackendStoreDriverType("all")
+)
+
 type DataEngineType string
 
 const (
@@ -242,6 +242,9 @@ type VolumeSpec struct {
 	NodeID string `json:"nodeID"`
 	// +optional
 	MigrationNodeID string `json:"migrationNodeID"`
+	// Deprecated: Replaced by field `image`.
+	// +optional
+	EngineImage string `json:"engineImage"`
 	// +optional
 	Image string `json:"image"`
 	// +optional
@@ -285,6 +288,9 @@ type VolumeSpec struct {
 	// +kubebuilder:validation:Enum=none;lz4;gzip
 	// +optional
 	BackupCompressionMethod BackupCompressionMethod `json:"backupCompressionMethod"`
+	// Deprecated:Replaced by field `dataEngine`.'
+	// +optional
+	BackendStoreDriver BackendStoreDriverType `json:"backendStoreDriver"`
 	// +kubebuilder:validation:Enum=v1;v2
 	// +optional
 	DataEngine DataEngineType `json:"dataEngine"`
@@ -299,13 +305,6 @@ type VolumeSpec struct {
 	// The backup target name that the volume will be backed up to or is synced.
 	// +optional
 	BackupTargetName string `json:"backupTargetName"`
-	// +kubebuilder:validation:Enum=ignored;disabled;enabled
-	// Specifies whether Longhorn should rebuild replicas while the detached volume is degraded.
-	// - ignored: Use the global setting for offline replica rebuilding.
-	// - enabled: Enable offline rebuilding for this volume, regardless of the global setting.
-	// - disabled: Disable offline rebuilding for this volume, regardless of the global setting
-	// +optional
-	OfflineRebuilding VolumeOfflineRebuilding `json:"offlineRebuilding"`
 }
 
 // VolumeStatus defines the observed state of the Longhorn volume
@@ -329,6 +328,9 @@ type VolumeStatus struct {
 	LastBackup string `json:"lastBackup"`
 	// +optional
 	LastBackupAt string `json:"lastBackupAt"`
+	// Deprecated.
+	// +optional
+	PendingNodeID string `json:"pendingNodeID"`
 	// the node that this volume is currently migrating to
 	// +optional
 	CurrentMigrationNodeID string `json:"currentMigrationNodeID"`
