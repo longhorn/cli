@@ -13,7 +13,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeclient "k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/utils/ptr"
 
 	commonkube "github.com/longhorn/go-common-libs/kubernetes"
@@ -65,12 +64,7 @@ func (remote *Exporter) Validate() error {
 
 // Init initializes the Exporter.
 func (remote *Exporter) Init() error {
-	kubeconfig, err := clientcmd.BuildConfigFromFlags("", remote.KubeConfigPath)
-	if err != nil {
-		return err
-	}
-
-	kubeClient, err := kubeclient.NewForConfig(kubeconfig)
+	kubeClient, err := kubeutils.NewKubeClient("", remote.KubeConfigPath)
 	if err != nil {
 		return err
 	}

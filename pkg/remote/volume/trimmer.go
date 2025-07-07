@@ -7,7 +7,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeclient "k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/utils/ptr"
 
 	commonkube "github.com/longhorn/go-common-libs/kubernetes"
@@ -50,12 +49,7 @@ func (remote *Trimmer) Validate() error {
 
 // Init initializes the Trimmer.
 func (remote *Trimmer) Init() error {
-	kubeconfig, err := clientcmd.BuildConfigFromFlags("", remote.KubeConfigPath)
-	if err != nil {
-		return err
-	}
-
-	kubeClient, err := kubeclient.NewForConfig(kubeconfig)
+	kubeClient, err := kubeutils.NewKubeClient("", remote.KubeConfigPath)
 	if err != nil {
 		return err
 	}
