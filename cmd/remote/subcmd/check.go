@@ -61,6 +61,7 @@ INFO[2024-07-16T17:17:42+08:00] Completed preflight checker`,
 			preflightChecker.Image = globalOpts.Image
 			preflightChecker.KubeConfigPath = globalOpts.KubeConfigPath
 			preflightChecker.NodeSelector = globalOpts.NodeSelector
+			preflightChecker.Namespace = globalOpts.Namespace
 
 			logrus.Info("Initializing preflight checker")
 			if err := preflightChecker.Init(); err != nil {

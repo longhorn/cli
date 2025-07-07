@@ -29,6 +29,7 @@ func SetGlobalOptionsRemote(cmd *cobra.Command, globalOpts *types.GlobalCmdOptio
 	cmd.PersistentFlags().StringVar(&globalOpts.KubeConfigPath, consts.CmdOptKubeConfigPath, globalOpts.KubeConfigPath, "Kubernetes config (kubeconfig) path")
 	cmd.PersistentFlags().StringVar(&globalOpts.Image, consts.CmdOptImage, globalOpts.Image, "Image containing longhornctl-local")
 	cmd.PersistentFlags().StringVar(&globalOpts.NodeSelector, consts.CmdOptNodeSelector, globalOpts.NodeSelector, "Comma-separated list of key=value pairs to match against node labels, selecting the nodes the DaemonSet will run on (e.g. env=prod,zone=us-west).")
+	cmd.PersistentFlags().StringVar(&globalOpts.Namespace, consts.CmdOptNamespace, globalOpts.Namespace, "The namespace to run DaemonSet pods.")
 }
 
 // SetFlagHidden adds a option flag to the given command and mark it as hidden.
