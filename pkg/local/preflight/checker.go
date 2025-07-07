@@ -239,7 +239,7 @@ func (local *Checker) Output() error {
 func (local *Checker) checkContainerOptimizedOS() error {
 	topic := formatTopic(consts.PreflightCheckTopicContainerOptimizedOS)
 
-	daemonSet, err := commonkube.GetDaemonSet(local.kubeClient, metav1.NamespaceDefault, consts.AppNamePreflightContainerOptimizedOS)
+	daemonSet, err := commonkube.GetDaemonSet(local.kubeClient, local.Namespace, consts.AppNamePreflightContainerOptimizedOS)
 	if err != nil {
 		return wrapInternalError(topic, errors.Wrapf(err,
 			"failed to retrieve DaemonSet %q in namespace %q. Please ensure the preflight DaemonSet is deployed correctly",

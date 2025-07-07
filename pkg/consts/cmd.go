@@ -34,6 +34,7 @@ const (
 
 	// General options
 	CmdOptName            = "name"
+	CmdOptNamespace       = "namespace"
 	CmdOptNodeId          = "node-id"
 	CmdOptOperatingSystem = "operating-system"
 	CmdOptOutputFile      = "output-file"

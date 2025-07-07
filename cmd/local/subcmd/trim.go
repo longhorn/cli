@@ -64,7 +64,6 @@ Regularly trimming your Longhorn volumes ensures better storage efficiency and m
 	utils.SetGlobalOptionsLocal(cmd, globalOpts)
 
 	cmd.Flags().StringVar(&localTrimmer.CurrentNodeID, consts.CmdOptNodeId, os.Getenv(consts.EnvCurrentNodeID), "Current node ID.")
-	cmd.Flags().StringVar(&localTrimmer.LonghornNamespace, consts.CmdOptLonghornNamespace, os.Getenv(consts.EnvLonghornNamespace), "Namespace where Longhorn is deployed within the Kubernetes cluster.")
 	cmd.Flags().StringVar(&localTrimmer.VolumeName, consts.CmdOptLonghornVolumeName, os.Getenv(consts.EnvLonghornVolumeName), "Name of the Longhorn volum to be trimmed.")
 
 	return cmd

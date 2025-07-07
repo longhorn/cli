@@ -98,7 +98,7 @@ func (remote *Installer) Run() (string, error) {
 
 // Cleanup deletes the DaemonSet created for the preflight install when it's installed with package manager.
 func (remote *Installer) Cleanup() error {
-	return commonkube.DeleteDaemonSet(remote.kubeClient, metav1.NamespaceDefault, remote.appName)
+	return commonkube.DeleteDaemonSet(remote.kubeClient, remote.Namespace, remote.appName)
 }
 
 // InstallByContainerOptimizedOS installs the dependencies on Container Optimized OS.
@@ -274,7 +274,7 @@ sleep infinity
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      remote.appName,
-			Namespace: metav1.NamespaceDefault,
+			Namespace: remote.Namespace,
 			Labels: map[string]string{
 				"app": remote.appName,
 			},
@@ -290,7 +290,7 @@ func (remote *Installer) newDaemonSetForContainerOptimizedOS(nodeSelector map[st
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      remote.appName,
-			Namespace: metav1.NamespaceDefault,
+			Namespace: remote.Namespace,
 			Labels: map[string]string{
 				"app": remote.appName,
 			},
@@ -418,7 +418,7 @@ func (remote *Installer) NewDaemonSetForPackageManager(nodeSelector map[string]s
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      remote.appName,
-			Namespace: metav1.NamespaceDefault,
+			Namespace: remote.Namespace,
 			Labels: map[string]string{
 				"app": remote.appName,
 			},

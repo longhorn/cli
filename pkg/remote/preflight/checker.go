@@ -31,8 +31,7 @@ type Checker struct {
 
 	kubeClient *kubeclient.Clientset
 
-	namespace string
-	appName   string // App name of the DaemonSet.
+	appName string // App name of the DaemonSet.
 }
 
 // CheckerCmdOptions holds the options for the command.
@@ -53,7 +52,6 @@ func (remote *Checker) Init() error {
 
 	remote.kubeClient = kubeClient
 
-	remote.namespace = metav1.NamespaceDefault
 	remote.appName = consts.AppNamePreflightChecker
 	return nil
 }
@@ -143,7 +141,7 @@ func (remote *Checker) createRbacForNodeAgent() error {
 
 // Cleanup deletes the DaemonSet created for the preflight check.
 func (remote *Checker) Cleanup() error {
-	if err := commonkube.DeleteDaemonSet(remote.kubeClient, remote.namespace, remote.appName); err != nil {
+	if err := commonkube.DeleteDaemonSet(remote.kubeClient, remote.Namespace, remote.appName); err != nil {
 		return err
 	}
 
@@ -155,7 +153,7 @@ func (remote *Checker) Cleanup() error {
 		return err
 	}
 
-	return commonkube.DeleteServiceAccount(remote.kubeClient, remote.namespace, remote.appName)
+	return commonkube.DeleteServiceAccount(remote.kubeClient, remote.Namespace, remote.appName)
 }
 
 func (remote *Checker) newClusterRole() *rbacv1.ClusterRole {
@@ -187,7 +185,7 @@ func (remote *Checker) newClusterRoleBinding() *rbacv1.ClusterRoleBinding {
 			{
 				Kind:      "ServiceAccount",
 				Name:      remote.appName,
-				Namespace: metav1.NamespaceDefault,
+				Namespace: remote.Namespace,
 			},
 		},
 	}
@@ -197,7 +195,7 @@ func (remote *Checker) newServiceAccount() *corev1.ServiceAccount {
 	return &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      remote.appName,
-			Namespace: metav1.NamespaceDefault,
+			Namespace: remote.Namespace,
 		},
 	}
 }
@@ -208,7 +206,7 @@ func (remote *Checker) newDaemonSet(nodeSelector map[string]string) *appsv1.Daem
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      remote.appName,
-			Namespace: metav1.NamespaceDefault,
+			Namespace: remote.Namespace,
 			Labels: map[string]string{
 				"app": remote.appName,
 			},
