@@ -12,7 +12,6 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeclient "k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/utils/ptr"
 
 	commonkube "github.com/longhorn/go-common-libs/kubernetes"
@@ -46,15 +45,11 @@ type CheckerCmdOptions struct {
 
 // Init initializes the Checker.
 func (remote *Checker) Init() error {
-	kubeconfig, err := clientcmd.BuildConfigFromFlags("", remote.KubeConfigPath)
+	kubeClient, err := kubeutils.NewKubeClient("", remote.KubeConfigPath)
 	if err != nil {
 		return err
 	}
 
-	kubeClient, err := kubeclient.NewForConfig(kubeconfig)
-	if err != nil {
-		return err
-	}
 	remote.kubeClient = kubeClient
 
 	remote.namespace = metav1.NamespaceDefault

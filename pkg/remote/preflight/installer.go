@@ -8,7 +8,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
-	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/kustomize/kyaml/yaml"
 
@@ -51,12 +50,7 @@ type InstallerCmdOptions struct {
 
 // Init initializes the Installer.
 func (remote *Installer) Init() error {
-	kubeconfig, err := clientcmd.BuildConfigFromFlags("", remote.KubeConfigPath)
-	if err != nil {
-		return err
-	}
-
-	kubeClient, err := kubeclient.NewForConfig(kubeconfig)
+	kubeClient, err := kubeutils.NewKubeClient("", remote.KubeConfigPath)
 	if err != nil {
 		return err
 	}
