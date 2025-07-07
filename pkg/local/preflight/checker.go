@@ -246,7 +246,7 @@ func (local *Checker) Output() error {
 
 // checkContainerOptimizedOS checks if the node-agent DaemonSet is running.
 func (local *Checker) checkContainerOptimizedOS() error {
-	daemonSet, err := commonkube.GetDaemonSet(local.kubeClient, metav1.NamespaceDefault, consts.AppNamePreflightContainerOptimizedOS)
+	daemonSet, err := commonkube.GetDaemonSet(local.kubeClient, local.PreflightNamespace, consts.AppNamePreflightContainerOptimizedOS)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get DaemonSet %v", consts.AppNamePreflightContainerOptimizedOS)
 	}
