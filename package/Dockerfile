@@ -13,7 +13,7 @@ RUN chmod +x /app/dapper/build
 RUN /app/dapper/build
 
 
-FROM  registry.suse.com/bci/golang:1.24 AS spdk_builder
+FROM registry.suse.com/bci/golang:1.24 AS spdk_builder
 
 ARG ARCH=amd64
 
