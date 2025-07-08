@@ -57,6 +57,7 @@ If a reboot is required, the following message will be displayed:
       --namespace string          The namespace to run DaemonSet pods. (default "default")
       --node-selector string      Comma-separated list of key=value pairs to match against node labels, selecting the nodes the DaemonSet will run on (e.g. env=prod,zone=us-west).
       --operating-system string   Specify the operating system ("", cos). Leave this empty to use the package manager for installation.
+      --restart-kubelet           Enable automatic kubelet service restart to apply changes to huge page size
       --spdk-options string       Specify a comma-separated (,) list of custom options for configuring SPDK environment.
       --update-packages           Update packages before installing required dependencies. (default true)
 ```
