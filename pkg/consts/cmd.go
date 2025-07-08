@@ -33,14 +33,14 @@ const (
 	CmdOptImage          = "image"
 
 	// General options
-	CmdOptName               = "name"
-	CmdOptNodeId             = "node-id"
-	CmdOptOperatingSystem    = "operating-system"
-	CmdOptOutputFile         = "output-file"
-	CmdOptTargetDirectory    = "target-dir"
-	CmdOptUpdatePackages     = "update-packages"
-	CmdOptNodeSelector       = "node-selector"
-	CmdOptPreflightNamespace = "preflight-namespace"
+	CmdOptName            = "name"
+	CmdOptNamespace       = "namespace"
+	CmdOptNodeId          = "node-id"
+	CmdOptOperatingSystem = "operating-system"
+	CmdOptOutputFile      = "output-file"
+	CmdOptTargetDirectory = "target-dir"
+	CmdOptUpdatePackages  = "update-packages"
+	CmdOptNodeSelector    = "node-selector"
 
 	// SPDK options
 	CmdOptAllowPci        = "allow-pci"
