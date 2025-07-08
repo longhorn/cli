@@ -3,6 +3,7 @@ package packagemanager
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"time"
 
 	commonns "github.com/longhorn/go-common-libs/ns"
@@ -20,7 +21,10 @@ const (
 	// PackageManagerQlist            = PackageManagerType("qlist")
 )
 
-var ErrPackageNotInstalled = errors.New("package not installed")
+var (
+	ErrPackageNotInstalled = errors.New("package not installed")
+	ServiceNotFoundRegex   = regexp.MustCompile(`Unit \S+\.service (not found|could not be found)`)
+)
 
 type PackageManager interface {
 	UpdatePackageList() (string, error)
@@ -30,6 +34,7 @@ type PackageManager interface {
 	Modprobe(module string) (string, error)
 	CheckModLoaded(module string) error
 	StartService(name string) (string, error)
+	RestartService(name string) (string, error)
 	GetServiceStatus(name string) (string, error)
 	CheckPackageInstalled(name string) (string, error)
 	Execute(envs []string, binary string, args []string, timeout time.Duration) (string, error)
