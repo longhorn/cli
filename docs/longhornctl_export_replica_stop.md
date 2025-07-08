@@ -21,10 +21,11 @@ INFO[2024-07-16T17:29:14+08:00] Successfully stopped exporting replica
 ### Options
 
 ```
-  -h, --help                 help for stop
-      --image string         Image containing longhornctl-local (default "longhornio/longhorn-cli:v1.10.0-dev")
-      --kube-config string   Kubernetes config (kubeconfig) path
-  -l, --log-level string     Log level (default "info")
+  -h, --help                   help for stop
+      --image string           Image containing longhornctl-local (default "longhornio/longhorn-cli:v1.10.0-dev")
+      --kube-config string     Kubernetes config (kubeconfig) path
+  -l, --log-level string       Log level (default "info")
+      --node-selector string   Comma-separated list of key=value pairs to match against node labels, selecting the nodes the DaemonSet will run on (e.g. env=prod,zone=us-west).
 ```
 
 ### SEE ALSO

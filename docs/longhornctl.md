@@ -9,10 +9,11 @@ A CLI tool for troubleshooting and managing Longhorn operations.
 ### Options
 
 ```
-  -h, --help                 help for longhornctl
-      --image string         Image containing longhornctl-local (default "longhornio/longhorn-cli:v1.10.0-dev")
-      --kube-config string   Kubernetes config (kubeconfig) path
-  -l, --log-level string     log level (trace, debug, info, warn, error, fatal, panic) (default "info")
+  -h, --help                   help for longhornctl
+      --image string           Image containing longhornctl-local (default "longhornio/longhorn-cli:v1.10.0-dev")
+      --kube-config string     Kubernetes config (kubeconfig) path
+  -l, --log-level string       log level (trace, debug, info, warn, error, fatal, panic) (default "info")
+      --node-selector string   Comma-separated list of key=value pairs to match against node labels, selecting the nodes the DaemonSet will run on (e.g. env=prod,zone=us-west).
 ```
 
 ### SEE ALSO

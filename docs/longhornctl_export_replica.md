@@ -47,14 +47,15 @@ lost+found
 ### Options
 
 ```
-      --data-dir string       Specify the Longhorn data directory. If not provided, the default will be attempted, or it will fall back to the directory of longhorn-disk.cfg. (default "/var/lib/longhorn")
-      --engine-image string   Engine image to use to create volume from the replica. (default "longhornio/longhorn-engine:v1.10.0-dev")
-  -h, --help                  help for replica
-      --image string          Image containing longhornctl-local (default "longhornio/longhorn-cli:v1.10.0-dev")
-      --kube-config string    Kubernetes config (kubeconfig) path
-  -l, --log-level string      Log level (default "info")
-      --name string           Specify the replica directory name to export. The replica data directory name is not the same as the Kubernetes Replica custom resource (CR) object name. To retrieve the replica directory name, use 'longhornctl get replica'.
-      --target-dir string     Target directory on the host machine where the exported data will be mounted.
+      --data-dir string        Specify the Longhorn data directory. If not provided, the default will be attempted, or it will fall back to the directory of longhorn-disk.cfg. (default "/var/lib/longhorn")
+      --engine-image string    Engine image to use to create volume from the replica. (default "longhornio/longhorn-engine:v1.10.0-dev")
+  -h, --help                   help for replica
+      --image string           Image containing longhornctl-local (default "longhornio/longhorn-cli:v1.10.0-dev")
+      --kube-config string     Kubernetes config (kubeconfig) path
+  -l, --log-level string       Log level (default "info")
+      --name string            Specify the replica directory name to export. The replica data directory name is not the same as the Kubernetes Replica custom resource (CR) object name. To retrieve the replica directory name, use 'longhornctl get replica'.
+      --node-selector string   Comma-separated list of key=value pairs to match against node labels, selecting the nodes the DaemonSet will run on (e.g. env=prod,zone=us-west).
+      --target-dir string      Target directory on the host machine where the exported data will be mounted.
 ```
 
 ### SEE ALSO
