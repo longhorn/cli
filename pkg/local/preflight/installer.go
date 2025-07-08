@@ -1,8 +1,12 @@
 package preflight
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	lhmgrutil "github.com/longhorn/longhorn-manager/util"
+	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,12 +16,14 @@ import (
 
 	cp "github.com/otiai10/copy"
 
-	commonns "github.com/longhorn/go-common-libs/ns"
-	commontypes "github.com/longhorn/go-common-libs/types"
+	kubeclient "k8s.io/client-go/kubernetes"
 
 	"github.com/longhorn/cli/pkg/consts"
 	"github.com/longhorn/cli/pkg/types"
 	"github.com/longhorn/cli/pkg/utils"
+	commonkube "github.com/longhorn/go-common-libs/kubernetes"
+	commonns "github.com/longhorn/go-common-libs/ns"
+	commontypes "github.com/longhorn/go-common-libs/types"
 
 	pkgmgr "github.com/longhorn/cli/pkg/local/preflight/packagemanager"
 	remote "github.com/longhorn/cli/pkg/remote/preflight"
@@ -30,6 +36,8 @@ type Installer struct {
 	logger *logrus.Entry
 
 	OutputFilePath string
+
+	kubeClient *kubeclient.Clientset
 
 	osRelease      string
 	packageManager pkgmgr.PackageManager
@@ -46,6 +54,16 @@ type Installer struct {
 // Init initializes the Installer.
 func (local *Installer) Init() error {
 	local.collection.Log = &types.LogCollection{}
+
+	config, err := commonkube.GetInClusterConfig()
+	if err != nil {
+		return errors.Wrap(err, "failed to get client config")
+	}
+
+	local.kubeClient, err = kubeclient.NewForConfig(config)
+	if err != nil {
+		return errors.Wrap(err, "failed to get Kubernetes clientset")
+	}
 
 	osRelease, err := utils.GetOSRelease()
 	if err != nil {
@@ -202,6 +220,11 @@ func (local *Installer) Run() error {
 		if err := local.configureSPDKEnv(); err != nil {
 			return err
 		}
+
+		// At this point, HugePages size is updated on the node, but won't be visible to the k8s cluster until kubelet is restarted.
+		if err := local.restartKubeletService(); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -348,4 +371,45 @@ func getArgsForConfiguringSPDKEnv(options string) []string {
 		args = append(args, customOptions...)
 	}
 	return args
+}
+
+func (local *Installer) restartKubeletService() error {
+	if !local.RestartKubelet {
+		return nil
+	}
+
+	currentNodeID := os.Getenv(consts.EnvCurrentNodeID)
+	node, err := local.kubeClient.CoreV1().Nodes().Get(context.TODO(), currentNodeID, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	currentHugePagesSize := node.Status.Capacity.Name("hugepages-2Mi", resource.BinarySI)
+	wantedHugePagesSize := resource.NewQuantity(int64(local.HugePageSize*lhmgrutil.MiB), resource.BinarySI)
+
+	if currentHugePagesSize.Cmp(*wantedHugePagesSize) < 0 {
+		logrus.Infof("Restarting kubelet service")
+		// Kubelet may be managed by different services depending on the k8s distribution
+		serviceCandidates := []string{"kubelet", "k3s", "rke2-server"}
+		var restartErr error
+
+		for _, svc := range serviceCandidates {
+			_, restartErr = local.packageManager.RestartService(svc)
+			if restartErr == nil {
+				logrus.Infof("Successfully restarted service %s", svc)
+				local.collection.Log.Info = append(local.collection.Log.Info, fmt.Sprintf("Successfully restarted service %s", svc))
+				return nil
+			}
+			// If error is not "not found", stop trying further services
+			if !pkgmgr.ServiceNotFoundRegex.MatchString(restartErr.Error()) {
+				break
+			}
+			// else continue trying next service
+		}
+
+		logrus.Warnf("Failed to restart kubelet service: %v", restartErr)
+		local.collection.Log.Warn = append(local.collection.Log.Warn, "Failed to restart kubelet service")
+		return restartErr
+	}
+
+	return nil
 }

@@ -46,6 +46,7 @@ type InstallerCmdOptions struct {
 	HugePageSize   int
 	AllowPci       string
 	DriverOverride string
+	RestartKubelet bool
 }
 
 // Init initializes the Installer.
@@ -71,6 +72,11 @@ func (remote *Installer) Init() error {
 // It checks if the operating system is specified, and installs the dependencies accordingly.
 // If the operating system is not specified, it installs the dependencies with package manager.
 func (remote *Installer) Run() (string, error) {
+	err := kubeutils.CreateRbac(remote.kubeClient, remote.appName)
+	if err != nil {
+		return "", err
+	}
+
 	operatingSystem := consts.OperatingSystem(remote.OperatingSystem)
 	switch operatingSystem {
 	case consts.OperatingSystemContainerOptimizedOS:
@@ -98,7 +104,11 @@ func (remote *Installer) Run() (string, error) {
 
 // Cleanup deletes the DaemonSet created for the preflight install when it's installed with package manager.
 func (remote *Installer) Cleanup() error {
-	return commonkube.DeleteDaemonSet(remote.kubeClient, metav1.NamespaceDefault, remote.appName)
+	if err := commonkube.DeleteDaemonSet(remote.kubeClient, metav1.NamespaceDefault, remote.appName); err != nil {
+		return err
+	}
+
+	return kubeutils.DeleteRbac(remote.kubeClient, remote.appName)
 }
 
 // InstallByContainerOptimizedOS installs the dependencies on Container Optimized OS.
@@ -437,8 +447,9 @@ func (remote *Installer) NewDaemonSetForPackageManager(nodeSelector map[string]s
 				},
 				Spec: corev1.PodSpec{
 					// Required for running systemd tasks.
-					HostNetwork: true,
-					HostPID:     true,
+					HostNetwork:        true,
+					HostPID:            true,
+					ServiceAccountName: remote.appName,
 
 					InitContainers: []corev1.Container{
 						{
@@ -477,6 +488,18 @@ func (remote *Installer) NewDaemonSetForPackageManager(nodeSelector map[string]s
 								{
 									Name:  consts.EnvDriverOverride,
 									Value: remote.DriverOverride,
+								},
+								{
+									Name:  consts.EnvRestartKubelet,
+									Value: commonutils.ConvertTypeToString(remote.RestartKubelet),
+								},
+								{
+									Name: consts.EnvCurrentNodeID,
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "spec.nodeName",
+										},
+									},
 								},
 							},
 							SecurityContext: &corev1.SecurityContext{
