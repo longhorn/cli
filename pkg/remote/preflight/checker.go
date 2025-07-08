@@ -12,7 +12,6 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeclient "k8s.io/client-go/kubernetes"
 
@@ -59,7 +58,7 @@ func (remote *Checker) Init() error {
 
 // Run creates the DaemonSet for the preflight check, and waits for it to complete.
 func (remote *Checker) Run() (string, error) {
-	err := remote.createRbacForNodeAgent()
+	err := kubeutils.CreateRbac(remote.kubeClient, remote.appName)
 	if err != nil {
 		return "", err
 	}
@@ -115,90 +114,13 @@ func (remote *Checker) Run() (string, error) {
 	return string(yamlData), nil
 }
 
-// createRbacForNodeAgent creates the RBAC for checking if node agent exists when the cluster is running on Container-Optimized OS (COS).
-// It creates a new ServiceAccount, ClusterRole, and ClusterRoleBinding to provide permission to get the node agent DaemonSet.
-func (remote *Checker) createRbacForNodeAgent() error {
-	// Create the RBAC for checking if node agent exists when the cluster is running on Container-Optimized OS.
-	newServiceAccount := remote.newServiceAccount()
-	_, err := commonkube.CreateServiceAccount(remote.kubeClient, newServiceAccount)
-	if err != nil {
-		return err
-	}
-
-	newClusterRole := remote.newClusterRole()
-	_, err = commonkube.CreateClusterRole(remote.kubeClient, newClusterRole)
-	if err != nil {
-		return err
-	}
-
-	newClusterRoleBinding := remote.newClusterRoleBinding()
-	_, err = commonkube.CreateClusterRoleBinding(remote.kubeClient, newClusterRoleBinding)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 // Cleanup deletes the DaemonSet created for the preflight check.
 func (remote *Checker) Cleanup() error {
 	if err := commonkube.DeleteDaemonSet(remote.kubeClient, remote.Namespace, remote.appName); err != nil {
 		return err
 	}
 
-	if err := commonkube.DeleteClusterRoleBinding(remote.kubeClient, remote.appName); err != nil {
-		return err
-	}
-
-	if err := commonkube.DeleteClusterRole(remote.kubeClient, remote.appName); err != nil {
-		return err
-	}
-
-	return commonkube.DeleteServiceAccount(remote.kubeClient, remote.Namespace, remote.appName)
-}
-
-func (remote *Checker) newClusterRole() *rbacv1.ClusterRole {
-	return &rbacv1.ClusterRole{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: remote.appName,
-		},
-		Rules: []rbacv1.PolicyRule{
-			{
-				APIGroups: []string{"apps"},
-				Resources: []string{"daemonsets", "deployments"},
-				Verbs:     []string{"get", "list"},
-			},
-		},
-	}
-}
-
-func (remote *Checker) newClusterRoleBinding() *rbacv1.ClusterRoleBinding {
-	return &rbacv1.ClusterRoleBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: remote.appName,
-		},
-		RoleRef: rbacv1.RoleRef{
-			APIGroup: rbacv1.GroupName,
-			Kind:     "ClusterRole",
-			Name:     remote.appName,
-		},
-		Subjects: []rbacv1.Subject{
-			{
-				Kind:      "ServiceAccount",
-				Name:      remote.appName,
-				Namespace: remote.Namespace,
-			},
-		},
-	}
-}
-
-func (remote *Checker) newServiceAccount() *corev1.ServiceAccount {
-	return &corev1.ServiceAccount{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      remote.appName,
-			Namespace: remote.Namespace,
-		},
-	}
+	return kubeutils.DeleteRbac(remote.kubeClient, remote.appName)
 }
 
 // NewDaemonSet prepares a DaemonSet for the preflight check.

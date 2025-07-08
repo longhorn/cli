@@ -64,6 +64,11 @@ func (c *AptPackageManager) StartService(name string) (string, error) {
 	return c.executor.Execute([]string{}, "systemctl", []string{"start", name}, commontypes.ExecuteNoTimeout)
 }
 
+// RestartService executes the service restart command
+func (c *AptPackageManager) RestartService(name string) (string, error) {
+	return c.executor.Execute([]string{}, "systemctl", []string{"restart", name}, commontypes.ExecuteNoTimeout)
+}
+
 // GetServiceStatus executes the service status command
 func (c *AptPackageManager) GetServiceStatus(name string) (string, error) {
 	return c.executor.Execute([]string{}, "systemctl", []string{"status", "--no-pager", name}, commontypes.ExecuteNoTimeout)

@@ -44,12 +44,14 @@ const (
 	CmdOptNodeSelector    = "node-selector"
 
 	// SPDK options
-	CmdOptAllowPci        = "allow-pci"
-	CmdOptDriverOverride  = "driver-override"
-	CmdOptEnableSpdk      = "enable-spdk"
-	CmdOptHugePageSize    = "huge-page-size"
-	CmdOptSpdkOptions     = "spdk-options"
-	CmdOptUserspaceDriver = "userspace-driver"
+	CmdOptAllowPci             = "allow-pci"
+	CmdOptDriverOverride       = "driver-override"
+	CmdOptEnableSpdk           = "enable-spdk"
+	CmdOptHugePageSize         = "huge-page-size"
+	CmdOptSpdkOptions          = "spdk-options"
+	CmdOptUserspaceDriver      = "userspace-driver"
+	CmdOptRestartKubelet       = "restart-kubelet"
+	CmdOptRestartKubeletWindow = "restart-kubelet-window"
 
 	// Longhorn options
 	CmdOptLonghornDataDirectory = "data-dir"
