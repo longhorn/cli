@@ -36,6 +36,7 @@ INFO[2024-07-16T17:32:01+08:00] Completed volume trimmer                      vo
   -l, --log-level string            Log level (default "info")
       --longhorn-namespace string   Namespace where Longhorn is deployed within the Kubernetes cluster. (default "longhorn-system")
       --name string                 Name of the Longhorn volum to be trimmed.
+      --node-selector string        Comma-separated list of key=value pairs to match against node labels, selecting the nodes the DaemonSet will run on (e.g. env=prod,zone=us-west).
 ```
 
 ### SEE ALSO
