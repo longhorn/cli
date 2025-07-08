@@ -71,6 +71,8 @@ These dependencies ensure your Kubernetes cluster meets the requirements for suc
 	cmd.Flags().IntVar(&localInstaller.HugePageSize, consts.CmdOptHugePageSize, utils.ConvertStringToTypeOrDefault(os.Getenv(consts.EnvHugePageSize), 2048), "Specify the huge page size in MiB for SPDK.")
 	cmd.Flags().StringVar(&localInstaller.AllowPci, consts.CmdOptAllowPci, os.Getenv(consts.EnvPciAllowed), fmt.Sprintf("Specify a comma-separated (%s) list of allowed PCI devices. By default, all PCI devices are blocked by a non-valid address.", consts.CmdOptSeperator))
 	cmd.Flags().StringVar(&localInstaller.DriverOverride, consts.CmdOptDriverOverride, os.Getenv(consts.EnvDriverOverride), "Userspace driver for device bindings. Override default driver for PCI devices.")
+	cmd.Flags().BoolVar(&localInstaller.RestartKubelet, consts.CmdOptRestartKubelet, utils.ConvertStringToTypeOrDefault(os.Getenv(consts.EnvRestartKubelet), false), "Enable automatic kubelet service restart to apply changes to huge page size")
+	cmd.Flags().StringVar(&localInstaller.RestartKubeletWindow, consts.CmdOptRestartKubeletWindow, os.Getenv(consts.EnvRestartKubeletWindow), "Time window for randomized restart (e.g., 30s, 2m). Kubelet will restart at a random time within this window.")
 
 	return cmd
 }

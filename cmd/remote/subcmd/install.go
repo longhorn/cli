@@ -115,6 +115,8 @@ If a reboot is required, the following message will be displayed:
 	cmd.Flags().IntVar(&preflightInstaller.HugePageSize, consts.CmdOptHugePageSize, 2048, "Specify the huge page size in MiB for SPDK.")
 	cmd.Flags().StringVar(&preflightInstaller.AllowPci, consts.CmdOptAllowPci, "none", fmt.Sprintf("Specify a comma-separated (%s) list of allowed PCI devices. By default, all PCI devices are blocked by a non-valid address.", consts.CmdOptSeperator))
 	cmd.Flags().StringVar(&preflightInstaller.DriverOverride, consts.CmdOptDriverOverride, "", "Userspace driver for device bindings. Override default driver for PCI devices.")
+	cmd.Flags().BoolVar(&preflightInstaller.RestartKubelet, consts.CmdOptRestartKubelet, false, "Enable automatic kubelet service restart to apply changes to huge page size")
+	cmd.Flags().StringVar(&preflightInstaller.RestartKubeletWindow, consts.CmdOptRestartKubeletWindow, "1m", "Time window for randomized restart (e.g., 10s, 2m). Kubelet will restart at a random time within this window.")
 
 	return cmd
 }

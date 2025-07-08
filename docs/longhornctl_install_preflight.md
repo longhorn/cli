@@ -46,20 +46,22 @@ If a reboot is required, the following message will be displayed:
 ### Options
 
 ```
-      --allow-pci string          Specify a comma-separated (,) list of allowed PCI devices. By default, all PCI devices are blocked by a non-valid address. (default "none")
-      --driver-override string    Userspace driver for device bindings. Override default driver for PCI devices.
-      --enable-spdk               Enable installation of SPDK required packages, modules, and setup.
-  -h, --help                      help for preflight
-      --huge-page-size int        Specify the huge page size in MiB for SPDK. (default 2048)
-      --image string              Image containing longhornctl-local (default "longhornio/longhorn-cli:v1.10.0-dev")
-      --image-registry string     Registry to apply to all images (CLI, engine, pause, BCI, etc.), replacing any registry already specified in those images.
-      --kubeconfig string         Kubernetes config (kubeconfig) path
-  -l, --log-level string          Log level (default "info")
-      --namespace string          The namespace to run DaemonSet pods. (default "longhorn-system")
-      --node-selector string      Comma-separated list of key=value pairs to match against node labels, selecting the nodes the DaemonSet will run on (e.g. env=prod,zone=us-west).
-      --operating-system string   Specify the operating system ("", cos). Leave this empty to use the package manager for installation.
-      --spdk-options string       Specify a comma-separated (,) list of custom options for configuring SPDK environment.
-      --update-packages           Update packages before installing required dependencies. (default true)
+      --allow-pci string                Specify a comma-separated (,) list of allowed PCI devices. By default, all PCI devices are blocked by a non-valid address. (default "none")
+      --driver-override string          Userspace driver for device bindings. Override default driver for PCI devices.
+      --enable-spdk                     Enable installation of SPDK required packages, modules, and setup.
+  -h, --help                            help for preflight
+      --huge-page-size int              Specify the huge page size in MiB for SPDK. (default 2048)
+      --image string                    Image containing longhornctl-local (default "longhornio/longhorn-cli:v1.10.0-dev")
+      --image-registry string           Registry to apply to all images (CLI, engine, pause, BCI, etc.), replacing any registry already specified in those images.
+      --kubeconfig string               Kubernetes config (kubeconfig) path
+  -l, --log-level string                Log level (default "info")
+      --namespace string                The namespace to run DaemonSet pods. (default "longhorn-system")
+      --node-selector string            Comma-separated list of key=value pairs to match against node labels, selecting the nodes the DaemonSet will run on (e.g. env=prod,zone=us-west).
+      --operating-system string         Specify the operating system ("", cos). Leave this empty to use the package manager for installation.
+      --restart-kubelet                 Enable automatic kubelet service restart to apply changes to huge page size
+      --restart-kubelet-window string   Time window for randomized restart (e.g., 10s, 2m). Kubelet will restart at a random time within this window. (default "1m")
+      --spdk-options string             Specify a comma-separated (,) list of custom options for configuring SPDK environment.
+      --update-packages                 Update packages before installing required dependencies. (default true)
 ```
 
 ### SEE ALSO
