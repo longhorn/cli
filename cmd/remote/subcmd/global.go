@@ -13,8 +13,8 @@ var KubeConfigPath string
 func NewCmdGlobalOptions() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "global-options",
-		Short: "Print global options inherited by all subcommands",
-		Long:  `This command allows you to view the global options that apply to all subcommands.`,
+		Short: "Display global options inherited by all subcommands",
+		Long:  `This command displays the global options that apply to all subcommands.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			utils.CheckErr(cmd.Usage())
 		},

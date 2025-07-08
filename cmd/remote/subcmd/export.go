@@ -31,16 +31,16 @@ func newCmdExportReplica(globalOpts *types.GlobalCmdOptions) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   consts.SubCmdReplica,
-		Short: "Export Longhorn replica",
-		Long: `This command exports the data from a specified Longhorn replica data directory to a directory on its host machine.
-It provides data recovery capabilities when the Longhorn system is unavailable.
+		Short: "Export data from a Longhorn replica",
+		Long: `This command exports the data from a specified Longhorn replica data directory to a directory on the host machine.
+It enables data recovery when Longhorn is unavailable, allowing you to access the exported data at the specified location.
 
-To perform an export, provide the name of the replica data directory to the --name option.
+To perform an export, provide the name of the replica data directory using the --name option.
 
-To find available replica data directory names, use the following command:
+To find available replica data directory names, run:
   $ longhornctl get replica
 
-After the export is completed, you can access the exported data at the specified location on the node provided in the output.
+After the export, you can access the exported data at the location specified in the output.
 
 To terminate the replica exporter and stop the replica export process, use the 'stop' subcommand with the original command. For example:
   $ longhornctl export replica <options> stop`,
@@ -113,8 +113,8 @@ func newCmdExportReplicaStop(globalOpts *types.GlobalCmdOptions) *cobra.Command 
 
 	cmd := &cobra.Command{
 		Use:   consts.SubCmdStop,
-		Short: "Stop exporting Longhorn replica",
-		Long:  `This command terminates the replica exporter, stopping the export process for the replica.`,
+		Short: "Stop the replica export process",
+		Long:  `This command terminates the ongoing replica export process and stops the replica exporter.`,
 		Example: `$ longhornctl export replica --name=pvc-48a6457d-585e-423b-b530-bbc68a5f948a-0e2603a7 --target-dir=/tmp/export stop
 INFO[2024-07-16T17:29:14+08:00] Stopping replica exporter
 INFO[2024-07-16T17:29:14+08:00] Successfully stopped exporting replica`,

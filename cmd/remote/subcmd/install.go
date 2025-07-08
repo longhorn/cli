@@ -32,11 +32,12 @@ func newCmdInstallPreflight(globalOpts *types.GlobalCmdOptions) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   consts.SubCmdPreflight,
 		Short: "Install Longhorn preflight",
-		Long: `This command prepares your system for Longhorn deployment. It automates the installation of the necessary dependencies.
-These dependencies ensure your cluster meets the necessary requirements for successful Longhorn operation.
+		Long: `This command prepares your system for Longhorn deployment by installing the necessary dependencies.
+These dependencies ensure your Kubernetes cluster meets the requirements for successful Longhorn operation.
 
 On some OS, like for example SLE Micro, after having installed the needed packages, ` + "`longhornctl`" + ` asks to the user to reboot the machine and
 to execute the install command again. During the first execution ` + "`longhornctl`" + ` install needed packages, during the second one it probes modules, start services and configure tools.`,
+
 		Example: `$ longhornctl install preflight
 INFO[2024-07-16T17:06:55+08:00] Initializing preflight installer
 INFO[2024-07-16T17:06:55+08:00] Cleaning up preflight installer
