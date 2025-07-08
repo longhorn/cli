@@ -38,10 +38,10 @@ type Checker struct {
 type CheckerCmdOptions struct {
 	types.GlobalCmdOptions
 
-	EnableSpdk         bool
-	HugePageSize       int
-	UserspaceDriver    string
-	PreflightNamespace string
+	EnableSpdk      bool
+	HugePageSize    int
+	UserspaceDriver string
+	Namespace       string
 }
 
 // Init initializes the Checker.
@@ -142,7 +142,7 @@ func (remote *Checker) createRbacForNodeAgent() error {
 
 // Cleanup deletes the DaemonSet created for the preflight check.
 func (remote *Checker) Cleanup() error {
-	if err := commonkube.DeleteDaemonSet(remote.kubeClient, remote.PreflightNamespace, remote.appName); err != nil {
+	if err := commonkube.DeleteDaemonSet(remote.kubeClient, remote.Namespace, remote.appName); err != nil {
 		return err
 	}
 
@@ -154,7 +154,7 @@ func (remote *Checker) Cleanup() error {
 		return err
 	}
 
-	return commonkube.DeleteServiceAccount(remote.kubeClient, remote.PreflightNamespace, remote.appName)
+	return commonkube.DeleteServiceAccount(remote.kubeClient, remote.Namespace, remote.appName)
 }
 
 func (remote *Checker) newClusterRole() *rbacv1.ClusterRole {
@@ -186,7 +186,7 @@ func (remote *Checker) newClusterRoleBinding() *rbacv1.ClusterRoleBinding {
 			{
 				Kind:      "ServiceAccount",
 				Name:      remote.appName,
-				Namespace: remote.PreflightNamespace,
+				Namespace: remote.Namespace,
 			},
 		},
 	}
@@ -196,7 +196,7 @@ func (remote *Checker) newServiceAccount() *corev1.ServiceAccount {
 	return &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      remote.appName,
-			Namespace: remote.PreflightNamespace,
+			Namespace: remote.Namespace,
 		},
 	}
 }
@@ -207,7 +207,7 @@ func (remote *Checker) newDaemonSet(nodeSelector map[string]string) *appsv1.Daem
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      remote.appName,
-			Namespace: remote.PreflightNamespace,
+			Namespace: remote.Namespace,
 			Labels: map[string]string{
 				"app": remote.appName,
 			},
