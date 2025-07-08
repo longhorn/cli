@@ -31,14 +31,14 @@ func newCmdGetReplica(globalOpts *types.GlobalCmdOptions) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   consts.SubCmdReplica,
-		Short: "Get Longhorn replica information",
-		Long: `This command retrieves detailed information about Longhorn replicas.
-The information can be used for troubleshooting and gaining insights into the state of your Longhorn replicas.
+		Short: "Retrieve Longhorn replica information",
+		Long: `This command retrieves detailed information about Longhorn replicas, which is useful for troubleshooting and understanding their state.
+The information is presented by the replica data directory names, not the actual Custom Resource (CR) names.
 
-By default, the command retrieves information about all Longhorn replicas in the system.
-You can optionally filter the results using the option flags to narrow down the information returned:
-- --name: Specify a specific Longhorn replica name to retrieve details for.
-- --volume-name: Filter replicas based on the volume they belong to.`,
+By default, this command retrieves information for all Longhorn replicas in the data directory.
+You can narrow down the results by using the following options:
+- --name: Specify the Longhorn replica data directory name to retrieve details for a specific replica.
+- --volume-name: Filter replicas by the volume they belong to.`,
 
 		PreRun: func(cmd *cobra.Command, args []string) {
 			localGetter.LogLevel = globalOpts.LogLevel

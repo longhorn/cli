@@ -13,7 +13,7 @@ func NewCmdDoc() *cobra.Command {
 	return &cobra.Command{
 		Use:   "doc [output directory]",
 		Short: "Generate markdown documentation for the CLI",
-		Long:  "Generate markdown documentation for the CLI and save it to the specified output directory.",
+		Long:  "Generate markdown documentation for the CLI and save it to the specified output directory. This allows you to easily access the documentation in markdown format.",
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			outputDir := args[0]
