@@ -48,6 +48,7 @@ const (
 	CmdOptHugePageSize    = "huge-page-size"
 	CmdOptSpdkOptions     = "spdk-options"
 	CmdOptUserspaceDriver = "userspace-driver"
+	CmdOptRestartKubelet  = "restart-kubelet"
 
 	// Longhorn options
 	CmdOptLonghornDataDirectory = "data-dir"

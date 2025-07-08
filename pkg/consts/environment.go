@@ -27,4 +27,5 @@ const (
 	EnvUserspaceDriver   = "USERSPACE_DRIVER"
 	EnvUpdatePackageList = "UPDATE_PACKAGE_LIST"
 	EnvSpdkOptions       = "SPDK_OPTIONS"
+	EnvRestartKubelet    = "RESTART_KUBELET"
 )
