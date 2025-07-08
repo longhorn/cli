@@ -8,18 +8,20 @@ import (
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 
+	"k8s.io/utils/ptr"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeclient "k8s.io/client-go/kubernetes"
-	"k8s.io/utils/ptr"
 
 	commonkube "github.com/longhorn/go-common-libs/kubernetes"
 	commonlonghorn "github.com/longhorn/go-common-libs/longhorn"
 
 	"github.com/longhorn/cli/pkg/consts"
 	"github.com/longhorn/cli/pkg/types"
+
 	kubeutils "github.com/longhorn/cli/pkg/utils/kubernetes"
 )
 

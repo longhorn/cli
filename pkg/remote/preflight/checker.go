@@ -3,8 +3,11 @@ package preflight
 import (
 	"encoding/json"
 	"path/filepath"
+	"reflect"
 
 	"github.com/pkg/errors"
+
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/kustomize/kyaml/yaml"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -12,16 +15,14 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeclient "k8s.io/client-go/kubernetes"
-	"k8s.io/utils/ptr"
 
 	commonkube "github.com/longhorn/go-common-libs/kubernetes"
 	commonutils "github.com/longhorn/go-common-libs/utils"
 
 	"github.com/longhorn/cli/pkg/consts"
 	"github.com/longhorn/cli/pkg/types"
-	kubeutils "github.com/longhorn/cli/pkg/utils/kubernetes"
 
-	"reflect"
+	kubeutils "github.com/longhorn/cli/pkg/utils/kubernetes"
 )
 
 // Checker provide functions for the preflight check.

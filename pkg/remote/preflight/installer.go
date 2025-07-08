@@ -16,11 +16,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeclient "k8s.io/client-go/kubernetes"
 
-	"github.com/longhorn/cli/pkg/consts"
-	"github.com/longhorn/cli/pkg/types"
-
 	commonkube "github.com/longhorn/go-common-libs/kubernetes"
 	commonutils "github.com/longhorn/go-common-libs/utils"
+
+	"github.com/longhorn/cli/pkg/consts"
+	"github.com/longhorn/cli/pkg/types"
 
 	kubeutils "github.com/longhorn/cli/pkg/utils/kubernetes"
 )

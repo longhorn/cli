@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	kubeclient "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+
+	kubeclient "k8s.io/client-go/kubernetes"
 )
 
 func NewKubeClient(masterUrl string, kubeconfigPath string) (kubeClient *kubeclient.Clientset, err error) {
