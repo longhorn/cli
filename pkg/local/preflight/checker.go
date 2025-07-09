@@ -415,7 +415,7 @@ func (local *Checker) checkCpuInstructionSet(instructionSets map[string][]string
 		if err != nil {
 			if isExitCode(err, 1) { // expected not-installed case
 				local.collection.Log.Error = append(local.collection.Log.Error,
-					wrapMsgWithTopic(topic, fmt.Sprintf("%s is unsupported. %v", set, err)))
+					wrapMsgWithTopic(topic, fmt.Sprintf("%s is unsupported. (exit code: 1)", set)))
 			} else {
 				internalError[set] = err
 			}
