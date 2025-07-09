@@ -267,11 +267,16 @@ func (local *Checker) checkMultipathService() error {
 		local.collection.Log.Warn = append(local.collection.Log.Warn, wrapMsgWithTopic(topic, msg))
 		return nil
 
-	case isExitCode(err, 3), isExitCode(err, 4):
+	case isExitCode(err, 3):
 		// systemctl
 		// Exit code 3: Inactive
 		// Exit code 4: Not found
-		local.collection.Log.Info = append(local.collection.Log.Info, wrapMsgWithTopic(topic, "multipathd.service is not running"))
+		msg := "multipathd.service is inactive (exit code: 3)"
+		local.collection.Log.Info = append(local.collection.Log.Info, wrapMsgWithTopic(topic, msg))
+
+	case isExitCode(err, 4):
+		msg := "multipathd.service is not found (exit code: 4)"
+		local.collection.Log.Info = append(local.collection.Log.Info, wrapMsgWithTopic(topic, msg))
 
 	default:
 		// Unexpected internal error
@@ -283,11 +288,12 @@ func (local *Checker) checkMultipathService() error {
 	case err == nil:
 		msg := "multipathd.service is inactive, but it can still be activated by multipathd.socket."
 		local.collection.Log.Warn = append(local.collection.Log.Warn, wrapMsgWithTopic(topic, msg))
-		return nil
-
-	case isExitCode(err, 3), isExitCode(err, 4):
-		local.collection.Log.Info = append(local.collection.Log.Info,
-			wrapMsgWithTopic(topic, "neither multipathd.service nor multipathd.socket is running"))
+	case isExitCode(err, 3):
+		msg := "neither multipathd.service nor multipathd.socket is running (exit code: 3)"
+		local.collection.Log.Info = append(local.collection.Log.Info, wrapMsgWithTopic(topic, msg))
+	case isExitCode(err, 4):
+		msg := "multipathd.socket is not found (exit code: 4)"
+		local.collection.Log.Info = append(local.collection.Log.Info, wrapMsgWithTopic(topic, msg))
 	default:
 		// Internal/systemctl failure
 		return wrapInternalError(topic, fmt.Errorf("failed to check multipathd.socket: %w", err))
@@ -301,37 +307,46 @@ func (local *Checker) checkIscsidService() error {
 	logrus.Info("Checking iscsid service status")
 	topic := formatTopic(consts.PreflightCheckTopicIscsidService)
 
+	iscsidErrMsg := ""
 	_, err := local.packageManager.GetServiceStatus("iscsid.service")
 	switch {
 	case err == nil:
 		local.collection.Log.Info = append(local.collection.Log.Info,
 			wrapMsgWithTopic(topic, "Service iscsid is running"))
 		return nil
-	case isExitCode(err, 3), isExitCode(err, 4):
+	case isExitCode(err, 3):
 		// systemctl
 		// Exit code 3: Inactive
 		// Exit code 4: Unit not found
+		iscsidErrMsg = "Service iscsid.service is inactive (exit code: 3)"
+	case isExitCode(err, 4):
+		iscsidErrMsg = "Service iscsid.service is not found (exit code: 4)"
 	default:
 		return wrapInternalError(topic, fmt.Errorf("failed to check iscsid.service: %w", err))
 	}
 
+	iscsidSocketMsg := ""
 	_, err = local.packageManager.GetServiceStatus("iscsid.socket")
 	switch {
 	case err == nil:
 		local.collection.Log.Info = append(local.collection.Log.Info,
 			wrapMsgWithTopic(topic, "Service iscsid is inactive, but it can still be activated by iscsid.socket"))
 		return nil
-	case isExitCode(err, 3), isExitCode(err, 4):
+	case isExitCode(err, 3):
 		// systemctl
 		// Exit code 3: Inactive
 		// Exit code 4: Unit not found
 		// These are considered expected results — proceed to check socket
+		iscsidSocketMsg = "Service iscsid.socket is inactive (exit code: 3)"
+	case isExitCode(err, 4):
+		iscsidSocketMsg = "Service iscsid.socket is not found (exit code: 4)"
+
 	default:
 		return wrapInternalError(topic, fmt.Errorf("failed to check iscsid.socket: %w", err))
 	}
 
-	local.collection.Log.Error = append(local.collection.Log.Error,
-		wrapMsgWithTopic(topic, "neither iscsid.service nor iscsid.socket is running"))
+	msg := fmt.Sprintf("Neither iscsid.service nor iscsid.socket is running.- %s- %s", iscsidErrMsg, iscsidSocketMsg)
+	local.collection.Log.Error = append(local.collection.Log.Error, wrapMsgWithTopic(topic, msg))
 
 	return nil
 }
@@ -400,7 +415,7 @@ func (local *Checker) checkCpuInstructionSet(instructionSets map[string][]string
 		if err != nil {
 			if isExitCode(err, 1) { // expected not-installed case
 				local.collection.Log.Error = append(local.collection.Log.Error,
-					wrapMsgWithTopic(topic, fmt.Sprintf("%s is unsupported. %v", set, err)))
+					wrapMsgWithTopic(topic, fmt.Sprintf("%s is unsupported. (exit code: 1)", set)))
 			} else {
 				internalError[set] = err
 			}
@@ -440,9 +455,9 @@ func (local *Checker) checkPackagesInstalled(spdkDependent bool) error {
 	for _, pkg := range packages {
 		_, err := local.packageManager.CheckPackageInstalled(pkg)
 		if err != nil {
-			if isExitCode(err, 1) || errors.Is(err, pkgmgr.PackageNotInstalledError) {
+			if isExitCode(err, 1) || errors.Is(err, pkgmgr.ErrPackageNotInstalled) {
 				local.collection.Log.Error = append(local.collection.Log.Error,
-					wrapMsgWithTopic(topic, fmt.Sprintf("%s is not installed. %v", pkg, err)))
+					wrapMsgWithTopic(topic, fmt.Sprintf("%s is not installed (exit code: 1)", pkg)))
 			} else {
 				internalError[pkg] = err
 			}
@@ -488,9 +503,9 @@ func (local *Checker) checkModulesLoaded(spdkDependent bool) error {
 
 		err := local.packageManager.CheckModLoaded(mod)
 		if err != nil {
-			if isExitCode(err, 1) || errors.Is(err, pkgmgr.PackageNotInstalledError) {
+			if isExitCode(err, 1) || errors.Is(err, pkgmgr.ErrPackageNotInstalled) {
 				local.collection.Log.Error = append(local.collection.Log.Error,
-					wrapMsgWithTopic(topic, fmt.Sprintf("%s is not loaded. %v", mod, err)))
+					wrapMsgWithTopic(topic, fmt.Sprintf("%s is not loaded. (exit code: 1)", mod)))
 			} else {
 				internalError[mod] = err
 			}
