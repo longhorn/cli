@@ -1,11 +1,12 @@
 package kubernetes
 
 import (
-	commonkube "github.com/longhorn/go-common-libs/kubernetes"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeclient "k8s.io/client-go/kubernetes"
+
+	commonkube "github.com/longhorn/go-common-libs/kubernetes"
 )
 
 // CreateRbac creates a new ServiceAccount, ClusterRole, and ClusterRoleBinding
