@@ -4,26 +4,30 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	lhmgrutil "github.com/longhorn/longhorn-manager/util"
-	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
 	cp "github.com/otiai10/copy"
 
+	"k8s.io/apimachinery/pkg/api/resource"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeclient "k8s.io/client-go/kubernetes"
+
+	commonkube "github.com/longhorn/go-common-libs/kubernetes"
+	commonns "github.com/longhorn/go-common-libs/ns"
+	commontypes "github.com/longhorn/go-common-libs/types"
+	lhmgrutil "github.com/longhorn/longhorn-manager/util"
 
 	"github.com/longhorn/cli/pkg/consts"
 	"github.com/longhorn/cli/pkg/types"
 	"github.com/longhorn/cli/pkg/utils"
-	commonkube "github.com/longhorn/go-common-libs/kubernetes"
-	commonns "github.com/longhorn/go-common-libs/ns"
-	commontypes "github.com/longhorn/go-common-libs/types"
 
 	pkgmgr "github.com/longhorn/cli/pkg/local/preflight/packagemanager"
 	remote "github.com/longhorn/cli/pkg/remote/preflight"
@@ -387,7 +391,14 @@ func (local *Installer) restartKubeletService() error {
 	wantedHugePagesSize := resource.NewQuantity(int64(local.HugePageSize*lhmgrutil.MiB), resource.BinarySI)
 
 	if currentHugePagesSize.Cmp(*wantedHugePagesSize) < 0 {
-		logrus.Infof("Restarting kubelet service")
+		restartWindow, err := time.ParseDuration(local.RestartKubeletWindow)
+		if err != nil {
+			return errors.Wrapf(err, "failed to parse %q argument", consts.CmdOptRestartKubeletWindow)
+		}
+		randomDelay := time.Duration(rand.Int63n(int64(restartWindow)))
+		logrus.Infof("Restarting kubelet service after %s", randomDelay)
+		time.Sleep(randomDelay)
+
 		// Kubelet may be managed by different services depending on the k8s distribution
 		serviceCandidates := []string{"kubelet", "k3s", "rke2-server"}
 		var restartErr error
