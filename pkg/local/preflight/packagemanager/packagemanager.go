@@ -20,7 +20,7 @@ const (
 	// PackageManagerQlist            = PackageManagerType("qlist")
 )
 
-var errPackageNotInstalled = errors.New("package not installed")
+var ErrPackageNotInstalled = errors.New("package not installed")
 
 type PackageManager interface {
 	UpdatePackageList() (string, error)
