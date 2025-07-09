@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"path/filepath"
 	"reflect"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -41,13 +42,14 @@ type InstallerCmdOptions struct {
 
 	OperatingSystem string
 
-	UpdatePackages bool
-	EnableSpdk     bool
-	SpdkOptions    string
-	HugePageSize   int
-	AllowPci       string
-	DriverOverride string
-	RestartKubelet bool
+	UpdatePackages       bool
+	EnableSpdk           bool
+	SpdkOptions          string
+	HugePageSize         int
+	AllowPci             string
+	DriverOverride       string
+	RestartKubelet       bool
+	RestartKubeletWindow string
 }
 
 // Init initializes the Installer.
@@ -93,6 +95,12 @@ func (remote *Installer) Run() (string, error) {
 	default:
 		logrus.Info("Installing dependencies with package manager")
 
+		if remote.RestartKubelet {
+			if _, err := time.ParseDuration(remote.RestartKubeletWindow); err != nil {
+				return "", errors.Wrapf(err, "failed to parse %q argument", consts.CmdOptRestartKubeletWindow)
+			}
+			logrus.Infof("Kubelet services will be restarted within %s (if needed)", remote.RestartKubeletWindow)
+		}
 		output, err := remote.InstallByPackageManager()
 		if err != nil {
 			return "", errors.Wrapf(err, "failed to install dependencies with package manager")
@@ -493,6 +501,10 @@ func (remote *Installer) NewDaemonSetForPackageManager(nodeSelector map[string]s
 								{
 									Name:  consts.EnvRestartKubelet,
 									Value: commonutils.ConvertTypeToString(remote.RestartKubelet),
+								},
+								{
+									Name:  consts.EnvRestartKubeletWindow,
+									Value: remote.RestartKubeletWindow,
 								},
 								{
 									Name: consts.EnvCurrentNodeID,
