@@ -1,7 +1,6 @@
 package preflight
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -17,7 +16,6 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/resource"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeclient "k8s.io/client-go/kubernetes"
 
 	commonkube "github.com/longhorn/go-common-libs/kubernetes"
@@ -31,6 +29,7 @@ import (
 
 	pkgmgr "github.com/longhorn/cli/pkg/local/preflight/packagemanager"
 	remote "github.com/longhorn/cli/pkg/remote/preflight"
+	kubeutils "github.com/longhorn/cli/pkg/utils/kubernetes"
 )
 
 // Installer provide functions for the preflight installer.
@@ -382,22 +381,22 @@ func (local *Installer) restartKubeletService() error {
 		return nil
 	}
 
-	currentNodeID := os.Getenv(consts.EnvCurrentNodeID)
-	node, err := local.kubeClient.CoreV1().Nodes().Get(context.TODO(), currentNodeID, metav1.GetOptions{})
+	currentHugePagesCapacity, err := kubeutils.GetHugePagesCapacity(local.kubeClient)
 	if err != nil {
 		return err
 	}
-	currentHugePagesSize := node.Status.Capacity.Name("hugepages-2Mi", resource.BinarySI)
-	wantedHugePagesSize := resource.NewQuantity(int64(local.HugePageSize*lhmgrutil.MiB), resource.BinarySI)
+	requiredHugePagesCapacity := resource.NewQuantity(int64(local.HugePageSize*lhmgrutil.MiB), resource.BinarySI)
 
-	if currentHugePagesSize.Cmp(*wantedHugePagesSize) < 0 {
+	if currentHugePagesCapacity.Cmp(*requiredHugePagesCapacity) < 0 {
+		logrus.Infof("K8s node CR doesn't have enough hugepages-2Mi capacity. Required: %v, Current: %v", requiredHugePagesCapacity, currentHugePagesCapacity)
+
 		restartWindow, err := time.ParseDuration(local.RestartKubeletWindow)
 		if err != nil {
 			return errors.Wrapf(err, "failed to parse %q argument", consts.CmdOptRestartKubeletWindow)
 		}
-		randomDelay := time.Duration(rand.Int63n(int64(restartWindow)))
-		logrus.Infof("Restarting kubelet service after %s", randomDelay)
-		time.Sleep(randomDelay)
+		restartDelay := time.Duration(rand.Int63n(int64(restartWindow)))
+		logrus.Infof("Restarting kubelet service after %s", restartDelay)
+		time.Sleep(restartDelay)
 
 		// Kubelet may be managed by different services depending on the k8s distribution
 		serviceCandidates := []string{"kubelet", "k3s", "rke2-server"}
@@ -418,7 +417,7 @@ func (local *Installer) restartKubeletService() error {
 		}
 
 		logrus.Warnf("Failed to restart kubelet service: %v", restartErr)
-		local.collection.Log.Warn = append(local.collection.Log.Warn, "Failed to restart kubelet service")
+		local.collection.Log.Error = append(local.collection.Log.Error, "Failed to restart kubelet service")
 		return restartErr
 	}
 

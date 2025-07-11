@@ -174,6 +174,14 @@ func (remote *Checker) newDaemonSet(nodeSelector map[string]string) *appsv1.Daem
 									Name:  consts.EnvUserspaceDriver,
 									Value: remote.UserspaceDriver,
 								},
+								{
+									Name: consts.EnvCurrentNodeID,
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "spec.nodeName",
+										},
+									},
+								},
 							},
 							SecurityContext: &corev1.SecurityContext{
 								Privileged: ptr.To(true),
