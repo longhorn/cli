@@ -12,6 +12,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
+	"k8s.io/apimachinery/pkg/api/resource"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeclient "k8s.io/client-go/kubernetes"
 
@@ -20,12 +22,15 @@ import (
 	commonns "github.com/longhorn/go-common-libs/ns"
 	commonsys "github.com/longhorn/go-common-libs/sys"
 	commontypes "github.com/longhorn/go-common-libs/types"
+	lhmgrutil "github.com/longhorn/longhorn-manager/util"
 
 	"github.com/longhorn/cli/pkg/consts"
-	pkgmgr "github.com/longhorn/cli/pkg/local/preflight/packagemanager"
-	remote "github.com/longhorn/cli/pkg/remote/preflight"
 	"github.com/longhorn/cli/pkg/types"
 	"github.com/longhorn/cli/pkg/utils"
+
+	pkgmgr "github.com/longhorn/cli/pkg/local/preflight/packagemanager"
+	remote "github.com/longhorn/cli/pkg/remote/preflight"
+	kubeutils "github.com/longhorn/cli/pkg/utils/kubernetes"
 )
 
 // Checker provide functions for the preflight checker.
@@ -244,13 +249,13 @@ func (local *Checker) checkContainerOptimizedOS() error {
 	if err != nil {
 		return wrapInternalError(topic, errors.Wrapf(err,
 			"failed to retrieve DaemonSet %q in namespace %q. Please ensure the preflight DaemonSet is deployed correctly",
-			consts.AppNamePreflightContainerOptimizedOS, metav1.NamespaceDefault))
+			consts.AppNamePreflightContainerOptimizedOS, local.Namespace))
 	}
 
 	if !commonkube.IsDaemonSetReady(daemonSet) {
 		local.collection.Log.Error = append(local.collection.Log.Error, wrapMsgWithTopic(topic, fmt.Sprintf(
 			"daemonSet %q is not ready in namespace %q.\nPlease check its pod status",
-			consts.AppNamePreflightContainerOptimizedOS, metav1.NamespaceDefault)))
+			consts.AppNamePreflightContainerOptimizedOS, local.Namespace)))
 	}
 	return nil
 }
@@ -382,6 +387,33 @@ func (local *Checker) checkHugePages() error {
 	}
 
 	local.collection.Log.Info = append(local.collection.Log.Info, wrapMsgWithTopic(topic, "HugePages is enabled"))
+
+	if err := local.checkHugePagesCapacity(); err != nil {
+		return wrapInternalError(topic, errors.Wrap(err, "failed to check hugepages-2Mi capacity"))
+	}
+
+	return nil
+}
+
+// checkHugePagesCapacity checks if current k8s node CR has enough hugepages-2Mi capacity
+func (local *Checker) checkHugePagesCapacity() error {
+	logrus.Info("Checking if k8s node CR has enough hugepages-2Mi capacity")
+	topic := formatTopic(consts.PreflightCheckTopicHugePages)
+
+	currentHugePagesCapacity, err := kubeutils.GetHugePagesCapacity(local.kubeClient)
+	if err != nil {
+		return err
+	}
+	requiredHugePagesCapacity := resource.NewQuantity(int64(local.HugePageSize*lhmgrutil.MiB), resource.BinarySI)
+
+	if currentHugePagesCapacity.Cmp(*requiredHugePagesCapacity) < 0 {
+		local.collection.Log.Error = append(local.collection.Log.Error,
+			wrapMsgWithTopic(topic, fmt.Sprintf("Node CR has insufficient hugepages-2Mi capacity. Required: %v, Current: %v. Please restart kubelet service", requiredHugePagesCapacity, currentHugePagesCapacity)))
+		return nil
+	}
+
+	local.collection.Log.Info = append(local.collection.Log.Info, wrapMsgWithTopic(topic, "Node CR has enough hugepages-2Mi capacity"))
+
 	return nil
 }
 

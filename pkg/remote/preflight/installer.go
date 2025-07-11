@@ -14,6 +14,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeclient "k8s.io/client-go/kubernetes"
 
@@ -75,7 +76,15 @@ func (remote *Installer) Init() error {
 // It checks if the operating system is specified, and installs the dependencies accordingly.
 // If the operating system is not specified, it installs the dependencies with package manager.
 func (remote *Installer) Run() (string, error) {
-	err := kubeutils.CreateRbac(remote.kubeClient, remote.appName)
+	// Create RBAC to check hugepages-2Mi capacity on nodes
+	rbacRules := []rbacv1.PolicyRule{
+		{
+			APIGroups: []string{""},
+			Resources: []string{"nodes", "nodes/status"},
+			Verbs:     []string{"get"},
+		},
+	}
+	err := kubeutils.CreateRbac(remote.kubeClient, remote.Namespace, remote.appName, rbacRules)
 	if err != nil {
 		return "", err
 	}
@@ -113,11 +122,21 @@ func (remote *Installer) Run() (string, error) {
 
 // Cleanup deletes the DaemonSet created for the preflight install when it's installed with package manager.
 func (remote *Installer) Cleanup() error {
-	if err := commonkube.DeleteDaemonSet(remote.kubeClient, metav1.NamespaceDefault, remote.appName); err != nil {
-		return err
+	var resultErr error
+
+	if err := commonkube.DeleteDaemonSet(remote.kubeClient, remote.Namespace, remote.appName); err != nil {
+		resultErr = errors.Wrap(err, "failed to delete DaemonSet")
 	}
 
-	return kubeutils.DeleteRbac(remote.kubeClient, remote.appName)
+	if err := kubeutils.DeleteRbac(remote.kubeClient, remote.Namespace, remote.appName); err != nil {
+		if resultErr != nil {
+			resultErr = errors.Wrap(resultErr, err.Error())
+		} else {
+			resultErr = errors.Wrap(err, "failed to delete RBAC")
+		}
+	}
+
+	return resultErr
 }
 
 // InstallByContainerOptimizedOS installs the dependencies on Container Optimized OS.
