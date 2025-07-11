@@ -12,6 +12,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeclient "k8s.io/client-go/kubernetes"
 
@@ -58,7 +59,23 @@ func (remote *Checker) Init() error {
 
 // Run creates the DaemonSet for the preflight check, and waits for it to complete.
 func (remote *Checker) Run() (string, error) {
-	err := kubeutils.CreateRbac(remote.kubeClient, remote.appName)
+	// Create RBAC to check:
+	// - the node agent existence when the cluster is running on Container-Optimized OS (COS)
+	// - replica count of the DNS deployment
+	// - hugepages-2Mi capacity on nodes
+	rbacRules := []rbacv1.PolicyRule{
+		{
+			APIGroups: []string{"apps"},
+			Resources: []string{"daemonsets", "deployments"},
+			Verbs:     []string{"get", "list"},
+		},
+		{
+			APIGroups: []string{""},
+			Resources: []string{"nodes", "nodes/status"},
+			Verbs:     []string{"get"},
+		},
+	}
+	err := kubeutils.CreateRbac(remote.kubeClient, remote.Namespace, remote.appName, rbacRules)
 	if err != nil {
 		return "", err
 	}
@@ -116,11 +133,21 @@ func (remote *Checker) Run() (string, error) {
 
 // Cleanup deletes the DaemonSet created for the preflight check.
 func (remote *Checker) Cleanup() error {
+	var resultErr error
+
 	if err := commonkube.DeleteDaemonSet(remote.kubeClient, remote.Namespace, remote.appName); err != nil {
-		return err
+		resultErr = errors.Wrap(err, "failed to delete DaemonSet")
 	}
 
-	return kubeutils.DeleteRbac(remote.kubeClient, remote.appName)
+	if err := kubeutils.DeleteRbac(remote.kubeClient, remote.Namespace, remote.appName); err != nil {
+		if resultErr != nil {
+			resultErr = errors.Wrap(resultErr, err.Error())
+		} else {
+			resultErr = errors.Wrap(err, "failed to delete RBAC")
+		}
+	}
+
+	return resultErr
 }
 
 // NewDaemonSet prepares a DaemonSet for the preflight check.
@@ -174,6 +201,14 @@ func (remote *Checker) newDaemonSet(nodeSelector map[string]string) *appsv1.Daem
 								{
 									Name:  consts.EnvUserspaceDriver,
 									Value: remote.UserspaceDriver,
+								},
+								{
+									Name: consts.EnvCurrentNodeID,
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "spec.nodeName",
+										},
+									},
 								},
 							},
 							SecurityContext: &corev1.SecurityContext{
