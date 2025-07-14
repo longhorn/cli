@@ -45,6 +45,7 @@ func newCmdLonghornctl() *cobra.Command {
 	cmd.PersistentFlags().StringVar(&globalOpts.Image, consts.CmdOptImage, consts.ImageLonghornCli, "Image containing longhornctl-local")
 	cmd.PersistentFlags().StringVar(&globalOpts.NodeSelector, consts.CmdOptNodeSelector, "", "Comma-separated list of key=value pairs to match against node labels, selecting the nodes the DaemonSet will run on (e.g. env=prod,zone=us-west).")
 	cmd.PersistentFlags().StringVar(&globalOpts.Namespace, consts.CmdOptNamespace, metav1.NamespaceDefault, "The namespace to run DaemonSet pods.")
+	cmd.PersistentFlags().StringVar(&globalOpts.ImageRegistry, consts.CmdOptImageRegistry, "", "Image registry to use for all images (CLI, engine, pause, BCI, etc.)")
 
 	groups := templates.CommandGroups{
 		{

@@ -58,6 +58,7 @@ INFO[2024-07-16T17:17:42+08:00] Cleaning up preflight checker
 INFO[2024-07-16T17:17:42+08:00] Completed preflight checker`,
 
 		PreRun: func(cmd *cobra.Command, args []string) {
+			preflightChecker.ImageRegistry = globalOpts.ImageRegistry
 			preflightChecker.Image = globalOpts.Image
 			preflightChecker.KubeConfigPath = globalOpts.KubeConfigPath
 			preflightChecker.NodeSelector = globalOpts.NodeSelector
