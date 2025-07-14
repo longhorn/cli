@@ -46,7 +46,6 @@ type InstallerCmdOptions struct {
 	HugePageSize   int
 	AllowPci       string
 	DriverOverride string
-	Namespace      string
 }
 
 // Init initializes the Installer.

@@ -31,8 +31,7 @@ type Exporter struct {
 
 	kubeClient *kubeclient.Clientset
 
-	appName   string // App name of the DaemonSet.
-	namespace string
+	appName string // App name of the DaemonSet.
 
 	volumeName string
 }
@@ -72,7 +71,6 @@ func (remote *Exporter) Init() error {
 	}
 	remote.kubeClient = kubeClient
 
-	remote.namespace = metav1.NamespaceDefault
 	remote.appName = consts.AppNameReplicaExporter
 
 	// Not required for cleanup
@@ -180,11 +178,11 @@ func (remote *Exporter) Run() (string, error) {
 
 // Cleanup deletes the ConfigMap and DaemonSet created for the replica exporter.
 func (remote *Exporter) Cleanup() error {
-	if err := commonkube.DeleteConfigMap(remote.kubeClient, remote.namespace, remote.appName); err != nil {
+	if err := commonkube.DeleteConfigMap(remote.kubeClient, remote.Namespace, remote.appName); err != nil {
 		return err
 	}
 
-	return commonkube.DeleteDaemonSet(remote.kubeClient, remote.namespace, remote.appName)
+	return commonkube.DeleteDaemonSet(remote.kubeClient, remote.Namespace, remote.appName)
 }
 
 // newConfigMapForSimpleLonghorn prepares a ConfigMap with entrypoint script for the replica exporter.
@@ -375,7 +373,7 @@ sleep infinity
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      remote.appName,
-			Namespace: metav1.NamespaceDefault,
+			Namespace: remote.Namespace,
 			Labels: map[string]string{
 				"app": remote.appName,
 			},
@@ -392,7 +390,7 @@ func (remote *Exporter) newDaemonSet(nodeSelector map[string]string) *appsv1.Dae
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      remote.appName,
-			Namespace: remote.namespace,
+			Namespace: remote.Namespace,
 			Labels: map[string]string{
 				"app": remote.appName,
 			},

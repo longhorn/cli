@@ -31,17 +31,12 @@ type Trimmer struct {
 type TrimmerCmdOptions struct {
 	types.GlobalCmdOptions
 
-	CurrentNodeID     string
-	LonghornNamespace string
-	VolumeName        string
+	CurrentNodeID string
+	VolumeName    string
 }
 
 // Validate validates the command options.
 func (remote *Trimmer) Validate() error {
-	if remote.LonghornNamespace == "" {
-		return errors.New("Longhorn namespace  (--namespace) is required")
-	}
-
 	if remote.VolumeName == "" {
 		return errors.New("Longhorn volume name (--name) is required")
 	}
@@ -78,7 +73,7 @@ func (remote *Trimmer) Run() error {
 
 // Cleanup deletes the DaemonSet created for the volume trimmer.
 func (remote *Trimmer) Cleanup() error {
-	return commonkube.DeleteDaemonSet(remote.kubeClient, remote.LonghornNamespace, remote.appName)
+	return commonkube.DeleteDaemonSet(remote.kubeClient, remote.Namespace, remote.appName)
 }
 
 // NewDaemonSet prepares the DaemonSet for the volume trimmer.
@@ -86,7 +81,7 @@ func (remote *Trimmer) newDaemonSet(nodeSelector map[string]string) *appsv1.Daem
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      remote.appName,
-			Namespace: remote.LonghornNamespace,
+			Namespace: remote.Namespace,
 			Labels: map[string]string{
 				"app": remote.appName,
 			},
@@ -129,7 +124,7 @@ func (remote *Trimmer) newDaemonSet(nodeSelector map[string]string) *appsv1.Daem
 								},
 								{
 									Name:  consts.EnvLonghornNamespace,
-									Value: remote.LonghornNamespace,
+									Value: remote.Namespace,
 								},
 							},
 							SecurityContext: &corev1.SecurityContext{

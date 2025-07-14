@@ -7,8 +7,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"github.com/longhorn/cli/pkg/consts"
 	"github.com/longhorn/cli/pkg/remote/preflight"
 	"github.com/longhorn/cli/pkg/types"
@@ -69,6 +67,7 @@ If a reboot is required, the following message will be displayed:
 			preflightInstaller.Image = globalOpts.Image
 			preflightInstaller.KubeConfigPath = globalOpts.KubeConfigPath
 			preflightInstaller.NodeSelector = globalOpts.NodeSelector
+			preflightInstaller.Namespace = globalOpts.Namespace
 
 			logrus.Info("Initializing preflight installer")
 			err := preflightInstaller.Init()
@@ -115,7 +114,6 @@ If a reboot is required, the following message will be displayed:
 	cmd.Flags().IntVar(&preflightInstaller.HugePageSize, consts.CmdOptHugePageSize, 2048, "Specify the huge page size in MiB for SPDK.")
 	cmd.Flags().StringVar(&preflightInstaller.AllowPci, consts.CmdOptAllowPci, "none", fmt.Sprintf("Specify a comma-separated (%s) list of allowed PCI devices. By default, all PCI devices are blocked by a non-valid address.", consts.CmdOptSeperator))
 	cmd.Flags().StringVar(&preflightInstaller.DriverOverride, consts.CmdOptDriverOverride, "", "Userspace driver for device bindings. Override default driver for PCI devices.")
-	cmd.Flags().StringVar(&preflightInstaller.Namespace, consts.CmdOptNamespace, metav1.NamespaceDefault, "Namespace to deploy preflight resources")
 
 	return cmd
 }
@@ -133,6 +131,7 @@ INFO[2024-07-16T17:21:32+08:00] Successfully stopped preflight installer`,
 
 		PreRun: func(cmd *cobra.Command, args []string) {
 			preflightInstaller.KubeConfigPath = globalOpts.KubeConfigPath
+			preflightInstaller.Namespace = globalOpts.Namespace
 
 			if err := preflightInstaller.Init(); err != nil {
 				utils.CheckErr(errors.Wrap(err, "Failed to initialize preflight installer"))

@@ -67,6 +67,7 @@ lost+found`,
 			replicaExporter.Image = globalOpts.Image
 			replicaExporter.KubeConfigPath = globalOpts.KubeConfigPath
 			replicaExporter.NodeSelector = globalOpts.NodeSelector
+			replicaExporter.Namespace = globalOpts.Namespace
 
 			utils.CheckErr(replicaExporter.Validate())
 
@@ -121,6 +122,7 @@ INFO[2024-07-16T17:29:14+08:00] Successfully stopped exporting replica`,
 
 		PreRun: func(cmd *cobra.Command, args []string) {
 			replicaExporter.KubeConfigPath = globalOpts.KubeConfigPath
+			replicaExporter.Namespace = globalOpts.Namespace
 
 			if err := replicaExporter.Init(); err != nil {
 				utils.CheckErr(errors.Wrap(err, "Failed to initialize replica exporter"))

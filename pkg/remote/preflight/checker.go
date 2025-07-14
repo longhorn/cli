@@ -41,7 +41,6 @@ type CheckerCmdOptions struct {
 	EnableSpdk      bool
 	HugePageSize    int
 	UserspaceDriver string
-	Namespace       string
 }
 
 // Init initializes the Checker.
