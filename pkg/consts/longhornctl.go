@@ -7,8 +7,11 @@ import (
 )
 
 const (
-	ImageBciBase = "registry.suse.com/bci/bci-base:15.6"
-	ImagePause   = "registry.k8s.io/pause:3.1"
+	ImageBciBase          = "bci/bci-base:15.6"
+	ImageBciBaseRegistry  = "registry.suse.com"
+	ImagePause            = "pause:3.1"
+	ImagePauseRegistry    = "registry.k8s.io"
+	ImageLonghornRegistry = ""
 )
 
 var (
