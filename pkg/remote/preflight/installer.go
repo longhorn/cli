@@ -21,6 +21,7 @@ import (
 
 	"github.com/longhorn/cli/pkg/consts"
 	"github.com/longhorn/cli/pkg/types"
+	"github.com/longhorn/cli/pkg/utils"
 
 	kubeutils "github.com/longhorn/cli/pkg/utils/kubernetes"
 )
@@ -312,7 +313,7 @@ func (remote *Installer) newDaemonSetForContainerOptimizedOS(nodeSelector map[st
 					Containers: []corev1.Container{
 						{
 							Name:    consts.ContainerName,
-							Image:   consts.ImageBciBase,
+							Image:   utils.Image(consts.ImageBciBase, remote.ImageRegistry, consts.ImageBciBaseRegistry),
 							Command: []string{"/scripts/entrypoint.sh"},
 							Env: []corev1.EnvVar{
 								{
@@ -443,7 +444,7 @@ func (remote *Installer) NewDaemonSetForPackageManager(nodeSelector map[string]s
 					InitContainers: []corev1.Container{
 						{
 							Name:    consts.ContainerNameInit,
-							Image:   remote.Image,
+							Image:   utils.Image(remote.Image, remote.ImageRegistry, consts.ImageLonghornRegistry),
 							Command: []string{consts.CmdLonghornctlLocal, consts.SubCmdInstall, consts.SubCmdPreflight},
 							Env: []corev1.EnvVar{
 								{
@@ -495,7 +496,7 @@ func (remote *Installer) NewDaemonSetForPackageManager(nodeSelector map[string]s
 						},
 						{
 							Name:    consts.ContainerNameOutput,
-							Image:   remote.Image,
+							Image:   utils.Image(remote.Image, remote.ImageRegistry, consts.ImageLonghornRegistry),
 							Command: []string{"cat", outputFilePath},
 							Env:     []corev1.EnvVar{},
 							VolumeMounts: []corev1.VolumeMount{
@@ -509,7 +510,7 @@ func (remote *Installer) NewDaemonSetForPackageManager(nodeSelector map[string]s
 					Containers: []corev1.Container{
 						{
 							Name:  consts.ContainerNamePause,
-							Image: consts.ImagePause,
+							Image: utils.Image(consts.ImagePause, remote.ImageRegistry, consts.ImagePauseRegistry),
 						},
 					},
 					Volumes: []corev1.Volume{

@@ -21,6 +21,7 @@ import (
 
 	"github.com/longhorn/cli/pkg/consts"
 	"github.com/longhorn/cli/pkg/types"
+	"github.com/longhorn/cli/pkg/utils"
 
 	kubeutils "github.com/longhorn/cli/pkg/utils/kubernetes"
 )
@@ -413,7 +414,7 @@ func (remote *Exporter) newDaemonSet(nodeSelector map[string]string) *appsv1.Dae
 					InitContainers: []corev1.Container{
 						{
 							Name:    consts.ContainerNameInit,
-							Image:   remote.Image,
+							Image:   utils.Image(remote.Image, remote.ImageRegistry, consts.ImageLonghornRegistry),
 							Command: []string{consts.CmdLonghornctlLocal, consts.SubCmdGet, consts.SubCmdReplica},
 							Env: []corev1.EnvVar{
 								{
@@ -459,7 +460,7 @@ func (remote *Exporter) newDaemonSet(nodeSelector map[string]string) *appsv1.Dae
 					Containers: []corev1.Container{
 						{
 							Name:    consts.ContainerNameEngine,
-							Image:   remote.EngineImage,
+							Image:   utils.Image(remote.EngineImage, remote.ImageRegistry, consts.ImageLonghornRegistry),
 							Command: []string{"/scripts/entrypoint.sh"},
 							Env: []corev1.EnvVar{
 								{
