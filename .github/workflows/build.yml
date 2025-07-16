@@ -86,7 +86,7 @@ jobs:
       uses: softprops/action-gh-release@v2
       if: github.ref_type == 'tag'
       with:
-        token: ${{ secrets.CUSTOM_GITHUB_TOKEN }}
+        token: ${{ steps.app-token.outputs.token }}
         draft: true
         files: |
           bin/longhornctl*
