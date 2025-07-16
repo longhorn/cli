@@ -67,6 +67,7 @@ If a reboot is required, the following message will be displayed:
 			preflightInstaller.Image = globalOpts.Image
 			preflightInstaller.KubeConfigPath = globalOpts.KubeConfigPath
 			preflightInstaller.NodeSelector = globalOpts.NodeSelector
+			preflightInstaller.Namespace = globalOpts.Namespace
 
 			logrus.Info("Initializing preflight installer")
 			err := preflightInstaller.Init()
@@ -130,6 +131,7 @@ INFO[2024-07-16T17:21:32+08:00] Successfully stopped preflight installer`,
 
 		PreRun: func(cmd *cobra.Command, args []string) {
 			preflightInstaller.KubeConfigPath = globalOpts.KubeConfigPath
+			preflightInstaller.Namespace = globalOpts.Namespace
 
 			if err := preflightInstaller.Init(); err != nil {
 				utils.CheckErr(errors.Wrap(err, "Failed to initialize preflight installer"))
