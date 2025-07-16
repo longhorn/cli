@@ -85,7 +85,7 @@ func (c *AptPackageManager) CheckPackageInstalled(name string) (output string, e
 			return output, nil
 		}
 	}
-	return output, errPackageNotInstalled
+	return output, ErrPackageNotInstalled
 }
 
 // NeedReboot tells if a reboot is needed after package installation
