@@ -28,8 +28,7 @@ type Getter struct {
 
 	kubeClient *kubeclient.Clientset
 
-	appName   string // App name of the DaemonSet.
-	namespace string
+	appName string // App name of the DaemonSet.
 }
 
 // GetterCmdOptions holds the options for the command.
@@ -49,7 +48,6 @@ func (remote *Getter) Init() error {
 	}
 	remote.kubeClient = kubeClient
 
-	remote.namespace = metav1.NamespaceDefault
 	remote.appName = consts.AppNameReplicaGetter
 
 	return nil
@@ -109,7 +107,7 @@ func (remote *Getter) Run() (string, error) {
 
 // Cleanup deletes the DaemonSet created for the replica getter.
 func (remote *Getter) Cleanup() error {
-	return commonkube.DeleteDaemonSet(remote.kubeClient, remote.namespace, remote.appName)
+	return commonkube.DeleteDaemonSet(remote.kubeClient, remote.Namespace, remote.appName)
 }
 
 // newDaemonSet prepares the DaemonSet for the replica getter.
@@ -118,7 +116,7 @@ func (remote *Getter) newDaemonSet(nodeSelector map[string]string) *appsv1.Daemo
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      remote.appName,
-			Namespace: remote.namespace,
+			Namespace: remote.Namespace,
 			Labels: map[string]string{
 				"app": remote.appName,
 			},
