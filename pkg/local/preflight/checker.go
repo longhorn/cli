@@ -11,6 +11,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
+	"k8s.io/apimachinery/pkg/api/resource"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeclient "k8s.io/client-go/kubernetes"
 
@@ -19,12 +21,15 @@ import (
 	commonns "github.com/longhorn/go-common-libs/ns"
 	commonsys "github.com/longhorn/go-common-libs/sys"
 	commontypes "github.com/longhorn/go-common-libs/types"
+	lhmgrutil "github.com/longhorn/longhorn-manager/util"
 
 	"github.com/longhorn/cli/pkg/consts"
-	pkgmgr "github.com/longhorn/cli/pkg/local/preflight/packagemanager"
-	remote "github.com/longhorn/cli/pkg/remote/preflight"
 	"github.com/longhorn/cli/pkg/types"
 	"github.com/longhorn/cli/pkg/utils"
+
+	pkgmgr "github.com/longhorn/cli/pkg/local/preflight/packagemanager"
+	remote "github.com/longhorn/cli/pkg/remote/preflight"
+	kubeutils "github.com/longhorn/cli/pkg/utils/kubernetes"
 )
 
 // Checker provide functions for the preflight checker.
@@ -316,8 +321,32 @@ func (local *Checker) checkHugePages() error {
 			fmt.Sprintf("HugePages is insufficient. Required 2MiB HugePages: %v pages, Total 2MiB HugePages: %v pages", requiredHugePages, hugePagesTotalNum))
 		return nil
 	}
-
 	local.collection.Log.Info = append(local.collection.Log.Info, "HugePages is enabled")
+
+	if err := local.checkHugePagesCapacity(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// checkHugePagesCapacity checks if current k8s node CR has enough hugepages-2Mi capacity
+func (local *Checker) checkHugePagesCapacity() error {
+	logrus.Info("Checking if k8s node CR has enough hugepages-2Mi capacity")
+
+	currentHugePagesCapacity, err := kubeutils.GetHugePagesCapacity(local.kubeClient)
+	if err != nil {
+		return err
+	}
+	requiredHugePagesCapacity := resource.NewQuantity(int64(local.HugePageSize*lhmgrutil.MiB), resource.BinarySI)
+
+	if currentHugePagesCapacity.Cmp(*requiredHugePagesCapacity) < 0 {
+		local.collection.Log.Error = append(local.collection.Log.Error,
+			fmt.Sprintf("Node CR has insufficient hugepages-2Mi capacity. Required: %v, Current: %v. Please restart kubelet service", requiredHugePagesCapacity, currentHugePagesCapacity))
+		return nil
+	}
+
+	local.collection.Log.Info = append(local.collection.Log.Info, "Node CR has enough hugepages-2Mi capacity")
 	return nil
 }
 

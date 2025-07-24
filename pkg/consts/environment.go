@@ -20,11 +20,13 @@ const (
 
 // SPDK related environment variables
 const (
-	EnvDriverOverride    = "DRIVER_OVERRIDE"
-	EnvEnableSpdk        = "ENABLE_SPDK"
-	EnvHugePageSize      = "HUGEMEM"
-	EnvPciAllowed        = "PCI_ALLOWED"
-	EnvUserspaceDriver   = "USERSPACE_DRIVER"
-	EnvUpdatePackageList = "UPDATE_PACKAGE_LIST"
-	EnvSpdkOptions       = "SPDK_OPTIONS"
+	EnvDriverOverride       = "DRIVER_OVERRIDE"
+	EnvEnableSpdk           = "ENABLE_SPDK"
+	EnvHugePageSize         = "HUGEMEM"
+	EnvPciAllowed           = "PCI_ALLOWED"
+	EnvUserspaceDriver      = "USERSPACE_DRIVER"
+	EnvUpdatePackageList    = "UPDATE_PACKAGE_LIST"
+	EnvSpdkOptions          = "SPDK_OPTIONS"
+	EnvRestartKubelet       = "RESTART_KUBELET"
+	EnvRestartKubeletWindow = "RESTART_KUBELET_WINDOW"
 )
