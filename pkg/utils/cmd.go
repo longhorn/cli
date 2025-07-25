@@ -27,9 +27,9 @@ func SetGlobalOptionsLocal(cmd *cobra.Command, globalOpts *types.GlobalCmdOption
 func SetGlobalOptionsRemote(cmd *cobra.Command, globalOpts *types.GlobalCmdOptions) {
 	cmd.PersistentFlags().StringVarP(&globalOpts.LogLevel, consts.CmdOptLogLevel, "l", globalOpts.LogLevel, "Log level")
 	cmd.PersistentFlags().StringVar(&globalOpts.KubeConfigPath, consts.CmdOptKubeConfigPath, globalOpts.KubeConfigPath, "Kubernetes config (kubeconfig) path")
-	cmd.PersistentFlags().StringVar(&globalOpts.Image, consts.CmdOptImage, globalOpts.Image, "Image containing longhornctl-local")
 	cmd.PersistentFlags().StringVar(&globalOpts.NodeSelector, consts.CmdOptNodeSelector, globalOpts.NodeSelector, "Comma-separated list of key=value pairs to match against node labels, selecting the nodes the DaemonSet will run on (e.g. env=prod,zone=us-west).")
 	cmd.PersistentFlags().StringVar(&globalOpts.Namespace, consts.CmdOptNamespace, globalOpts.Namespace, "The namespace to run DaemonSet pods.")
+	cmd.PersistentFlags().StringVar(&globalOpts.Image, consts.CmdOptImage, globalOpts.Image, "Image containing longhornctl-local. Do not include registry when used together with --image-registry. For example: longhornctl check preflight --image longhornio/longhorn-cli:latest --image-registry my-registry.com")
 	cmd.PersistentFlags().StringVar(&globalOpts.ImageRegistry, consts.CmdOptImageRegistry, globalOpts.ImageRegistry, "Image registry to use for all images (CLI, engine, pause, BCI, etc.)")
 }
 

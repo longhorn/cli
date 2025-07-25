@@ -6,7 +6,7 @@ Export Longhorn resources
 
 ```
   -h, --help                    help for export
-      --image string            Image containing longhornctl-local (default "longhornio/longhorn-cli:v1.10.0-dev")
+      --image string            Image containing longhornctl-local. Do not include registry when used together with --image-registry. For example: longhornctl check preflight --image longhornio/longhorn-cli:latest --image-registry my-registry.com (default "longhornio/longhorn-cli:v1.10.0-dev")
       --image-registry string   Image registry to use for all images (CLI, engine, pause, BCI, etc.)
       --kube-config string      Kubernetes config (kubeconfig) path
   -l, --log-level string        Log level (default "info")
