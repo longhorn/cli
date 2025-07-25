@@ -14,6 +14,7 @@ import (
 
 	"github.com/longhorn/cli/pkg/consts"
 	"github.com/longhorn/cli/pkg/types"
+	"github.com/longhorn/cli/pkg/utils"
 
 	kubeutils "github.com/longhorn/cli/pkg/utils/kubernetes"
 )
@@ -108,7 +109,7 @@ func (remote *Trimmer) newDaemonSet(nodeSelector map[string]string) *appsv1.Daem
 					InitContainers: []corev1.Container{
 						{
 							Name:    consts.ContainerNameInit,
-							Image:   remote.Image,
+							Image:   utils.BuildImageName(remote.Image, remote.ImageRegistry, consts.ImageLonghornRegistry),
 							Command: []string{consts.CmdLonghornctlLocal, consts.SubCmdTrim, consts.SubCmdVolume},
 							Env: []corev1.EnvVar{
 								{
@@ -146,7 +147,7 @@ func (remote *Trimmer) newDaemonSet(nodeSelector map[string]string) *appsv1.Daem
 					Containers: []corev1.Container{
 						{
 							Name:  consts.ContainerNamePause,
-							Image: consts.ImagePause,
+							Image: utils.BuildImageName(consts.ImagePause, remote.ImageRegistry, consts.ImagePauseRegistry),
 						},
 					},
 					Volumes: []corev1.Volume{

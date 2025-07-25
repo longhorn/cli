@@ -45,6 +45,7 @@ INFO[2024-07-16T17:32:01+08:00] Cleaning volume trimmer                       vo
 INFO[2024-07-16T17:32:01+08:00] Completed volume trimmer                      volume=pvc-48a6457d-585e-423b-b530-bbc68a5f948a`,
 
 		PreRun: func(cmd *cobra.Command, args []string) {
+			volumeTrimmer.ImageRegistry = globalOpts.ImageRegistry
 			volumeTrimmer.Image = globalOpts.Image
 			volumeTrimmer.KubeConfigPath = globalOpts.KubeConfigPath
 			volumeTrimmer.NodeSelector = globalOpts.NodeSelector

@@ -18,6 +18,7 @@ import (
 
 	"github.com/longhorn/cli/pkg/consts"
 	"github.com/longhorn/cli/pkg/types"
+	"github.com/longhorn/cli/pkg/utils"
 
 	kubeutils "github.com/longhorn/cli/pkg/utils/kubernetes"
 )
@@ -139,7 +140,7 @@ func (remote *Getter) newDaemonSet(nodeSelector map[string]string) *appsv1.Daemo
 					InitContainers: []corev1.Container{
 						{
 							Name:    consts.ContainerNameInit,
-							Image:   remote.Image,
+							Image:   utils.BuildImageName(remote.Image, remote.ImageRegistry, consts.ImageLonghornRegistry),
 							Command: []string{consts.CmdLonghornctlLocal, consts.SubCmdGet, consts.SubCmdReplica},
 							Env: []corev1.EnvVar{
 								{
@@ -188,7 +189,7 @@ func (remote *Getter) newDaemonSet(nodeSelector map[string]string) *appsv1.Daemo
 						},
 						{
 							Name:    consts.ContainerNameOutput,
-							Image:   remote.Image,
+							Image:   utils.BuildImageName(remote.Image, remote.ImageRegistry, consts.ImageLonghornRegistry),
 							Command: []string{"cat", outputFilePath},
 							Env:     []corev1.EnvVar{},
 							VolumeMounts: []corev1.VolumeMount{
@@ -202,7 +203,7 @@ func (remote *Getter) newDaemonSet(nodeSelector map[string]string) *appsv1.Daemo
 					Containers: []corev1.Container{
 						{
 							Name:  consts.ContainerNamePause,
-							Image: consts.ImagePause,
+							Image: utils.BuildImageName(consts.ImagePause, remote.ImageRegistry, consts.ImagePauseRegistry),
 						},
 					},
 					Volumes: []corev1.Volume{
