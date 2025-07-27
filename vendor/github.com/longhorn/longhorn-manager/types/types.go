@@ -400,9 +400,16 @@ func GetEngineBinaryDirectoryForReplicaManagerContainer(image string) string {
 	return filepath.Join(filepath.Join(ReplicaHostPrefix, EngineBinaryDirectoryOnHost), cname)
 }
 
-func EngineBinaryExistOnHostForImage(image string) bool {
-	st, err := os.Stat(filepath.Join(GetEngineBinaryDirectoryOnHostForImage(image), "longhorn"))
-	return err == nil && !st.IsDir()
+func EngineBinaryExistOnHostForImage(image string) (bool, error) {
+	engineBinaryPath := filepath.Join(GetEngineBinaryDirectoryOnHostForImage(image), "longhorn")
+	st, err := os.Stat(engineBinaryPath)
+	if err != nil {
+		return false, err
+	}
+	if st.IsDir() {
+		return false, errors.Errorf("expected %s to be a file, but it is a directory", engineBinaryPath)
+	}
+	return true, nil
 }
 
 func GetBackingImageManagerName(image, diskUUID string) string {
@@ -769,8 +776,9 @@ func GetShareManagerNameFromShareManagerPodName(podName string) string {
 	return strings.TrimPrefix(podName, shareManagerPrefix)
 }
 
-func GetBackupVolumeNameFromVolumeName(volumeName string) string {
-	return volumeName + "-" + util.RandomID()
+func GetBackupVolumeNameFromVolumeName(volumeName, backupTargetName string) string {
+	// Generate a unique backup volume name based on the volume name and backup target name to prevent re-creation from a split-brain scenario.
+	return volumeName + "-" + util.GetStringChecksumSHA256(strings.TrimSpace(fmt.Sprintf("%s-%s", volumeName, backupTargetName)))[:util.RandomIDLength]
 }
 
 func GetBackupBackingImageNameFromBIName(backingImageName string) string {
