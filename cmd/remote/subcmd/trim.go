@@ -48,6 +48,7 @@ INFO[2024-07-16T17:32:01+08:00] Completed volume trimmer                      vo
 			volumeTrimmer.Image = globalOpts.Image
 			volumeTrimmer.KubeConfigPath = globalOpts.KubeConfigPath
 			volumeTrimmer.NodeSelector = globalOpts.NodeSelector
+			volumeTrimmer.Namespace = globalOpts.Namespace
 
 			utils.CheckErr(volumeTrimmer.Validate())
 
@@ -84,7 +85,6 @@ INFO[2024-07-16T17:32:01+08:00] Completed volume trimmer                      vo
 
 	utils.SetGlobalOptionsRemote(cmd, globalOpts)
 
-	cmd.Flags().StringVar(&volumeTrimmer.LonghornNamespace, consts.CmdOptLonghornNamespace, "longhorn-system", "Namespace where Longhorn is deployed within the Kubernetes cluster.")
 	cmd.Flags().StringVar(&volumeTrimmer.VolumeName, consts.CmdOptName, "", "Name of the Longhorn volum to be trimmed.")
 
 	return cmd

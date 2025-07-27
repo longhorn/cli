@@ -83,7 +83,7 @@ func (local *Trimmer) Init() error {
 
 // Run trims the volume based on the volume's access mode.
 func (local *Trimmer) Run() error {
-	volume, err := local.longhornClient.LonghornV1beta2().Volumes(local.LonghornNamespace).Get(context.TODO(), local.VolumeName, metav1.GetOptions{})
+	volume, err := local.longhornClient.LonghornV1beta2().Volumes(local.Namespace).Get(context.TODO(), local.VolumeName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -122,7 +122,7 @@ func (local *Trimmer) trimReadWriteMany(volume *longhorn.Volume) error {
 		return nil
 	}
 
-	shareManager, err := local.longhornClient.LonghornV1beta2().ShareManagers(local.LonghornNamespace).Get(context.TODO(), volume.Name, metav1.GetOptions{})
+	shareManager, err := local.longhornClient.LonghornV1beta2().ShareManagers(local.Namespace).Get(context.TODO(), volume.Name, metav1.GetOptions{})
 	if err != nil {
 		return errors.Wrapf(err, "failed to get share manager for volume %v", volume.Name)
 	}
@@ -132,7 +132,7 @@ func (local *Trimmer) trimReadWriteMany(volume *longhorn.Volume) error {
 	}
 
 	shareManagerPodName := lhmgrtypes.GetShareManagerPodNameFromShareManagerName(shareManager.Name)
-	shareManagerPod, err := local.kubeClient.CoreV1().Pods(local.LonghornNamespace).Get(context.TODO(), shareManagerPodName, metav1.GetOptions{})
+	shareManagerPod, err := local.kubeClient.CoreV1().Pods(local.Namespace).Get(context.TODO(), shareManagerPodName, metav1.GetOptions{})
 	if err != nil {
 		return errors.Wrapf(err, "failed to get share manager pod for trimming volume %v in namespace", volume.Name)
 

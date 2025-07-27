@@ -65,6 +65,7 @@ INFO[2024-07-16T17:23:51+08:00] Completed replica getter`,
 			replicaGetter.Image = globalOpts.Image
 			replicaGetter.KubeConfigPath = globalOpts.KubeConfigPath
 			replicaGetter.NodeSelector = globalOpts.NodeSelector
+			replicaGetter.Namespace = globalOpts.Namespace
 
 			logrus.Info("Initializing replica getter")
 			if err := replicaGetter.Init(); err != nil {
