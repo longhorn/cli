@@ -658,19 +658,6 @@ func wrapAggregatedInternalError(topic, msg string, items map[string]any) error 
 // wrapMultItems aggregates multiple related errors under a common topic.
 // It formats the errors into a user-friendly bullet list and returns a single wrapped error.
 func wrapMultItems(msg string, items map[string]any) string {
-	// Example usage:
-	//
-	//	return wrapMultItems("[Packages]", "The following packages are not installed:", map[string]error{
-	//	    "nvme-cli": errors.New("command not found"),
-	//	    "sg3_utils": errors.New("exit status 1"),
-	//	})
-	//
-	// Sample output:
-	//
-	//	[Packages] The following packages are not installed:
-	//	  (1) nvme-cli: command not found
-	//	  (2) sg3_utils: exit status 1
-
 	var msgBuilder strings.Builder
 	msgBuilder.WriteString(msg)
 
