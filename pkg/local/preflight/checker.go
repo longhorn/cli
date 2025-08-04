@@ -345,7 +345,7 @@ func (local *Checker) checkIscsidService() error {
 		return wrapInternalError(topic, fmt.Errorf("failed to check iscsid.socket: %w", err))
 	}
 
-	msg := fmt.Sprintf("Neither iscsid.service nor iscsid.socket is running.- %s- %s", iscsidErrMsg, iscsidSocketMsg)
+	msg := fmt.Sprintf("Neither iscsid.service nor iscsid.socket is running. - %s - %s", iscsidErrMsg, iscsidSocketMsg)
 	local.collection.Log.Error = append(local.collection.Log.Error, wrapMsgWithTopic(topic, msg))
 
 	return nil
@@ -357,7 +357,8 @@ func (local *Checker) checkHugePages() error {
 	topic := formatTopic(consts.PreflightCheckTopicHugePages)
 
 	if local.HugePageSize == 0 {
-		logrus.Error("HUGEMEM environment variable is not set")
+		local.collection.Log.Error = append(local.collection.Log.Error,
+			wrapMsgWithTopic(topic, "HUGEMEM environment variable is not set"))
 		return nil
 	}
 
@@ -365,7 +366,13 @@ func (local *Checker) checkHugePages() error {
 
 	ok, hugePagesTotalNum, requiredHugePages, err := local.isHugePagesTotalEqualOrLargerThan(pages)
 	if err != nil {
-		return wrapInternalError(topic, errors.Wrap(err, "failed to check HugePages"))
+		if isExitCode(err, 1) || errors.Is(err, pkgmgr.ErrPackageNotInstalled) { // expected not-installed case
+			local.collection.Log.Error = append(local.collection.Log.Error,
+				wrapMsgWithTopic(topic, fmt.Sprintf("HugePages check failed: %v (exit code: 1)", err)))
+			return nil
+		} else {
+			return wrapInternalError(topic, errors.Wrap(err, "failed to check HugePages"))
+		}
 	}
 	if !ok {
 		local.collection.Log.Error = append(local.collection.Log.Error,
@@ -380,7 +387,7 @@ func (local *Checker) checkHugePages() error {
 func (local *Checker) isHugePagesTotalEqualOrLargerThan(requiredHugePages int) (bool, int, int, error) {
 	output, err := local.packageManager.Execute([]string{}, "grep", []string{"HugePages_Total", "/proc/meminfo"}, commontypes.ExecuteNoTimeout)
 	if err != nil {
-		return false, 0, 0, errors.Wrap(err, "failed to get total number of HugePages")
+		return false, 0, 0, err
 	}
 	line := strings.Split(output, "\n")[0]
 	hugePagesTotal := strings.TrimSpace(strings.Split(line, ":")[1])
@@ -413,7 +420,7 @@ func (local *Checker) checkCpuInstructionSet(instructionSets map[string][]string
 	for _, set := range sets {
 		_, err := local.packageManager.Execute([]string{}, "grep", []string{set, "/proc/cpuinfo"}, commontypes.ExecuteNoTimeout)
 		if err != nil {
-			if isExitCode(err, 1) { // expected not-installed case
+			if isExitCode(err, 1) || errors.Is(err, pkgmgr.ErrPackageNotInstalled) { // expected not-installed case
 				local.collection.Log.Error = append(local.collection.Log.Error,
 					wrapMsgWithTopic(topic, fmt.Sprintf("%s is unsupported. (exit code: 1)", set)))
 			} else {
@@ -516,7 +523,7 @@ func (local *Checker) checkModulesLoaded(spdkDependent bool) error {
 	}
 
 	if len(internalError) > 0 {
-		return wrapAggregatedInternalError(topic, "Failed to check packages:", internalError)
+		return wrapAggregatedInternalError(topic, "Failed to check modules:", internalError)
 	}
 
 	return nil
@@ -586,7 +593,7 @@ func (local *Checker) checkNFSv4Support() error {
 
 	if !isSupportedNFSVersion {
 		local.collection.Log.Warn = append(local.collection.Log.Warn,
-			wrapMsgWithTopic(topic, "NFSv4 is supported, but default protocol version is not 4, 4.1, or 4.2.  Please refer to the NFS mount configuration manual page for more information: man 5 nfsmount.conf"))
+			wrapMsgWithTopic(topic, "NFSv4 is supported, but default protocol version is not 4, 4.1, or 4.2. Please refer to the NFS mount configuration manual page for more information: man 5 nfsmount.conf"))
 	}
 
 	local.collection.Log.Info = append(local.collection.Log.Info, wrapMsgWithTopic(topic, "NFS4 is supported"))
