@@ -58,7 +58,7 @@ func (remote *Checker) Init() error {
 
 // Run creates the DaemonSet for the preflight check, and waits for it to complete.
 func (remote *Checker) Run() (string, error) {
-	err := kubeutils.CreateRbac(remote.kubeClient, remote.appName)
+	err := kubeutils.CreateRbac(remote.kubeClient, remote.Namespace, remote.appName)
 	if err != nil {
 		return "", err
 	}
@@ -120,7 +120,7 @@ func (remote *Checker) Cleanup() error {
 		return err
 	}
 
-	return kubeutils.DeleteRbac(remote.kubeClient, remote.appName)
+	return kubeutils.DeleteRbac(remote.kubeClient, remote.Namespace, remote.appName)
 }
 
 // NewDaemonSet prepares a DaemonSet for the preflight check.

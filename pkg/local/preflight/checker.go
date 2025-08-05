@@ -249,13 +249,13 @@ func (local *Checker) checkContainerOptimizedOS() error {
 	if err != nil {
 		return wrapInternalError(topic, errors.Wrapf(err,
 			"failed to retrieve DaemonSet %q in namespace %q. Please ensure the preflight DaemonSet is deployed correctly",
-			consts.AppNamePreflightContainerOptimizedOS, metav1.NamespaceDefault))
+			consts.AppNamePreflightContainerOptimizedOS, local.Namespace))
 	}
 
 	if !commonkube.IsDaemonSetReady(daemonSet) {
 		local.collection.Log.Error = append(local.collection.Log.Error, wrapMsgWithTopic(topic, fmt.Sprintf(
 			"daemonSet %q is not ready in namespace %q.\nPlease check its pod status",
-			consts.AppNamePreflightContainerOptimizedOS, metav1.NamespaceDefault)))
+			consts.AppNamePreflightContainerOptimizedOS, local.Namespace)))
 	}
 	return nil
 }
@@ -389,7 +389,7 @@ func (local *Checker) checkHugePages() error {
 	local.collection.Log.Info = append(local.collection.Log.Info, wrapMsgWithTopic(topic, "HugePages is enabled"))
 
 	if err := local.checkHugePagesCapacity(); err != nil {
-		return err
+		return wrapInternalError(topic, errors.Wrap(err, "failed to check hugepages-2Mi capacity"))
 	}
 
 	return nil

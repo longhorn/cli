@@ -394,7 +394,10 @@ func (local *Installer) restartKubeletService() error {
 		if err != nil {
 			return errors.Wrapf(err, "failed to parse %q argument", consts.CmdOptRestartKubeletWindow)
 		}
-		restartDelay := time.Duration(rand.Int63n(int64(restartWindow)))
+		var restartDelay time.Duration
+		if restartWindow > 0 {
+			restartDelay = time.Duration(rand.Int63n(int64(restartWindow)))
+		}
 		logrus.Infof("Restarting kubelet service after %s", restartDelay)
 		time.Sleep(restartDelay)
 
