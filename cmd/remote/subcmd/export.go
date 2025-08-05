@@ -64,6 +64,7 @@ $ ls /tmp/export/pvc-48a6457d-585e-423b-b530-bbc68a5f948a
 lost+found`,
 
 		PreRun: func(cmd *cobra.Command, args []string) {
+			replicaExporter.ImageRegistry = globalOpts.ImageRegistry
 			replicaExporter.Image = globalOpts.Image
 			replicaExporter.KubeConfigPath = globalOpts.KubeConfigPath
 			replicaExporter.NodeSelector = globalOpts.NodeSelector

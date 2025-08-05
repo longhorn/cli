@@ -64,6 +64,7 @@ If a reboot is required, the following message will be displayed:
   - Need to reboot the system and execute longhornctl install preflight again`,
 
 		PreRun: func(cmd *cobra.Command, args []string) {
+			preflightInstaller.ImageRegistry = globalOpts.ImageRegistry
 			preflightInstaller.Image = globalOpts.Image
 			preflightInstaller.KubeConfigPath = globalOpts.KubeConfigPath
 			preflightInstaller.NodeSelector = globalOpts.NodeSelector
