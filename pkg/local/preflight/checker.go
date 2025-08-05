@@ -248,13 +248,13 @@ func (local *Checker) checkContainerOptimizedOS() error {
 	if err != nil {
 		return wrapInternalError(topic, errors.Wrapf(err,
 			"failed to retrieve DaemonSet %q in namespace %q. Please ensure the preflight DaemonSet is deployed correctly",
-			consts.AppNamePreflightContainerOptimizedOS, metav1.NamespaceDefault))
+			consts.AppNamePreflightContainerOptimizedOS, local.Namespace))
 	}
 
 	if !commonkube.IsDaemonSetReady(daemonSet) {
 		local.collection.Log.Error = append(local.collection.Log.Error, wrapMsgWithTopic(topic, fmt.Sprintf(
 			"daemonSet %q is not ready in namespace %q.\nPlease check its pod status",
-			consts.AppNamePreflightContainerOptimizedOS, metav1.NamespaceDefault)))
+			consts.AppNamePreflightContainerOptimizedOS, local.Namespace)))
 	}
 	return nil
 }

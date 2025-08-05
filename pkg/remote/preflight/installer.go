@@ -74,7 +74,7 @@ func (remote *Installer) Init() error {
 // It checks if the operating system is specified, and installs the dependencies accordingly.
 // If the operating system is not specified, it installs the dependencies with package manager.
 func (remote *Installer) Run() (string, error) {
-	err := kubeutils.CreateRbac(remote.kubeClient, remote.appName)
+	err := kubeutils.CreateRbac(remote.kubeClient, remote.Namespace, remote.appName)
 	if err != nil {
 		return "", err
 	}
@@ -112,11 +112,11 @@ func (remote *Installer) Run() (string, error) {
 
 // Cleanup deletes the DaemonSet created for the preflight install when it's installed with package manager.
 func (remote *Installer) Cleanup() error {
-	if err := commonkube.DeleteDaemonSet(remote.kubeClient, metav1.NamespaceDefault, remote.appName); err != nil {
+	if err := commonkube.DeleteDaemonSet(remote.kubeClient, remote.Namespace, remote.appName); err != nil {
 		return err
 	}
 
-	return kubeutils.DeleteRbac(remote.kubeClient, remote.appName)
+	return kubeutils.DeleteRbac(remote.kubeClient, remote.Namespace, remote.appName)
 }
 
 // InstallByContainerOptimizedOS installs the dependencies on Container Optimized OS.
