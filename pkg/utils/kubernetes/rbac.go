@@ -10,8 +10,8 @@ import (
 )
 
 // CreateRbac creates a new ServiceAccount, ClusterRole, and ClusterRoleBinding
-func CreateRbac(kubeClient *kubeclient.Clientset, name string) error {
-	newServiceAccount := newServiceAccount(name)
+func CreateRbac(kubeClient *kubeclient.Clientset, namespace, name string) error {
+	newServiceAccount := newServiceAccount(namespace, name)
 	_, err := commonkube.CreateServiceAccount(kubeClient, newServiceAccount)
 	if err != nil {
 		return err
@@ -23,7 +23,7 @@ func CreateRbac(kubeClient *kubeclient.Clientset, name string) error {
 		return err
 	}
 
-	newClusterRoleBinding := newClusterRoleBinding(name)
+	newClusterRoleBinding := newClusterRoleBinding(namespace, name)
 	_, err = commonkube.CreateClusterRoleBinding(kubeClient, newClusterRoleBinding)
 	if err != nil {
 		return err
@@ -33,7 +33,7 @@ func CreateRbac(kubeClient *kubeclient.Clientset, name string) error {
 }
 
 // DeleteRbac deletes ServiceAccount, ClusterRole, and ClusterRoleBinding
-func DeleteRbac(kubeClient *kubeclient.Clientset, name string) error {
+func DeleteRbac(kubeClient *kubeclient.Clientset, namespace, name string) error {
 	if err := commonkube.DeleteClusterRoleBinding(kubeClient, name); err != nil {
 		return err
 	}
@@ -42,7 +42,7 @@ func DeleteRbac(kubeClient *kubeclient.Clientset, name string) error {
 		return err
 	}
 
-	return commonkube.DeleteServiceAccount(kubeClient, metav1.NamespaceDefault, name)
+	return commonkube.DeleteServiceAccount(kubeClient, namespace, name)
 }
 
 func newClusterRole(name string) *rbacv1.ClusterRole {
@@ -65,7 +65,7 @@ func newClusterRole(name string) *rbacv1.ClusterRole {
 	}
 }
 
-func newClusterRoleBinding(name string) *rbacv1.ClusterRoleBinding {
+func newClusterRoleBinding(namespace, name string) *rbacv1.ClusterRoleBinding {
 	return &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
@@ -79,17 +79,17 @@ func newClusterRoleBinding(name string) *rbacv1.ClusterRoleBinding {
 			{
 				Kind:      "ServiceAccount",
 				Name:      name,
-				Namespace: metav1.NamespaceDefault,
+				Namespace: namespace,
 			},
 		},
 	}
 }
 
-func newServiceAccount(name string) *corev1.ServiceAccount {
+func newServiceAccount(namespace, name string) *corev1.ServiceAccount {
 	return &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
-			Namespace: metav1.NamespaceDefault,
+			Namespace: namespace,
 		},
 	}
 }
