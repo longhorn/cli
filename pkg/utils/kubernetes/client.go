@@ -12,7 +12,7 @@ import (
 func NewKubeClient(masterUrl string, kubeconfigPath string) (kubeClient *kubeclient.Clientset, err error) {
 	const kubeConfigHint = `Make sure to either:
   - Set the environment variable: export KUBECONFIG=/path/to/config
-  - Or use: --kube-config=/path/to/config`
+  - Or use: --kubeconfig=/path/to/config`
 
 	if masterUrl == "" && kubeconfigPath == "" {
 		return nil, fmt.Errorf("no kubeconfig path provided.\n\n%s", kubeConfigHint)

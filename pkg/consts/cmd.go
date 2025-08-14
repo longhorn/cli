@@ -28,7 +28,7 @@ const (
 
 const (
 	// Global options
-	CmdOptKubeConfigPath = "kube-config"
+	CmdOptKubeConfigPath = "kubeconfig"
 	CmdOptLogLevel       = "log-level"
 	CmdOptImage          = "image"
 
