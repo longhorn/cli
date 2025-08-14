@@ -21,6 +21,7 @@ import (
 
 	"github.com/longhorn/cli/pkg/consts"
 	"github.com/longhorn/cli/pkg/types"
+	"github.com/longhorn/cli/pkg/utils"
 
 	kubeutils "github.com/longhorn/cli/pkg/utils/kubernetes"
 )
@@ -229,7 +230,7 @@ func (remote *Checker) newDaemonSet(nodeSelector map[string]string) *appsv1.Daem
 					InitContainers: []corev1.Container{
 						{
 							Name:    consts.ContainerNameInit,
-							Image:   remote.Image,
+							Image:   utils.BuildImageName(remote.Image, remote.ImageRegistry),
 							Command: []string{consts.CmdLonghornctlLocal, consts.SubCmdCheck, consts.SubCmdPreflight},
 							Env: []corev1.EnvVar{
 								{
@@ -270,7 +271,7 @@ func (remote *Checker) newDaemonSet(nodeSelector map[string]string) *appsv1.Daem
 						},
 						{
 							Name:    consts.ContainerNameOutput,
-							Image:   remote.Image,
+							Image:   utils.BuildImageName(remote.Image, remote.ImageRegistry),
 							Command: []string{"cat", outputFilePath},
 							Env:     []corev1.EnvVar{},
 							VolumeMounts: []corev1.VolumeMount{
@@ -284,7 +285,7 @@ func (remote *Checker) newDaemonSet(nodeSelector map[string]string) *appsv1.Daem
 					Containers: []corev1.Container{
 						{
 							Name:  consts.ContainerNamePause,
-							Image: consts.ImagePause,
+							Image: utils.BuildImageName(consts.ImagePause, remote.ImageRegistry),
 						},
 					},
 					Volumes: []corev1.Volume{
