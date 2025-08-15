@@ -31,6 +31,7 @@ const (
 	CmdOptKubeConfigPath = "kubeconfig"
 	CmdOptLogLevel       = "log-level"
 	CmdOptImage          = "image"
+	CmdOptImageRegistry  = "image-registry"
 
 	// General options
 	CmdOptName            = "name"
