@@ -65,6 +65,7 @@ If a reboot is required, the following message will be displayed:
 
 		PreRun: func(cmd *cobra.Command, args []string) {
 			preflightInstaller.Image = globalOpts.Image
+			preflightInstaller.ImageRegistry = globalOpts.ImageRegistry
 			preflightInstaller.KubeConfigPath = globalOpts.KubeConfigPath
 			preflightInstaller.NodeSelector = globalOpts.NodeSelector
 			preflightInstaller.Namespace = globalOpts.Namespace
