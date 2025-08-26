@@ -200,6 +200,7 @@ func (local *Checker) Run() error {
 		if local.EnableSpdk {
 			instructionSets := map[string][]string{
 				"amd64": {"sse4_2"},
+				"arm64": {"asimd"},
 			}
 
 			checkTasks = append(checkTasks,
