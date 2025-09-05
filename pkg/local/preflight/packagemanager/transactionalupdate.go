@@ -68,6 +68,11 @@ func (c *TransactionalUpdatePackageManager) StartService(name string) (string, e
 	return c.executor.Execute([]string{}, "systemctl", []string{"start", name}, commontypes.ExecuteNoTimeout)
 }
 
+// RestartService executes the service restart command
+func (c *TransactionalUpdatePackageManager) RestartService(name string) (string, error) {
+	return c.executor.Execute([]string{}, "systemctl", []string{"restart", name}, commontypes.ExecuteNoTimeout)
+}
+
 // GetServiceStatus executes the service status command
 func (c *TransactionalUpdatePackageManager) GetServiceStatus(name string) (string, error) {
 	return c.executor.Execute([]string{}, "systemctl", []string{"status", "--no-pager", name}, commontypes.ExecuteNoTimeout)
