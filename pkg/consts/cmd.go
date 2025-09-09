@@ -58,4 +58,8 @@ const (
 	CmdOptLonghornVolumeName    = "volume-name"
 )
 
+const (
+	NamespaceLonghorn = "longhorn-system"
+)
+
 const CmdOptSeperator = ","
