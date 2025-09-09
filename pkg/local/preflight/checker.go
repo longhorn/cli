@@ -102,7 +102,7 @@ func (local *Checker) Init() error {
 			"nfs-common", "open-iscsi", "cryptsetup", "dmsetup",
 		}
 		local.modules = []string{
-			"dm_crypt",
+			"nfs", "dm_crypt",
 		}
 		local.services = []string{
 			"multipathd.service",
@@ -120,7 +120,7 @@ func (local *Checker) Init() error {
 			"nfs-utils", "iscsi-initiator-utils", "cryptsetup", "device-mapper",
 		}
 		local.modules = []string{
-			"dm_crypt",
+			"nfs", "iscsi_tcp", "dm_crypt",
 		}
 		local.services = []string{
 			"multipathd.service",
@@ -138,7 +138,7 @@ func (local *Checker) Init() error {
 			"nfs-client", "open-iscsi", "cryptsetup", "device-mapper",
 		}
 		local.modules = []string{
-			"dm_crypt",
+			"nfs", "iscsi_tcp", "dm_crypt",
 		}
 		local.services = []string{
 			"multipathd.service",
@@ -156,7 +156,7 @@ func (local *Checker) Init() error {
 			"nfs-utils", "open-iscsi", "cryptsetup", "device-mapper",
 		}
 		local.modules = []string{
-			"dm_crypt",
+			"nfs", "iscsi_tcp", "dm_crypt",
 		}
 		local.services = []string{
 			"multipathd.service",
