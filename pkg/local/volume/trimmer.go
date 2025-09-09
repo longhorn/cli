@@ -74,8 +74,9 @@ func (local *Trimmer) Init() error {
 	}
 
 	local.logger = logrus.WithFields(logrus.Fields{
-		"volume": local.VolumeName,
-		"node":   local.CurrentNodeID,
+		"volume":    local.VolumeName,
+		"node":      local.CurrentNodeID,
+		"namespace": local.Namespace,
 	})
 
 	return nil
