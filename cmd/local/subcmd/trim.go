@@ -42,6 +42,7 @@ Regularly trimming your Longhorn volumes ensures better storage efficiency and m
 
 		PreRun: func(cmd *cobra.Command, args []string) {
 			localTrimmer.LogLevel = globalOpts.LogLevel
+			localTrimmer.Namespace = os.Getenv(consts.EnvLonghornNamespace)
 
 			utils.CheckErr(localTrimmer.Validate())
 
