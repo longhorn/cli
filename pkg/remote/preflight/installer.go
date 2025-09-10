@@ -76,19 +76,6 @@ func (remote *Installer) Init() error {
 // It checks if the operating system is specified, and installs the dependencies accordingly.
 // If the operating system is not specified, it installs the dependencies with package manager.
 func (remote *Installer) Run() (string, error) {
-	// Create RBAC to check hugepages-2Mi capacity on nodes
-	rbacRules := []rbacv1.PolicyRule{
-		{
-			APIGroups: []string{""},
-			Resources: []string{"nodes", "nodes/status"},
-			Verbs:     []string{"get"},
-		},
-	}
-	err := kubeutils.CreateRbac(remote.kubeClient, remote.Namespace, remote.appName, rbacRules)
-	if err != nil {
-		return "", err
-	}
-
 	operatingSystem := consts.OperatingSystem(remote.OperatingSystem)
 	switch operatingSystem {
 	case consts.OperatingSystemContainerOptimizedOS:
@@ -104,6 +91,18 @@ func (remote *Installer) Run() (string, error) {
 	default:
 		logrus.Info("Installing dependencies with package manager")
 
+		// Create RBAC to check hugepages-2Mi capacity on nodes
+		rbacRules := []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{""},
+				Resources: []string{"nodes", "nodes/status"},
+				Verbs:     []string{"get"},
+			},
+		}
+		err := kubeutils.CreateRbac(remote.kubeClient, remote.Namespace, remote.appName, rbacRules)
+		if err != nil {
+			return "", err
+		}
 		if remote.RestartKubelet {
 			if _, err := time.ParseDuration(remote.RestartKubeletWindow); err != nil {
 				return "", errors.Wrapf(err, "failed to parse %q argument", consts.CmdOptRestartKubeletWindow)
