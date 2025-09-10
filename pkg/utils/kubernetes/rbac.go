@@ -1,6 +1,8 @@
 package kubernetes
 
 import (
+	"github.com/pkg/errors"
+
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -9,8 +11,19 @@ import (
 	commonkube "github.com/longhorn/go-common-libs/kubernetes"
 )
 
-// CreateRbac creates a new ServiceAccount, ClusterRole, and ClusterRoleBinding
+// CreateRbac creates a new ServiceAccount, ClusterRole, and ClusterRoleBinding.
+// If creation fails, it attempts to clean up any partially created resources before returning the error.
 func CreateRbac(kubeClient *kubeclient.Clientset, namespace, name string, rbacRules []rbacv1.PolicyRule) error {
+	if err := createRbac(kubeClient, namespace, name, rbacRules); err != nil {
+		if cleanupErr := DeleteRbac(kubeClient, namespace, name); cleanupErr != nil {
+			return errors.Wrapf(err, "RBAC cleanup failed: %v", cleanupErr)
+		}
+		return err
+	}
+	return nil
+}
+
+func createRbac(kubeClient *kubeclient.Clientset, namespace, name string, rbacRules []rbacv1.PolicyRule) error {
 	newServiceAccount := newServiceAccount(namespace, name)
 	_, err := commonkube.CreateServiceAccount(kubeClient, newServiceAccount)
 	if err != nil {
