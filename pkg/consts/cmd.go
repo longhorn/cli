@@ -28,10 +28,11 @@ const (
 
 const (
 	// Global options
-	CmdOptKubeConfigPath = "kubeconfig"
-	CmdOptLogLevel       = "log-level"
-	CmdOptImage          = "image"
-	CmdOptImageRegistry  = "image-registry"
+	CmdOptKubeConfigPath  = "kubeconfig"
+	CmdOptLogLevel        = "log-level"
+	CmdOptImage           = "image"
+	CmdOptImageRegistry   = "image-registry"
+	CmdOptImagePullSecret = "image-pull-secret"
 
 	// General options
 	CmdOptName            = "name"
