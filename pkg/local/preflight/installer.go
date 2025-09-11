@@ -409,24 +409,26 @@ func (local *Installer) restartKubelet() error {
 
 func (local *Installer) restartKubeletService() error {
 	// Kubelet may be managed by different services depending on the k8s distribution
-	serviceCandidates := []string{"kubelet", "k3s", "rke2-server"}
-	var restartErr error
+	serviceCandidates := []string{"kubelet", "k3s", "k3s-agent", "rke2-server", "rke2-agent"}
+	var errs []error
 
 	for _, svc := range serviceCandidates {
-		_, restartErr = local.packageManager.RestartService(svc)
-		if restartErr == nil {
+		_, err := local.packageManager.RestartService(svc)
+		if err == nil {
 			logrus.Infof("Successfully restarted service %s", svc)
 			local.collection.Log.Info = append(local.collection.Log.Info, fmt.Sprintf("Successfully restarted service %s", svc))
 			return nil
 		}
+		errs = append(errs, err)
 		// If error is not "not found", stop trying further services
-		if !pkgmgr.ServiceNotFoundRegex.MatchString(restartErr.Error()) {
+		if !pkgmgr.ServiceNotFoundRegex.MatchString(err.Error()) {
 			break
 		}
 		// else continue trying next service
 	}
 
-	logrus.Errorf("Failed to restart kubelet service: %v", restartErr)
-	local.collection.Log.Error = append(local.collection.Log.Error, fmt.Sprintf("Failed to restart kubelet service: %s", restartErr))
-	return restartErr
+	errMsg := fmt.Sprintf("Failed to restart kubelet service: %v", errs)
+	logrus.Error(errMsg)
+	local.collection.Log.Error = append(local.collection.Log.Error, errMsg)
+	return errors.New(errMsg)
 }
