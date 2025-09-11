@@ -220,7 +220,8 @@ func (remote *Getter) newDaemonSet(nodeSelector map[string]string) *appsv1.Daemo
 							},
 						},
 					},
-					NodeSelector: nodeSelector,
+					NodeSelector:     nodeSelector,
+					ImagePullSecrets: kubeutils.GetImagePullSecrets(remote.ImagePullSecret),
 				},
 			},
 			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{

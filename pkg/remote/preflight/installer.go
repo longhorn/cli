@@ -439,7 +439,8 @@ func (remote *Installer) newDaemonSetForContainerOptimizedOS(nodeSelector map[st
 							},
 						},
 					},
-					NodeSelector: nodeSelector,
+					NodeSelector:     nodeSelector,
+					ImagePullSecrets: kubeutils.GetImagePullSecrets(remote.ImagePullSecret),
 				},
 			},
 			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
@@ -582,7 +583,8 @@ func (remote *Installer) NewDaemonSetForPackageManager(nodeSelector map[string]s
 							},
 						},
 					},
-					NodeSelector: nodeSelector,
+					NodeSelector:     nodeSelector,
+					ImagePullSecrets: kubeutils.GetImagePullSecrets(remote.ImagePullSecret),
 				},
 			},
 			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
