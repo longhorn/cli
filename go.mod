@@ -5,7 +5,7 @@ go 1.24.0
 toolchain go1.25.1
 
 require (
-	github.com/longhorn/go-common-libs v0.0.0-20250905093241-e9576a7c89fa
+	github.com/longhorn/go-common-libs v0.0.0-20250908085655-4593e23015c0
 	github.com/longhorn/longhorn-manager v1.9.1
 	github.com/otiai10/copy v1.14.1
 	github.com/pkg/errors v0.9.1
@@ -13,11 +13,11 @@ require (
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.11.1
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/api v0.34.0
-	k8s.io/apimachinery v0.34.0
-	k8s.io/cli-runtime v0.34.0
-	k8s.io/client-go v0.34.0
-	k8s.io/kubectl v0.34.0
+	k8s.io/api v0.34.1
+	k8s.io/apimachinery v0.34.1
+	k8s.io/cli-runtime v0.34.1
+	k8s.io/client-go v0.34.1
+	k8s.io/kubectl v0.34.1
 	k8s.io/utils v0.0.0-20250820121507-0af2bda4dd1d
 	sigs.k8s.io/kustomize/kyaml v0.20.1
 )
@@ -90,8 +90,8 @@ require (
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	k8s.io/component-base v0.34.0 // indirect
-	k8s.io/component-helpers v0.34.0 // indirect
+	k8s.io/component-base v0.34.1 // indirect
+	k8s.io/component-helpers v0.34.1 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20250710124328-f3f2b991d03b // indirect
 	k8s.io/mount-utils v0.33.3 // indirect
@@ -104,6 +104,6 @@ require (
 )
 
 replace (
-	k8s.io/cloud-provider => k8s.io/cloud-provider v0.34.0
-	k8s.io/kubelet => k8s.io/kubelet v0.34.0
+	k8s.io/cloud-provider => k8s.io/cloud-provider v0.34.1
+	k8s.io/kubelet => k8s.io/kubelet v0.34.1
 )
