@@ -10,6 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	kubeclient "k8s.io/client-go/kubernetes"
 
 	"github.com/longhorn/cli/pkg/types"
@@ -139,4 +140,11 @@ func ParseNodeSelector(nodeSelectorRaw string) (map[string]string, error) {
 	}
 
 	return nodeSelector, nil
+}
+
+func GetImagePullSecrets(imagePullSecret string) []corev1.LocalObjectReference {
+	if imagePullSecret != "" {
+		return []corev1.LocalObjectReference{{Name: imagePullSecret}}
+	}
+	return nil
 }
