@@ -110,7 +110,7 @@ github.com/json-iterator/go
 # github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de
 ## explicit
 github.com/liggitt/tabwriter
-# github.com/longhorn/go-common-libs v0.0.0-20250905093241-e9576a7c89fa
+# github.com/longhorn/go-common-libs v0.0.0-20250908085655-4593e23015c0
 ## explicit; go 1.24.0
 github.com/longhorn/go-common-libs/exec
 github.com/longhorn/go-common-libs/io
