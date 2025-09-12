@@ -90,31 +90,27 @@ func (remote *Exporter) Init() error {
 // before collecting volume information and returning it as a YAML string.
 func (remote *Exporter) Run() (string, error) {
 	newConfigMap := remote.newConfigMapForSimpleLonghorn()
-	nodeSelector, err := kubeutils.ParseNodeSelector(remote.NodeSelector)
-	if err != nil {
-		return "", errors.Wrapf(err, "failed to parse %q argument", consts.CmdOptNodeSelector)
-	}
-	newDaemonSet := remote.newDaemonSet(nodeSelector)
-
 	configMap, err := commonkube.GetConfigMap(remote.kubeClient, newConfigMap.Namespace, newConfigMap.Name)
 	if err == nil {
 		return "", errors.Errorf("ConfigMap %v already exists", configMap.Name)
 	} else if !apierrors.IsNotFound(err) {
 		return "", err
 	}
+	_, err = commonkube.CreateConfigMap(remote.kubeClient, newConfigMap)
+	if err != nil {
+		return "", err
+	}
 
+	newDaemonSet, err := kubeutils.PrepareDaemonSet(remote.newDaemonSet(), remote.kubeClient, remote.NodeSelector, remote.ImagePullSecret)
+	if err != nil {
+		return "", err
+	}
 	daemonSet, err := commonkube.GetDaemonSet(remote.kubeClient, newDaemonSet.Namespace, newDaemonSet.Name)
 	if err == nil {
 		return "", errors.Errorf("DaemonSet %v already exists", daemonSet.Name)
 	} else if !apierrors.IsNotFound(err) {
 		return "", err
 	}
-
-	_, err = commonkube.CreateConfigMap(remote.kubeClient, newConfigMap)
-	if err != nil {
-		return "", err
-	}
-
 	daemonSet, err = commonkube.CreateDaemonSet(remote.kubeClient, newDaemonSet)
 	if err != nil {
 		return "", err
@@ -386,7 +382,7 @@ sleep infinity
 }
 
 // newDaemonSet prepares the DaemonSet for the replica exporter.
-func (remote *Exporter) newDaemonSet(nodeSelector map[string]string) *appsv1.DaemonSet {
+func (remote *Exporter) newDaemonSet() *appsv1.DaemonSet {
 	outputFilePath := filepath.Join(consts.VolumeMountSharedDirectory, consts.FileNameOutputJSON)
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -566,8 +562,6 @@ func (remote *Exporter) newDaemonSet(nodeSelector map[string]string) *appsv1.Dae
 							},
 						},
 					},
-					NodeSelector:     nodeSelector,
-					ImagePullSecrets: kubeutils.GetImagePullSecrets(remote.ImagePullSecret),
 				},
 			},
 			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{

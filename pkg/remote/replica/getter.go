@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"path/filepath"
 
-	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 
 	"k8s.io/utils/ptr"
@@ -58,11 +57,10 @@ func (remote *Getter) Init() error {
 // init container and the output container completes before collecting the
 // replica information and returning it as a YAML string.
 func (remote *Getter) Run() (string, error) {
-	nodeSelector, err := kubeutils.ParseNodeSelector(remote.NodeSelector)
+	newDaemonSet, err := kubeutils.PrepareDaemonSet(remote.newDaemonSet(), remote.kubeClient, remote.NodeSelector, remote.ImagePullSecret)
 	if err != nil {
-		return "", errors.Wrapf(err, "failed to parse %q argument", consts.CmdOptNodeSelector)
+		return "", err
 	}
-	newDaemonSet := remote.newDaemonSet(nodeSelector)
 
 	daemonSet, err := commonkube.CreateDaemonSet(remote.kubeClient, newDaemonSet)
 	if err != nil {
@@ -112,7 +110,7 @@ func (remote *Getter) Cleanup() error {
 }
 
 // newDaemonSet prepares the DaemonSet for the replica getter.
-func (remote *Getter) newDaemonSet(nodeSelector map[string]string) *appsv1.DaemonSet {
+func (remote *Getter) newDaemonSet() *appsv1.DaemonSet {
 	outputFilePath := filepath.Join(consts.VolumeMountSharedDirectory, consts.FileNameOutputJSON)
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -220,8 +218,6 @@ func (remote *Getter) newDaemonSet(nodeSelector map[string]string) *appsv1.Daemo
 							},
 						},
 					},
-					NodeSelector:     nodeSelector,
-					ImagePullSecrets: kubeutils.GetImagePullSecrets(remote.ImagePullSecret),
 				},
 			},
 			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{

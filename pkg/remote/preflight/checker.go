@@ -80,11 +80,10 @@ func (remote *Checker) Run() (string, error) {
 		return "", err
 	}
 
-	nodeSelector, err := kubeutils.ParseNodeSelector(remote.NodeSelector)
+	newDaemonSet, err := kubeutils.PrepareDaemonSet(remote.newDaemonSet(), remote.kubeClient, remote.NodeSelector, remote.ImagePullSecret)
 	if err != nil {
-		return "", errors.Wrapf(err, "failed to parse %q argument", consts.CmdOptNodeSelector)
+		return "", err
 	}
-	newDaemonSet := remote.newDaemonSet(nodeSelector)
 	daemonSet, err := commonkube.CreateDaemonSet(remote.kubeClient, newDaemonSet)
 	if err != nil {
 		return "", err
@@ -150,8 +149,8 @@ func (remote *Checker) Cleanup() error {
 	return resultErr
 }
 
-// NewDaemonSet prepares a DaemonSet for the preflight check.
-func (remote *Checker) newDaemonSet(nodeSelector map[string]string) *appsv1.DaemonSet {
+// newDaemonSet prepares a DaemonSet for the preflight check.
+func (remote *Checker) newDaemonSet() *appsv1.DaemonSet {
 	outputFilePath := filepath.Join(consts.VolumeMountSharedDirectory, consts.FileNameOutputJSON)
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -261,8 +260,6 @@ func (remote *Checker) newDaemonSet(nodeSelector map[string]string) *appsv1.Daem
 							},
 						},
 					},
-					NodeSelector:     nodeSelector,
-					ImagePullSecrets: kubeutils.GetImagePullSecrets(remote.ImagePullSecret),
 				},
 			},
 			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
