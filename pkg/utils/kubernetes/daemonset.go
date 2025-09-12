@@ -11,8 +11,10 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeclient "k8s.io/client-go/kubernetes"
 
+	"github.com/longhorn/cli/pkg/consts"
 	"github.com/longhorn/cli/pkg/types"
 )
 
@@ -112,10 +114,27 @@ func GetDaemonSetPodCollections(kubeClient *kubeclient.Clientset, daemonSet *app
 	return collections, nil
 }
 
-// ParseNodeSelector parses a node selector string (e.g., "key1=value1,key2=value2")
+// PrepareDaemonSet takes DaemonSet object and populates common fields such as NodeSelector and ImagePullSecrets
+func PrepareDaemonSet(daemonSet *appsv1.DaemonSet, kubeClient *kubeclient.Clientset, nodeSelectorRaw, imagePullSecretRaw string) (*appsv1.DaemonSet, error) {
+	nodeSelector, err := parseNodeSelector(nodeSelectorRaw)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to parse %q argument", consts.CmdOptNodeSelector)
+	}
+	daemonSet.Spec.Template.Spec.NodeSelector = nodeSelector
+
+	imagePullSecret, err := parseImagePullSecret(kubeClient, daemonSet.Namespace, imagePullSecretRaw)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to parse %q argument", consts.CmdOptImagePullSecret)
+	}
+	daemonSet.Spec.Template.Spec.ImagePullSecrets = imagePullSecret
+
+	return daemonSet, nil
+}
+
+// parseNodeSelector parses a node selector string (e.g., "key1=value1,key2=value2")
 // and returns it as a map[string]string. This map can be used directly in a DaemonSet spec.
 // It returns an error if the input is malformed (e.g., missing '=' or empty key/value).
-func ParseNodeSelector(nodeSelectorRaw string) (map[string]string, error) {
+func parseNodeSelector(nodeSelectorRaw string) (map[string]string, error) {
 	if strings.TrimSpace(nodeSelectorRaw) == "" {
 		return nil, nil
 	}
@@ -142,9 +161,12 @@ func ParseNodeSelector(nodeSelectorRaw string) (map[string]string, error) {
 	return nodeSelector, nil
 }
 
-func GetImagePullSecrets(imagePullSecret string) []corev1.LocalObjectReference {
-	if imagePullSecret != "" {
-		return []corev1.LocalObjectReference{{Name: imagePullSecret}}
+func parseImagePullSecret(kubeClient *kubeclient.Clientset, namespace, imagePullSecret string) ([]corev1.LocalObjectReference, error) {
+	if imagePullSecret == "" {
+		return nil, nil
 	}
-	return nil
+	if _, err := kubeClient.CoreV1().Secrets(namespace).Get(context.TODO(), imagePullSecret, metav1.GetOptions{}); err != nil {
+		return nil, err
+	}
+	return []corev1.LocalObjectReference{{Name: imagePullSecret}}, nil
 }
