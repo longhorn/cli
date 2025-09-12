@@ -58,7 +58,7 @@ func TestParseNodeSelector(t *testing.T) {
 			expectedErr: nil,
 		},
 	} {
-		got, err := ParseNodeSelector(test.input)
+		got, err := parseNodeSelector(test.input)
 		if test.expectedErr != nil {
 			if err == nil {
 				t.Errorf("expected error but got nil")

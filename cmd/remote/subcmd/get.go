@@ -64,6 +64,7 @@ INFO[2024-07-16T17:23:51+08:00] Completed replica getter`,
 		PreRun: func(cmd *cobra.Command, args []string) {
 			replicaGetter.Image = globalOpts.Image
 			replicaGetter.ImageRegistry = globalOpts.ImageRegistry
+			replicaGetter.ImagePullSecret = globalOpts.ImagePullSecret
 			replicaGetter.KubeConfigPath = globalOpts.KubeConfigPath
 			replicaGetter.NodeSelector = globalOpts.NodeSelector
 			replicaGetter.Namespace = globalOpts.Namespace

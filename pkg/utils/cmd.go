@@ -29,6 +29,7 @@ func SetGlobalOptionsRemote(cmd *cobra.Command, globalOpts *types.GlobalCmdOptio
 	cmd.PersistentFlags().StringVar(&globalOpts.KubeConfigPath, consts.CmdOptKubeConfigPath, globalOpts.KubeConfigPath, "Kubernetes config (kubeconfig) path")
 	cmd.PersistentFlags().StringVar(&globalOpts.Image, consts.CmdOptImage, globalOpts.Image, "Image containing longhornctl-local")
 	cmd.PersistentFlags().StringVar(&globalOpts.ImageRegistry, consts.CmdOptImageRegistry, globalOpts.ImageRegistry, "Registry to apply to all images (CLI, engine, pause, BCI, etc.), replacing any registry already specified in those images.")
+	cmd.PersistentFlags().StringVar(&globalOpts.ImagePullSecret, consts.CmdOptImagePullSecret, globalOpts.ImagePullSecret, "Secret with registry credentials for pulling images")
 	cmd.PersistentFlags().StringVar(&globalOpts.NodeSelector, consts.CmdOptNodeSelector, globalOpts.NodeSelector, "Comma-separated list of key=value pairs to match against node labels, selecting the nodes the DaemonSet will run on (e.g. env=prod,zone=us-west).")
 	cmd.PersistentFlags().StringVar(&globalOpts.Namespace, consts.CmdOptNamespace, globalOpts.Namespace, "The namespace to run DaemonSet pods.")
 }
