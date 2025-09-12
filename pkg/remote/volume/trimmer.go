@@ -59,11 +59,10 @@ func (remote *Trimmer) Init() error {
 
 // Run creates the DaemonSet for the volume trimmer, and waits for it to complete.
 func (remote *Trimmer) Run() error {
-	nodeSelector, err := kubeutils.ParseNodeSelector(remote.NodeSelector)
+	newDaemonSet, err := kubeutils.PrepareDaemonSet(remote.newDaemonSet(), remote.kubeClient, remote.NodeSelector, remote.ImagePullSecret)
 	if err != nil {
-		return errors.Wrapf(err, "failed to parse %q argument", consts.CmdOptNodeSelector)
+		return err
 	}
-	newDaemonSet := remote.newDaemonSet(nodeSelector)
 	daemonSet, err := commonkube.CreateDaemonSet(remote.kubeClient, newDaemonSet)
 	if err != nil {
 		return err
@@ -77,8 +76,8 @@ func (remote *Trimmer) Cleanup() error {
 	return commonkube.DeleteDaemonSet(remote.kubeClient, remote.Namespace, remote.appName)
 }
 
-// NewDaemonSet prepares the DaemonSet for the volume trimmer.
-func (remote *Trimmer) newDaemonSet(nodeSelector map[string]string) *appsv1.DaemonSet {
+// newDaemonSet prepares the DaemonSet for the volume trimmer.
+func (remote *Trimmer) newDaemonSet() *appsv1.DaemonSet {
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      remote.appName,
@@ -155,8 +154,6 @@ func (remote *Trimmer) newDaemonSet(nodeSelector map[string]string) *appsv1.Daem
 							},
 						},
 					},
-					NodeSelector:     nodeSelector,
-					ImagePullSecrets: kubeutils.GetImagePullSecrets(remote.ImagePullSecret),
 				},
 			},
 			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
