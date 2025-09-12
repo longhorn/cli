@@ -147,11 +147,10 @@ func (remote *Installer) InstallByContainerOptimizedOS() error {
 		return err
 	}
 
-	nodeSelector, err := kubeutils.ParseNodeSelector(remote.NodeSelector)
+	newDaemonSet, err := kubeutils.PrepareDaemonSet(remote.newDaemonSetForContainerOptimizedOS(), remote.kubeClient, remote.NodeSelector, remote.ImagePullSecret)
 	if err != nil {
-		return errors.Wrapf(err, "failed to parse %q argument", consts.CmdOptNodeSelector)
+		return err
 	}
-	newDaemonSet := remote.newDaemonSetForContainerOptimizedOS(nodeSelector)
 	daemonSet, err := commonkube.CreateDaemonSet(remote.kubeClient, newDaemonSet)
 	if err != nil {
 		return err
@@ -173,11 +172,10 @@ func (remote *Installer) InstallByContainerOptimizedOS() error {
 //	- Successfully probed module dm_crypt
 //	- Successfully started service iscsid
 func (remote *Installer) InstallByPackageManager() (string, error) {
-	nodeSelector, err := kubeutils.ParseNodeSelector(remote.NodeSelector)
+	newDaemonSet, err := kubeutils.PrepareDaemonSet(remote.newDaemonSetForPackageManager(), remote.kubeClient, remote.NodeSelector, remote.ImagePullSecret)
 	if err != nil {
-		return "", errors.Wrapf(err, "failed to parse %q argument", consts.CmdOptNodeSelector)
+		return "", err
 	}
-	newDaemonSet := remote.NewDaemonSetForPackageManager(nodeSelector)
 	daemonSet, err := commonkube.CreateDaemonSet(remote.kubeClient, newDaemonSet)
 	if err != nil {
 		return "", err
@@ -323,7 +321,7 @@ sleep infinity
 }
 
 // newDaemonSetForContainerOptimizedOS prepares a DaemonSet for installing the dependencies on Container Optimized OS.
-func (remote *Installer) newDaemonSetForContainerOptimizedOS(nodeSelector map[string]string) *appsv1.DaemonSet {
+func (remote *Installer) newDaemonSetForContainerOptimizedOS() *appsv1.DaemonSet {
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      remote.appName,
@@ -439,8 +437,6 @@ func (remote *Installer) newDaemonSetForContainerOptimizedOS(nodeSelector map[st
 							},
 						},
 					},
-					NodeSelector:     nodeSelector,
-					ImagePullSecrets: kubeutils.GetImagePullSecrets(remote.ImagePullSecret),
 				},
 			},
 			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
@@ -450,8 +446,8 @@ func (remote *Installer) newDaemonSetForContainerOptimizedOS(nodeSelector map[st
 	}
 }
 
-// NewDaemonSetForPackageManager prepares a DaemonSet for installing dependencies with the package manager.
-func (remote *Installer) NewDaemonSetForPackageManager(nodeSelector map[string]string) *appsv1.DaemonSet {
+// newDaemonSetForPackageManager prepares a DaemonSet for installing dependencies with the package manager.
+func (remote *Installer) newDaemonSetForPackageManager() *appsv1.DaemonSet {
 	outputFilePath := filepath.Join(consts.VolumeMountSharedDirectory, consts.FileNameOutputJSON)
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -583,8 +579,6 @@ func (remote *Installer) NewDaemonSetForPackageManager(nodeSelector map[string]s
 							},
 						},
 					},
-					NodeSelector:     nodeSelector,
-					ImagePullSecrets: kubeutils.GetImagePullSecrets(remote.ImagePullSecret),
 				},
 			},
 			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
