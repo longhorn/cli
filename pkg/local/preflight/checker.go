@@ -178,6 +178,14 @@ func (local *Checker) Init() error {
 		return errors.Errorf("operating system (%v) package manager (%s) is not supported", osRelease, packageManagerType)
 	}
 
+	kernelMajorVersion, err := utils.GetKernelMajorVersion()
+	if err != nil {
+		return err
+	}
+	if kernelMajorVersion >= 6 {
+		local.spdkDepModules = append(local.spdkDepModules, "ublk_drv")
+	}
+
 	return nil
 }
 
