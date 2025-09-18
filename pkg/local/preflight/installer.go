@@ -86,17 +86,15 @@ func (local *Installer) Init() error {
 		commontypes.NamespaceNet,
 	}
 
+	kernelVersion, err := utils.GetKernelVersion()
+	if err != nil {
+		return err
+	}
+
 	executor, err := commonns.NewNamespaceExecutor(commontypes.ProcessSelf, commontypes.HostProcDirectory, namespaces)
 	if err != nil {
 		return err
 	}
-
-	kernelRelease, err := executor.Execute([]string{}, "uname", []string{"-r"}, commontypes.ExecuteNoTimeout)
-	if err != nil {
-		return err
-	}
-	kernelRelease = strings.TrimRight(kernelRelease, "\n")
-
 	pkgMgr, err := pkgmgr.New(packageManagerType, executor)
 	if err != nil {
 		return err
@@ -115,14 +113,13 @@ func (local *Installer) Init() error {
 			"iscsid",
 		}
 		local.spdkDepPackages = []string{
-			"linux-modules-extra-" + kernelRelease,
+			"linux-modules-extra-" + kernelVersion,
 		}
 		local.spdkDepModules = []string{
 			"nvme_tcp",
 			"uio_pci_generic",
 			"vfio_pci",
 		}
-		return nil
 
 	case pkgmgr.PackageManagerYum:
 		local.packageManager = pkgMgr
@@ -141,7 +138,6 @@ func (local *Installer) Init() error {
 			"uio_pci_generic",
 			"vfio_pci",
 		}
-		return nil
 
 	case pkgmgr.PackageManagerZypper, pkgmgr.PackageManagerTransactionalUpdate:
 		local.packageManager = pkgMgr
@@ -160,7 +156,6 @@ func (local *Installer) Init() error {
 			"uio_pci_generic",
 			"vfio_pci",
 		}
-		return nil
 
 	case pkgmgr.PackageManagerPacman:
 		local.packageManager = pkgMgr
@@ -179,11 +174,20 @@ func (local *Installer) Init() error {
 			"uio_pci_generic",
 			"vfio_pci",
 		}
-		return nil
 
 	default:
 		return errors.Errorf("Operating system (%v) package manager (%s) is not supported", osRelease, packageManagerType)
 	}
+
+	kernelMajorVersion, err := utils.GetKernelMajorVersion()
+	if err != nil {
+		return err
+	}
+	if kernelMajorVersion >= 6 {
+		local.spdkDepModules = append(local.spdkDepModules, "ublk_drv")
+	}
+
+	return nil
 }
 
 func (local *Installer) Run() error {
