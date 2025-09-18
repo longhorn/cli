@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/longhorn/cli/pkg/consts"
@@ -128,4 +129,21 @@ func GetKernelVersion() (string, error) {
 		return "", err
 	}
 	return strings.TrimSpace(string(output)), nil
+}
+
+// GetKernelMajorVersion returns kernel major version
+func GetKernelMajorVersion() (int, error) {
+	kernelVersion, err := GetKernelVersion()
+	if err != nil {
+		return -1, err
+	}
+	parts := strings.Split(kernelVersion, ".")
+	if len(parts) == 0 {
+		return -1, fmt.Errorf("invalid kernel version")
+	}
+	majorVersion, err := strconv.Atoi(parts[0])
+	if err != nil {
+		return -1, err
+	}
+	return majorVersion, nil
 }
