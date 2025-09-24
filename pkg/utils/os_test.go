@@ -36,3 +36,44 @@ func TestParseOSreleaseFile(t *testing.T) {
 		}
 	}
 }
+
+func TestGetKernelMajorVersion(t *testing.T) {
+	for _, tc := range []struct {
+		kernelVersion        string
+		expectedMajorVersion int
+	}{
+		{
+			kernelVersion:        "",
+			expectedMajorVersion: -1,
+		},
+		{
+			kernelVersion:        "six.zero.zero",
+			expectedMajorVersion: -1,
+		},
+		{
+			kernelVersion:        "a.4.5",
+			expectedMajorVersion: -1,
+		},
+		{
+			kernelVersion:        "5-beta.4.5",
+			expectedMajorVersion: -1,
+		},
+		{
+			kernelVersion:        "5.4.5",
+			expectedMajorVersion: 5,
+		},
+		{
+			kernelVersion:        "6.0.0-rc1",
+			expectedMajorVersion: 6,
+		},
+		{
+			kernelVersion:        "  2.1.5-generic  ",
+			expectedMajorVersion: 2,
+		},
+	} {
+		majorVersion, err := getKernelMajorVersion(tc.kernelVersion)
+		if tc.expectedMajorVersion != majorVersion {
+			t.Errorf("expected kernel major version: %d, got: %d (err: %v)", tc.expectedMajorVersion, majorVersion, err)
+		}
+	}
+}
