@@ -137,7 +137,11 @@ func GetKernelMajorVersion() (int, error) {
 	if err != nil {
 		return -1, err
 	}
-	parts := strings.Split(kernelVersion, ".")
+	return getKernelMajorVersion(kernelVersion)
+}
+
+func getKernelMajorVersion(kernelVersion string) (int, error) {
+	parts := strings.Split(strings.TrimSpace(kernelVersion), ".")
 	if len(parts) == 0 {
 		return -1, fmt.Errorf("invalid kernel version")
 	}
