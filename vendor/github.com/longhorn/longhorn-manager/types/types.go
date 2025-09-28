@@ -108,6 +108,8 @@ const (
 	UnixDomainSocketDirectoryInContainer = "/host/var/lib/longhorn/unix-domain-socket/"
 	UnixDomainSocketDirectoryOnHost      = "/var/lib/longhorn/unix-domain-socket/"
 
+	DefaultLogDirectoryOnHost = "/var/lib/longhorn/logs/"
+
 	BackingImageManagerDirectory = "/backing-images/"
 	BackingImageFileName         = "backing"
 
@@ -140,8 +142,10 @@ const (
 
 	DeleteCustomResourceOnly = "delete-custom-resource-only"
 
-	// const value `DeleteBackupTargetFromLonghorn` is used for annotation to note that deleting backup target is by Longhorn during uninstalling.
+	// annotations to note that deleting backup target is by Longhorn during uninstalling.
 	DeleteBackupTargetFromLonghorn = "delete-backup-target-from-longhorn"
+	DeleteEngineImageFromLonghorn  = "delete-engine-image-from-longhorn"
+	DeleteNodeFromLonghorn         = "delete-node-from-longhorn"
 
 	KubernetesStatusLabel = "KubernetesStatus"
 	KubernetesReplicaSet  = "ReplicaSet"
@@ -252,6 +256,7 @@ const (
 	EnvPodNamespace   = "POD_NAMESPACE"
 	EnvPodIP          = "POD_IP"
 	EnvServiceAccount = "SERVICE_ACCOUNT"
+	EnvDataEngine     = "DATA_ENGINE"
 
 	BackupStoreTypeS3     = "s3"
 	BackupStoreTypeCIFS   = "cifs"
@@ -338,6 +343,7 @@ const (
 	engineImagePrefix          = "ei-"
 	instanceManagerImagePrefix = "imi-"
 	shareManagerImagePrefix    = "smi-"
+	backingImageManagerPrefix  = "bim-"
 	orphanPrefix               = "orphan-"
 
 	BackingImageDataSourcePodNamePrefix = "backing-image-ds-"
@@ -413,7 +419,7 @@ func EngineBinaryExistOnHostForImage(image string) (bool, error) {
 }
 
 func GetBackingImageManagerName(image, diskUUID string) string {
-	return fmt.Sprintf("backing-image-manager-%s-%s", util.GetStringChecksum(image)[:4], diskUUID[:4])
+	return backingImageManagerPrefix + util.GetStringChecksumSHA256(strings.TrimSpace(fmt.Sprintf("%s-%s", image, diskUUID)))
 }
 
 func GetBackingImageDirectoryName(backingImageName, backingImageUUID string) string {
@@ -883,7 +889,7 @@ func ValidateMinNumberOfBackingIamgeCopies(number int) error {
 	return nil
 }
 
-func ValidateV2DataEngineLogFlags(flags string) error {
+func ValidateDataEngineLogFlags(flags string) error {
 	if flags == "" {
 		return nil
 	}
@@ -1027,6 +1033,29 @@ func ValidateOfflineRebuild(value longhorn.VolumeOfflineRebuilding) error {
 		return fmt.Errorf("invalid OfflineRebuilding setting: %v", value)
 	}
 	return nil
+}
+
+// ValidateBackupBlockSize skips the volume size check if volSize set to negative.
+func ValidateBackupBlockSize(volSize int64, backupBlockSize int64) error {
+	if backupBlockSize != BackupBlockSize2Mi && backupBlockSize != BackupBlockSize16Mi {
+		return fmt.Errorf("unsupported BackupBlockSize: %v", backupBlockSize)
+	}
+	if volSize >= 0 && volSize%backupBlockSize != 0 {
+		return fmt.Errorf("volume size %v must be an integer multiple of the backup block size %v", volSize, backupBlockSize)
+	}
+	return nil
+}
+
+func ValidateReplicaRebuildingBandwidthLimit(dataEengine longhorn.DataEngineType, replicaRebuildingBandwidthLimit int64) error {
+	if replicaRebuildingBandwidthLimit == 0 {
+		return nil
+	}
+
+	if IsDataEngineV2(dataEengine) {
+		return nil
+	}
+
+	return fmt.Errorf("replicaRebuildingBandwidthLimit is not supported for data engine %v", dataEengine)
 }
 
 func GetDaemonSetNameFromEngineImageName(engineImageName string) string {
@@ -1238,25 +1267,6 @@ func CreateDefaultDisk(dataPath string, storageReservedPercentage int64) (map[st
 			Tags:              []string{},
 		},
 	}, nil
-}
-
-func ValidateCPUReservationValues(settingName SettingName, instanceManagerCPUStr string) error {
-	instanceManagerCPU, err := strconv.Atoi(instanceManagerCPUStr)
-	if err != nil {
-		return errors.Wrapf(err, "invalid guaranteed/requested instance manager CPU value (%v)", instanceManagerCPUStr)
-	}
-
-	definition, _ := GetSettingDefinition(settingName)
-	valueIntRange := definition.ValueIntRange
-
-	switch settingName {
-	case SettingNameGuaranteedInstanceManagerCPU, SettingNameV2DataEngineGuaranteedInstanceManagerCPU:
-		isUnderLimit := instanceManagerCPU < valueIntRange[ValueIntRangeMinimum]
-		if isUnderLimit {
-			return fmt.Errorf("invalid requested instance manager CPUs. Valid instance manager CPU range is larger than %v millicpu", valueIntRange[ValueIntRangeMinimum])
-		}
-	}
-	return nil
 }
 
 type CniNetwork struct {
