@@ -45,6 +45,15 @@ const (
 	VolumeDataSourceTypeVolume   = VolumeDataSourceType("volume")
 )
 
+// +kubebuilder:validation:Enum="";full-copy;linked-clone
+type CloneMode string
+
+const (
+	CloneModeNone        = CloneMode("")
+	CloneModeFullCopy    = CloneMode("full-copy")
+	CloneModeLinkedClone = CloneMode("linked-clone")
+)
+
 // +kubebuilder:validation:Enum=disabled;best-effort;strict-local
 type DataLocality string
 
@@ -92,10 +101,11 @@ const (
 type VolumeCloneState string
 
 const (
-	VolumeCloneStateEmpty     = VolumeCloneState("")
-	VolumeCloneStateInitiated = VolumeCloneState("initiated")
-	VolumeCloneStateCompleted = VolumeCloneState("completed")
-	VolumeCloneStateFailed    = VolumeCloneState("failed")
+	VolumeCloneStateEmpty                        = VolumeCloneState("")
+	VolumeCloneStateInitiated                    = VolumeCloneState("initiated")
+	VolumeCloneStateCopyCompletedAwaitingHealthy = VolumeCloneState("copy-completed-awaiting-healthy")
+	VolumeCloneStateCompleted                    = VolumeCloneState("completed")
+	VolumeCloneStateFailed                       = VolumeCloneState("failed")
 )
 
 type VolumeCloneStatus struct {
@@ -235,6 +245,8 @@ type VolumeSpec struct {
 	// +optional
 	DataSource VolumeDataSource `json:"dataSource"`
 	// +optional
+	CloneMode CloneMode `json:"cloneMode,omitempty"`
+	// +optional
 	DataLocality DataLocality `json:"dataLocality"`
 	// +optional
 	StaleReplicaTimeout int `json:"staleReplicaTimeout"`
@@ -285,6 +297,11 @@ type VolumeSpec struct {
 	// +kubebuilder:validation:Enum=none;lz4;gzip
 	// +optional
 	BackupCompressionMethod BackupCompressionMethod `json:"backupCompressionMethod"`
+	// BackupBlockSize indicate the block size to create backups. The block size is immutable.
+	// +kubebuilder:validation:Type=string
+	// +kubebuilder:validation:Enum="2097152";"16777216"
+	// +optional
+	BackupBlockSize int64 `json:"backupBlockSize,string"`
 	// +kubebuilder:validation:Enum=v1;v2
 	// +optional
 	DataEngine DataEngineType `json:"dataEngine"`
@@ -306,6 +323,10 @@ type VolumeSpec struct {
 	// - disabled: Disable offline rebuilding for this volume, regardless of the global setting
 	// +optional
 	OfflineRebuilding VolumeOfflineRebuilding `json:"offlineRebuilding"`
+	// ReplicaRebuildingBandwidthLimit controls the maximum write bandwidth (in megabytes per second) allowed on the destination replica during the rebuilding process. Set this value to 0 to disable bandwidth limiting.
+	// +kubebuilder:validation:Minimum=0
+	// +optional
+	ReplicaRebuildingBandwidthLimit int64 `json:"replicaRebuildingBandwidthLimit"`
 }
 
 // VolumeStatus defines the observed state of the Longhorn volume
