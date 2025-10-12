@@ -156,7 +156,7 @@ github.com/kr/text
 # github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de
 ## explicit
 github.com/liggitt/tabwriter
-# github.com/longhorn/go-common-libs v0.0.0-20250921030719-16313e7f30b3
+# github.com/longhorn/go-common-libs v0.0.0-20251009070934-14b7c6b59be3
 ## explicit; go 1.24.0
 github.com/longhorn/go-common-libs/exec
 github.com/longhorn/go-common-libs/io

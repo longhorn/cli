@@ -2,10 +2,10 @@ module github.com/longhorn/cli
 
 go 1.24.0
 
-toolchain go1.25.1
+toolchain go1.25.2
 
 require (
-	github.com/longhorn/go-common-libs v0.0.0-20250921030719-16313e7f30b3
+	github.com/longhorn/go-common-libs v0.0.0-20251009070934-14b7c6b59be3
 	github.com/longhorn/longhorn-manager v1.10.0
 	github.com/otiai10/copy v1.14.1
 	github.com/pkg/errors v0.9.1
