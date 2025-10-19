@@ -162,7 +162,7 @@ github.com/kr/text
 # github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de
 ## explicit
 github.com/liggitt/tabwriter
-# github.com/longhorn/go-common-libs v0.0.0-20251012091539-422bbbd4c8b9
+# github.com/longhorn/go-common-libs v0.0.0-20251019060945-fb1eaf5233d1
 ## explicit; go 1.24.0
 github.com/longhorn/go-common-libs/exec
 github.com/longhorn/go-common-libs/io
@@ -282,7 +282,7 @@ github.com/xlab/treeprint
 # github.com/yusufpapurcu/wmi v1.2.4
 ## explicit; go 1.16
 github.com/yusufpapurcu/wmi
-# golang.org/x/exp v0.0.0-20251009144603-d2f985daa21b
+# golang.org/x/exp v0.0.0-20251017212417-90e834f514db
 ## explicit; go 1.24.0
 golang.org/x/exp/constraints
 # golang.org/x/net v0.41.0
@@ -336,7 +336,7 @@ golang.org/x/text/unicode/norm
 # golang.org/x/time v0.11.0
 ## explicit; go 1.23.0
 golang.org/x/time/rate
-# google.golang.org/protobuf v1.36.9
+# google.golang.org/protobuf v1.36.10
 ## explicit; go 1.23
 google.golang.org/protobuf/encoding/prototext
 google.golang.org/protobuf/encoding/protowire
