@@ -48,8 +48,8 @@ func (c *TransactionalUpdatePackageManager) Execute(envs []string, binary string
 }
 
 // Modprobe executes the modprobe command
-func (c *TransactionalUpdatePackageManager) Modprobe(module string) (string, error) {
-	return c.executor.Execute([]string{}, "modprobe", []string{module}, commontypes.ExecuteNoTimeout)
+func (c *TransactionalUpdatePackageManager) Modprobe(module string, opts ...string) (string, error) {
+	return c.executor.Execute([]string{}, "modprobe", append(opts, module), commontypes.ExecuteNoTimeout)
 }
 
 // CheckModLoaded checks if a module is loaded

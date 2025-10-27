@@ -44,8 +44,8 @@ func (c *AptPackageManager) Execute(envs []string, binary string, args []string,
 }
 
 // Modprobe executes the modprobe command
-func (c *AptPackageManager) Modprobe(module string) (string, error) {
-	return c.executor.Execute([]string{}, "modprobe", []string{module}, commontypes.ExecuteNoTimeout)
+func (c *AptPackageManager) Modprobe(module string, opts ...string) (string, error) {
+	return c.executor.Execute([]string{}, "modprobe", append(opts, module), commontypes.ExecuteNoTimeout)
 }
 
 // CheckModLoaded checks if a module is loaded

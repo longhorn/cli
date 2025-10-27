@@ -216,6 +216,15 @@ func (local *Installer) Run() error {
 	}
 
 	if local.EnableSpdk {
+		// Load ublk_drv module if supported by the kernel
+		if _, err := local.packageManager.Modprobe("ublk_drv", "--dry-run"); err != nil {
+			local.collection.Log.Warn = append(local.collection.Log.Warn,
+				"ublk_drv cannot be loaded: ublk is not included in this kernel. Install or upgrade to a kernel with ublk included.")
+			logrus.Warnf("ublk_drv module can not be loaded: %v", err)
+		} else {
+			local.spdkDepModules = append(local.spdkDepModules, "ublk_drv")
+		}
+
 		if err := local.probeModules(consts.DependencyModuleSpdk); err != nil {
 			return err
 		}
