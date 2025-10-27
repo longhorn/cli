@@ -31,7 +31,7 @@ type PackageManager interface {
 	StartPackageSession() (string, error)
 	InstallPackage(name string) (string, error)
 	UninstallPackage(name string) (string, error)
-	Modprobe(module string) (string, error)
+	Modprobe(module string, opts ...string) (string, error)
 	CheckModLoaded(module string) error
 	StartService(name string) (string, error)
 	RestartService(name string) (string, error)
