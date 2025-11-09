@@ -2,7 +2,7 @@ module github.com/longhorn/cli
 
 go 1.24.0
 
-toolchain go1.25.3
+toolchain go1.25.4
 
 require (
 	github.com/longhorn/go-common-libs v0.0.0-20251025140453-faa811992208
