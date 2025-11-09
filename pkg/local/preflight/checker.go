@@ -526,6 +526,13 @@ func (local *Checker) checkModulesLoaded(spdkDependent bool) error {
 		if local.UserspaceDriver != "" {
 			modules = append(modules, local.UserspaceDriver)
 		}
+
+		// check if ublk_drv module can be loaded
+		if _, err := local.packageManager.Modprobe("ublk_drv", "--dry-run"); err != nil {
+			logrus.Infof("ublk_drv module can not be loaded: %v", err)
+		} else {
+			local.spdkDepModules = append(local.spdkDepModules, "ublk_drv")
+		}
 	} else {
 		topic = formatTopic(consts.PreflightCheckTopicKernelModules)
 	}
