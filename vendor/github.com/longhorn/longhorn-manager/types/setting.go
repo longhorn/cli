@@ -89,6 +89,7 @@ const (
 	SettingNameCRDAPIVersion                                            = SettingName("crd-api-version")
 	SettingNameAutoSalvage                                              = SettingName("auto-salvage")
 	SettingNameAutoDeletePodWhenVolumeDetachedUnexpectedly              = SettingName("auto-delete-pod-when-volume-detached-unexpectedly")
+	SettingNameBlacklistForAutoDeletePodWhenVolumeDetachedUnexpectedly  = SettingName("blacklist-for-auto-delete-pod-when-volume-detached-unexpectedly")
 	SettingNameRegistrySecret                                           = SettingName("registry-secret")
 	SettingNameDisableSchedulingOnCordonedNode                          = SettingName("disable-scheduling-on-cordoned-node")
 	SettingNameReplicaZoneSoftAntiAffinity                              = SettingName("replica-zone-soft-anti-affinity")
@@ -131,7 +132,7 @@ const (
 	SettingNameRemoveSnapshotsDuringFilesystemTrim                      = SettingName("remove-snapshots-during-filesystem-trim")
 	SettingNameFastReplicaRebuildEnabled                                = SettingName("fast-replica-rebuild-enabled")
 	SettingNameReplicaFileSyncHTTPClientTimeout                         = SettingName("replica-file-sync-http-client-timeout")
-	SettingNameLongGPRCTimeOut                                          = SettingName("long-grpc-timeout")
+	SettingNameLongGRPCTimeOut                                          = SettingName("long-grpc-timeout")
 	SettingNameBackupCompressionMethod                                  = SettingName("backup-compression-method")
 	SettingNameBackupConcurrentLimit                                    = SettingName("backup-concurrent-limit")
 	SettingNameRestoreConcurrentLimit                                   = SettingName("restore-concurrent-limit")
@@ -207,6 +208,7 @@ var (
 		SettingNameCRDAPIVersion,
 		SettingNameAutoSalvage,
 		SettingNameAutoDeletePodWhenVolumeDetachedUnexpectedly,
+		SettingNameBlacklistForAutoDeletePodWhenVolumeDetachedUnexpectedly,
 		SettingNameRegistrySecret,
 		SettingNameDisableSchedulingOnCordonedNode,
 		SettingNameReplicaZoneSoftAntiAffinity,
@@ -248,7 +250,7 @@ var (
 		SettingNameRemoveSnapshotsDuringFilesystemTrim,
 		SettingNameFastReplicaRebuildEnabled,
 		SettingNameReplicaFileSyncHTTPClientTimeout,
-		SettingNameLongGPRCTimeOut,
+		SettingNameLongGRPCTimeOut,
 		SettingNameBackupCompressionMethod,
 		SettingNameBackupConcurrentLimit,
 		SettingNameRestoreConcurrentLimit,
@@ -353,6 +355,7 @@ var (
 		SettingNameCRDAPIVersion:                                            SettingDefinitionCRDAPIVersion,
 		SettingNameAutoSalvage:                                              SettingDefinitionAutoSalvage,
 		SettingNameAutoDeletePodWhenVolumeDetachedUnexpectedly:              SettingDefinitionAutoDeletePodWhenVolumeDetachedUnexpectedly,
+		SettingNameBlacklistForAutoDeletePodWhenVolumeDetachedUnexpectedly:  SettingDefinitionBlacklistForAutoDeletePodWhenVolumeDetachedUnexpectedly,
 		SettingNameRegistrySecret:                                           SettingDefinitionRegistrySecret,
 		SettingNameDisableSchedulingOnCordonedNode:                          SettingDefinitionDisableSchedulingOnCordonedNode,
 		SettingNameReplicaZoneSoftAntiAffinity:                              SettingDefinitionReplicaZoneSoftAntiAffinity,
@@ -394,7 +397,7 @@ var (
 		SettingNameRemoveSnapshotsDuringFilesystemTrim:                      SettingDefinitionRemoveSnapshotsDuringFilesystemTrim,
 		SettingNameFastReplicaRebuildEnabled:                                SettingDefinitionFastReplicaRebuildEnabled,
 		SettingNameReplicaFileSyncHTTPClientTimeout:                         SettingDefinitionReplicaFileSyncHTTPClientTimeout,
-		SettingNameLongGPRCTimeOut:                                          SettingDefinitionLongGPRCTimeOut,
+		SettingNameLongGRPCTimeOut:                                          SettingDefinitionLongGRPCTimeOut,
 		SettingNameBackupCompressionMethod:                                  SettingDefinitionBackupCompressionMethod,
 		SettingNameBackupConcurrentLimit:                                    SettingDefinitionBackupConcurrentLimit,
 		SettingNameRestoreConcurrentLimit:                                   SettingDefinitionRestoreConcurrentLimit,
@@ -844,6 +847,20 @@ var (
 		ReadOnly:           false,
 		DataEngineSpecific: false,
 		Default:            "true",
+	}
+
+	SettingDefinitionBlacklistForAutoDeletePodWhenVolumeDetachedUnexpectedly = SettingDefinition{
+		DisplayName: "Blacklist for Automatically Delete Workload Pod when The Volume Is Detached Unexpectedly",
+		Description: "Blacklist of controller api/kind values for the setting Automatically Delete Workload Pod when the Volume Is Detached Unexpectedly" +
+			"If a workload pod is managed by a controller whose api/kind is listed in this blacklist, Longhorn will not automatically delete the pod when its volume is unexpectedly detached.\n\n" +
+			"Multiple controller apiVersion/kind entries can be specified, separated by semicolons. For example: `apps/StatefulSet;apps/DaemonSet`.\n\n" +
+			"**Note:** The controller api/kind is case sensitive and must exactly match the api/kind in the workload pod's owner reference.",
+		Category:           SettingCategoryGeneral,
+		Type:               SettingTypeString,
+		Required:           false,
+		ReadOnly:           false,
+		DataEngineSpecific: false,
+		Default:            "",
 	}
 
 	SettingDefinitionRegistrySecret = SettingDefinition{
@@ -1423,7 +1440,7 @@ var (
 		},
 	}
 
-	SettingDefinitionLongGPRCTimeOut = SettingDefinition{
+	SettingDefinitionLongGRPCTimeOut = SettingDefinition{
 		DisplayName:        "Long gRPC Timeout",
 		Description:        "Number of seconds that Longhorn allows for the completion of replica rebuilding and snapshot cloning operations.",
 		Category:           SettingCategoryGeneral,
