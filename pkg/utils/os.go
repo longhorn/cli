@@ -28,8 +28,40 @@ func GetPackageManagerType(osRelease string) (pkgmgr.PackageManagerType, error) 
 	case "arch":
 		return pkgmgr.PackageManagerPacman, nil
 	default:
-		return pkgmgr.PackageManagerUnknown, fmt.Errorf("operating system (%s) is not supported", osRelease)
+		return detectPackageManagerUnknown(osRelease)
 	}
+}
+
+func detectPackageManagerUnknown(osRelease string) (pkgmgr.PackageManagerType, error) {
+	packageManagers := []struct {
+		command string
+		pkgType pkgmgr.PackageManagerType
+		distro  string
+	}{
+		{"transactional-update", pkgmgr.PackageManagerTransactionalUpdate, "SUSE micro"},
+		{"zypper", pkgmgr.PackageManagerZypper, "SUSE-based"},
+		{"apt", pkgmgr.PackageManagerApt, "Debian-based"},
+		{"microdnf", pkgmgr.PackageManagerYum, "RPM-based (microdnf)"},
+		{"yum", pkgmgr.PackageManagerYum, "RPM-based (yum)"},
+		{"dnf", pkgmgr.PackageManagerYum, "RPM-based (dnf)"},
+		{"pacman", pkgmgr.PackageManagerPacman, "Arch Linux"},
+	}
+
+	for _, pm := range packageManagers {
+		if isCommandAvailable(pm.command) {
+			fmt.Fprintf(os.Stderr, "WARNING: Operating system '%s' is not officially supported by the Longhorn command-line tool. Please check the official documentation to install the prerequisites manually. "+
+				"Detected package manager '%s' (%s). "+
+				"Proceeding with compatibility mode, but there may be compatibility issues.\n",
+				osRelease, pm.command, pm.distro)
+			return pm.pkgType, nil
+		}
+	}
+	return pkgmgr.PackageManagerUnknown, fmt.Errorf("operating system (%s) is not supported by the Longhorn command-line tool and no known package manager could be detected. Please check the official documentation to install the prerequisites manually", osRelease)
+}
+
+func isCommandAvailable(command string) bool {
+	_, err := exec.LookPath(command)
+	return err == nil
 }
 
 func GetOSRelease() (string, error) {
