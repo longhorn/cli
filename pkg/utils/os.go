@@ -48,7 +48,7 @@ func detectPackageManagerUnknown(osRelease string) (pkgmgr.PackageManagerType, e
 	}
 
 	for _, pm := range packageManagers {
-		if isCommandAvailable(pm.command) {
+		if isCommandAvailableOnHost(pm.command) {
 			fmt.Fprintf(os.Stderr, "WARNING: Operating system '%s' is not officially supported by the Longhorn command-line tool. Please check the official documentation to install the prerequisites manually. "+
 				"Detected package manager '%s' (%s). "+
 				"Proceeding with compatibility mode, but there may be compatibility issues.\n",
@@ -59,7 +59,38 @@ func detectPackageManagerUnknown(osRelease string) (pkgmgr.PackageManagerType, e
 	return pkgmgr.PackageManagerUnknown, fmt.Errorf("operating system (%s) is not supported by the Longhorn command-line tool and no known package manager could be detected. Please check the official documentation to install the prerequisites manually", osRelease)
 }
 
-func isCommandAvailable(command string) bool {
+// isCommandAvailableOnHost checks if a command is available on the host system
+// by checking common binary locations in the host filesystem
+func isCommandAvailableOnHost(command string) bool {
+	// Common paths where package managers are typically installed
+	commonPaths := []string{
+		"/usr/bin",
+		"/bin",
+		"/usr/sbin",
+		"/sbin",
+		"/usr/local/bin",
+		"/usr/local/sbin",
+	}
+
+	// Check if running in a container with host mount
+	hostRoot := consts.VolumeMountHostDirectory
+	if _, err := os.Stat(hostRoot); err == nil {
+		// Check in host paths
+		for _, dir := range commonPaths {
+			hostPath := filepath.Join(hostRoot, dir, command)
+			if info, err := os.Stat(hostPath); err == nil {
+				// Verify it's a regular file or symlink and has execute permissions
+				if info.Mode().IsRegular() || info.Mode()&os.ModeSymlink != 0 {
+					// Check if file has execute permission (at least one execute bit set)
+					if info.Mode().Perm()&0111 != 0 {
+						return true
+					}
+				}
+			}
+		}
+	}
+
+	// Fallback to checking in current environment
 	_, err := exec.LookPath(command)
 	return err == nil
 }
