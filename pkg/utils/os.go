@@ -90,9 +90,7 @@ func isCommandAvailableOnHost(command string) bool {
 		}
 	}
 
-	// Fallback to checking in current environment
-	_, err := exec.LookPath(command)
-	return err == nil
+	return false
 }
 
 func GetOSRelease() (string, error) {
