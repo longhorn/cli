@@ -156,7 +156,7 @@ github.com/kr/text
 # github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de
 ## explicit
 github.com/liggitt/tabwriter
-# github.com/longhorn/go-common-libs v0.0.0-20251213114131-1a1ec1f0270e
+# github.com/longhorn/go-common-libs v0.0.0-20251213114131-1a1ec1f0270e => github.com/davidcheng0922/go-common-libs v0.0.0-20260120053215-2dd5c66c68aa
 ## explicit; go 1.24.0
 github.com/longhorn/go-common-libs/exec
 github.com/longhorn/go-common-libs/io
@@ -255,8 +255,8 @@ github.com/russross/blackfriday/v2
 github.com/shirou/gopsutil/v3/common
 github.com/shirou/gopsutil/v3/disk
 github.com/shirou/gopsutil/v3/internal/common
-# github.com/sirupsen/logrus v1.9.3
-## explicit; go 1.13
+# github.com/sirupsen/logrus v1.9.4
+## explicit; go 1.17
 github.com/sirupsen/logrus
 # github.com/spf13/cobra v1.10.2
 ## explicit; go 1.15
@@ -286,7 +286,7 @@ go.yaml.in/yaml/v2
 # go.yaml.in/yaml/v3 v3.0.4
 ## explicit; go 1.16
 go.yaml.in/yaml/v3
-# golang.org/x/exp v0.0.0-20251209150349-8475f28825e9
+# golang.org/x/exp v0.0.0-20260112195511-716be5621a96
 ## explicit; go 1.24.0
 golang.org/x/exp/constraints
 # golang.org/x/net v0.47.0
@@ -340,7 +340,7 @@ golang.org/x/text/unicode/norm
 # golang.org/x/time v0.12.0
 ## explicit; go 1.23.0
 golang.org/x/time/rate
-# google.golang.org/protobuf v1.36.10
+# google.golang.org/protobuf v1.36.11
 ## explicit; go 1.23
 google.golang.org/protobuf/encoding/prototext
 google.golang.org/protobuf/encoding/protowire
@@ -982,5 +982,6 @@ sigs.k8s.io/structured-merge-diff/v6/value
 ## explicit; go 1.22
 sigs.k8s.io/yaml
 sigs.k8s.io/yaml/kyaml
+# github.com/longhorn/go-common-libs => github.com/davidcheng0922/go-common-libs v0.0.0-20260120053215-2dd5c66c68aa
 # k8s.io/cloud-provider => k8s.io/cloud-provider v0.35.0
 # k8s.io/kubelet => k8s.io/kubelet v0.35.0

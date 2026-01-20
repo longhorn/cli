@@ -9,7 +9,7 @@ require (
 	github.com/longhorn/longhorn-manager v1.10.1
 	github.com/otiai10/copy v1.14.1
 	github.com/pkg/errors v0.9.1
-	github.com/sirupsen/logrus v1.9.3
+	github.com/sirupsen/logrus v1.9.4
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
 	gopkg.in/yaml.v3 v3.0.1
@@ -84,7 +84,7 @@ require (
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.org/x/exp v0.0.0-20251209150349-8475f28825e9 // indirect
+	golang.org/x/exp v0.0.0-20260112195511-716be5621a96 // indirect
 	golang.org/x/net v0.47.0 // indirect
 	golang.org/x/oauth2 v0.32.0 // indirect
 	golang.org/x/sync v0.19.0 // indirect
@@ -92,7 +92,7 @@ require (
 	golang.org/x/term v0.37.0 // indirect
 	golang.org/x/text v0.31.0 // indirect
 	golang.org/x/time v0.12.0 // indirect
-	google.golang.org/protobuf v1.36.10 // indirect
+	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.13.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
@@ -109,6 +109,7 @@ require (
 )
 
 replace (
+	github.com/longhorn/go-common-libs => github.com/davidcheng0922/go-common-libs v0.0.0-20260120053215-2dd5c66c68aa
 	k8s.io/cloud-provider => k8s.io/cloud-provider v0.35.0
 	k8s.io/kubelet => k8s.io/kubelet v0.35.0
 )
