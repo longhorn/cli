@@ -6,7 +6,7 @@ This repository contains the source code for `longhornctl`, a CLI (command-line 
 
 - Install and verify prelight requirements.
 - Execute one-time Longhorn operations.
-- Gain inside into your Longhorn system.
+- Gain insight into your Longhorn system.
 
 ## Usage
 
