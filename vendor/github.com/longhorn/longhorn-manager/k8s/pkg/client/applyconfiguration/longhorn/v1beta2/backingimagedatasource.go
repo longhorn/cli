@@ -26,6 +26,8 @@ import (
 
 // BackingImageDataSourceApplyConfiguration represents a declarative configuration of the BackingImageDataSource type for use
 // with apply.
+//
+// BackingImageDataSource is where Longhorn stores backing image data source object.
 type BackingImageDataSourceApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
 	*v1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
@@ -43,6 +45,8 @@ func BackingImageDataSource(name, namespace string) *BackingImageDataSourceApply
 	b.WithAPIVersion("longhorn.io/v1beta2")
 	return b
 }
+
+func (b BackingImageDataSourceApplyConfiguration) IsApplyConfiguration() {}
 
 // WithKind sets the Kind field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
@@ -218,8 +222,24 @@ func (b *BackingImageDataSourceApplyConfiguration) WithStatus(value *BackingImag
 	return b
 }
 
+// GetKind retrieves the value of the Kind field in the declarative configuration.
+func (b *BackingImageDataSourceApplyConfiguration) GetKind() *string {
+	return b.TypeMetaApplyConfiguration.Kind
+}
+
+// GetAPIVersion retrieves the value of the APIVersion field in the declarative configuration.
+func (b *BackingImageDataSourceApplyConfiguration) GetAPIVersion() *string {
+	return b.TypeMetaApplyConfiguration.APIVersion
+}
+
 // GetName retrieves the value of the Name field in the declarative configuration.
 func (b *BackingImageDataSourceApplyConfiguration) GetName() *string {
 	b.ensureObjectMetaApplyConfigurationExists()
 	return b.ObjectMetaApplyConfiguration.Name
+}
+
+// GetNamespace retrieves the value of the Namespace field in the declarative configuration.
+func (b *BackingImageDataSourceApplyConfiguration) GetNamespace() *string {
+	b.ensureObjectMetaApplyConfigurationExists()
+	return b.ObjectMetaApplyConfiguration.Namespace
 }
