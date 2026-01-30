@@ -43,6 +43,7 @@ const (
 	CmdOptTargetDirectory = "target-dir"
 	CmdOptUpdatePackages  = "update-packages"
 	CmdOptNodeSelector    = "node-selector"
+	CmdOptAll             = "all"
 
 	// SPDK options
 	CmdOptAllowPci             = "allow-pci"

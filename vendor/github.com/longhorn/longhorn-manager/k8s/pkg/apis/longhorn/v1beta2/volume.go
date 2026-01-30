@@ -123,22 +123,24 @@ type VolumeCloneStatus struct {
 }
 
 const (
-	VolumeConditionTypeScheduled           = "Scheduled"
-	VolumeConditionTypeRestore             = "Restore"
-	VolumeConditionTypeTooManySnapshots    = "TooManySnapshots"
-	VolumeConditionTypeWaitForBackingImage = "WaitForBackingImage"
-	VolumeConditionTypeOfflineRebuilding   = "OfflineRebuilding"
+	VolumeConditionTypeScheduled                = "Scheduled"
+	VolumeConditionTypeRestore                  = "Restore"
+	VolumeConditionTypeTooManySnapshots         = "TooManySnapshots"
+	VolumeConditionTypeWaitForBackingImage      = "WaitForBackingImage"
+	VolumeConditionTypeBackingImageIncompatible = "BackingImageIncompatible"
+	VolumeConditionTypeOfflineRebuilding        = "OfflineRebuilding"
 )
 
 const (
-	VolumeConditionReasonReplicaSchedulingFailure      = "ReplicaSchedulingFailure"
-	VolumeConditionReasonLocalReplicaSchedulingFailure = "LocalReplicaSchedulingFailure"
-	VolumeConditionReasonRestoreInProgress             = "RestoreInProgress"
-	VolumeConditionReasonRestoreFailure                = "RestoreFailure"
-	VolumeConditionReasonTooManySnapshots              = "TooManySnapshots"
-	VolumeConditionReasonWaitForBackingImageFailed     = "GetBackingImageFailed"
-	VolumeConditionReasonWaitForBackingImageWaiting    = "Waiting"
-	VolumeConditionReasonOfflineRebuildingInProgress   = "OfflineRebuildingInProgress"
+	VolumeConditionReasonReplicaSchedulingFailure        = "ReplicaSchedulingFailure"
+	VolumeConditionReasonLocalReplicaSchedulingFailure   = "LocalReplicaSchedulingFailure"
+	VolumeConditionReasonRestoreInProgress               = "RestoreInProgress"
+	VolumeConditionReasonRestoreFailure                  = "RestoreFailure"
+	VolumeConditionReasonTooManySnapshots                = "TooManySnapshots"
+	VolumeConditionReasonWaitForBackingImageFailed       = "GetBackingImageFailed"
+	VolumeConditionReasonWaitForBackingImageWaiting      = "Waiting"
+	VolumeConditionReasonBackingImageVirtualSizeTooLarge = "BackingImageVirtualSizeTooLarge"
+	VolumeConditionReasonOfflineRebuildingInProgress     = "OfflineRebuildingInProgress"
 )
 
 type SnapshotDataIntegrity string
@@ -346,10 +348,14 @@ type VolumeSpec struct {
 	// When set to 0, it means following the global setting.
 	RebuildConcurrentSyncLimit int `json:"rebuildConcurrentSyncLimit"`
 
-	// OnDemandChecksumRequestedAt is the RFC3339 timestamp when an on-demand checksum calculation is requested.
-	// When this value differs from LastOnDemandChecksumCompletedAt, the system will attempt to calculate checksums for all snapshots
-	// that do not already have a checksum.
-	OnDemandChecksumRequestedAt string `json:"onDemandChecksumRequestedAt,omitempty"` // +optional
+	// +optional
+	// SnapshotHashingRequestedAt is the RFC3339 timestamp (e.g., "2026-03-16T10:30:00Z") when an on-demand snapshot checksum calculation is requested.
+	// When this value is set and is later than LastOnDemandSnapshotHashingCompleteAt, the system will calculate checksums
+	// for all user snapshots.
+	//
+	// If SnapshotHashingRequestedAt differs from LastOnDemandSnapshotHashingCompleteAt, it indicates that a hashing request
+	// is still in progress, and a new request will be rejected.
+	SnapshotHashingRequestedAt string `json:"snapshotHashingRequestedAt,omitempty"` // +optional
 }
 
 // VolumeStatus defines the observed state of the Longhorn volume
@@ -399,7 +405,10 @@ type VolumeStatus struct {
 	// +optional
 	ShareState ShareManagerState `json:"shareState"`
 	// +optional
-	LastOnDemandChecksumCompletedAt string `json:"lastOnDemandChecksumCompletedAt,omitempty"`
+	// LastOnDemandSnapshotHashingCompleteAt is the RFC3339 timestamp (e.g., "2026-03-16T10:30:00Z") when the
+	// most recent on-demand snapshot checksum calculation completed.
+	// When this value matches SnapshotHashingRequestedAt, the requested on-demand checksum calculation is considered complete.
+	LastOnDemandSnapshotHashingCompleteAt string `json:"lastOnDemandSnapshotHashingCompleteAt,omitempty"`
 }
 
 // +genclient
