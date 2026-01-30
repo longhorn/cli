@@ -58,6 +58,7 @@ func newCmdLonghornctl() *cobra.Command {
 			Commands: []*cobra.Command{
 				subcmd.NewCmdTrim(globalOpts),
 				subcmd.NewCmdExport(globalOpts),
+				subcmd.NewCmdChecksum(globalOpts),
 			},
 		},
 		{

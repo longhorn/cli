@@ -1,11 +1,14 @@
 package kubernetes
 
 import (
+	"context"
 	"fmt"
 	"os"
 
+	"github.com/pkg/errors"
 	"k8s.io/client-go/tools/clientcmd"
 
+	lhClient "github.com/longhorn/longhorn-manager/util/client"
 	kubeclient "k8s.io/client-go/kubernetes"
 )
 
@@ -35,4 +38,15 @@ func NewKubeClient(masterUrl string, kubeconfigPath string) (kubeClient *kubecli
 	}
 
 	return kubeClient, nil
+}
+
+func NewLonghornClient(kubeconfigPath string) (*lhClient.Clients, context.CancelFunc, error) {
+	ctx, cancel := context.WithCancel(context.Background())
+
+	lhClient, err := lhClient.NewClients(kubeconfigPath, true, ctx.Done())
+	if err != nil {
+		return nil, cancel, errors.Wrap(err, "failed to create Longhorn clientset")
+	}
+
+	return lhClient, cancel, nil
 }
