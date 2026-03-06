@@ -516,5 +516,60 @@ func (local *Checker) checkKubeDNS() {
 		return
 	}
 
+<<<<<<< HEAD
 	local.collection.Log.Info = append(local.collection.Log.Info, fmt.Sprintf("Kube DNS %q is set with %d replicas and %d ready replicas", deployment.Name, *deployment.Spec.Replicas, deployment.Status.ReadyReplicas))
+=======
+	local.collection.Log.Info = append(local.collection.Log.Info,
+		wrapMsgWithTopic(topic,
+			fmt.Sprintf("Kube DNS %q is set with %d replicas and %d ready replicas", deployment.Name, *deployment.Spec.Replicas, deployment.Status.ReadyReplicas)))
+
+	return nil
+}
+
+func wrapMsgWithTopic(topic, msg string) string {
+	return fmt.Sprintf("%s %s", topic, msg)
+}
+
+func wrapInternalError(topic string, err error) error {
+	return fmt.Errorf("%s%s %w", topic, formatTopic(consts.PreflightCheckTopicInternalError), err)
+}
+
+func wrapAggregatedInternalError(topic, msg string, items map[string]any) error {
+	return wrapInternalError(topic, errors.New(wrapMultItems(msg, items)))
+}
+
+// wrapMultItems aggregates multiple related errors under a common topic.
+// It formats the errors into a user-friendly bullet list and returns a single wrapped error.
+func wrapMultItems(msg string, items map[string]any) string {
+	var msgBuilder strings.Builder
+	msgBuilder.WriteString(msg)
+
+	index := 1
+	for set, content := range items {
+		if content == nil {
+			fmt.Fprintf(&msgBuilder, "  (%d) %s", index, set)
+		} else {
+			fmt.Fprintf(&msgBuilder, "  (%d) %s: %v", index, set, content)
+		}
+		index++
+	}
+
+	return msgBuilder.String()
+}
+
+func isExitCode(err error, code int) bool {
+	var exitErr *exec.ExitError
+	if errors.As(err, &exitErr) {
+		return exitErr.ExitCode() == code
+	}
+	return false
+}
+
+func formatTopic(topics ...string) string {
+	s := ""
+	for _, topic := range topics {
+		s += "[" + topic + "]"
+	}
+	return s
+>>>>>>> ac4ac4b (fix: fix validation errors)
 }
