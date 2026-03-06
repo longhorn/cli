@@ -24,9 +24,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/uuid"
 	"github.com/gorilla/handlers"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -413,6 +413,15 @@ func GetStringChecksumSHA256(data string) string {
 
 func GetChecksumSHA256(data []byte) string {
 	checksum := sha256.Sum256(data)
+	return hex.EncodeToString(checksum[:])
+}
+
+func GetStringChecksumSHA224(data string) string {
+	return GetChecksumSHA224([]byte(data))
+}
+
+func GetChecksumSHA224(data []byte) string {
+	checksum := sha256.Sum224(data)
 	return hex.EncodeToString(checksum[:])
 }
 

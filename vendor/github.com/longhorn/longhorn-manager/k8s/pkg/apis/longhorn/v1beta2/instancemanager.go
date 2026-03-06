@@ -20,6 +20,23 @@ const (
 	InstanceManagerStateUnknown  = InstanceManagerState("unknown")
 )
 
+const (
+	InstanceManagerConditionTypeNodeReady     = "NodeReady"
+	InstanceManagerConditionTypePodReady      = "PodReady"
+	InstanceManagerConditionTypeSettingSynced = "SettingSynced"
+
+	InstanceManagerConditionReasonNodeDown          = "Down"
+	InstanceManagerConditionReasonNodeUnschedulable = "Unschedulable"
+
+	InstanceManagerConditionReasonPodDeleting = "Deleting"
+	InstanceManagerConditionReasonPodFailed   = "Failed"
+	InstanceManagerConditionReasonPodNotFound = "NotFound"
+	InstanceManagerConditionReasonPodRunning  = "Running"
+	InstanceManagerConditionReasonPodStarting = "Starting"
+
+	InstanceManagerConditionReasonSettingNotSynced = "SettingNotSynced"
+)
+
 // +kubebuilder:validation:Enum=aio;engine;replica
 type InstanceManagerType string
 
@@ -197,6 +214,9 @@ type InstanceManagerStatus struct {
 	CurrentState InstanceManagerState `json:"currentState"`
 	// +optional
 	// +nullable
+	Conditions []Condition `json:"conditions"`
+	// +optional
+	// +nullable
 	InstanceEngines map[string]InstanceProcess `json:"instanceEngines,omitempty"`
 	// +optional
 	// +nullable
@@ -216,11 +236,6 @@ type InstanceManagerStatus struct {
 	ProxyAPIVersion int `json:"proxyApiVersion"`
 	// +optional
 	DataEngineStatus DataEngineStatus `json:"dataEngineStatus"`
-
-	// Deprecated: Replaced by InstanceEngines and InstanceReplicas
-	// +optional
-	// +nullable
-	Instances map[string]InstanceProcess `json:"instances,omitempty"`
 }
 
 // +genclient

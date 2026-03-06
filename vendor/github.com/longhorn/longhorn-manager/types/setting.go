@@ -77,6 +77,7 @@ const (
 	SettingNameStorageReservedPercentageForDefaultDisk                  = SettingName("storage-reserved-percentage-for-default-disk")
 	SettingNameUpgradeChecker                                           = SettingName("upgrade-checker")
 	SettingNameUpgradeResponderURL                                      = SettingName("upgrade-responder-url")
+	SettingNameManagerURL                                               = SettingName("manager-url")
 	SettingNameAllowCollectingLonghornUsage                             = SettingName("allow-collecting-longhorn-usage-metrics")
 	SettingNameCurrentLonghornVersion                                   = SettingName("current-longhorn-version")
 	SettingNameLatestLonghornVersion                                    = SettingName("latest-longhorn-version")
@@ -86,6 +87,7 @@ const (
 	SettingNameDefaultLonghornStaticStorageClass                        = SettingName("default-longhorn-static-storage-class")
 	SettingNameTaintToleration                                          = SettingName("taint-toleration")
 	SettingNameSystemManagedComponentsNodeSelector                      = SettingName("system-managed-components-node-selector")
+	SettingNameSystemManagedCSIComponentsResourceLimits                 = SettingName("system-managed-csi-components-resource-limits")
 	SettingNameCRDAPIVersion                                            = SettingName("crd-api-version")
 	SettingNameAutoSalvage                                              = SettingName("auto-salvage")
 	SettingNameAutoDeletePodWhenVolumeDetachedUnexpectedly              = SettingName("auto-delete-pod-when-volume-detached-unexpectedly")
@@ -100,6 +102,7 @@ const (
 	SettingNameDisableRevisionCounter                                   = SettingName("disable-revision-counter")
 	SettingNameReplicaReplenishmentWaitInterval                         = SettingName("replica-replenishment-wait-interval")
 	SettingNameConcurrentReplicaRebuildPerNodeLimit                     = SettingName("concurrent-replica-rebuild-per-node-limit")
+	SettingNameReplicaRebuildConcurrentSyncLimit                        = SettingName("replica-rebuild-concurrent-sync-limit")
 	SettingNameConcurrentBackingImageCopyReplenishPerNodeLimit          = SettingName("concurrent-backing-image-replenish-per-node-limit")
 	SettingNameConcurrentBackupRestorePerNodeLimit                      = SettingName("concurrent-volume-backup-restore-per-node-limit")
 	SettingNameSystemManagedPodsImagePullPolicy                         = SettingName("system-managed-pods-image-pull-policy")
@@ -115,7 +118,7 @@ const (
 	SettingNameOrphanResourceAutoDeletion                               = SettingName("orphan-resource-auto-deletion")
 	SettingNameOrphanResourceAutoDeletionGracePeriod                    = SettingName("orphan-resource-auto-deletion-grace-period")
 	SettingNameStorageNetwork                                           = SettingName("storage-network")
-	SettingNameStorageNetworkForRWXVolumeEnabled                        = SettingName("storage-network-for-rwx-volume-enabled")
+	SettingNameEndpointNetworkForRWXVolume                              = SettingName("endpoint-network-for-rwx-volume")
 	SettingNameFailedBackupTTL                                          = SettingName("failed-backup-ttl")
 	SettingNameRecurringSuccessfulJobsHistoryLimit                      = SettingName("recurring-successful-jobs-history-limit")
 	SettingNameRecurringFailedJobsHistoryLimit                          = SettingName("recurring-failed-jobs-history-limit")
@@ -157,19 +160,17 @@ const (
 	SettingNameRWXVolumeFastFailover                                    = SettingName("rwx-volume-fast-failover")
 	SettingNameOfflineReplicaRebuilding                                 = SettingName("offline-replica-rebuilding")
 	SettingNameReplicaRebuildingBandwidthLimit                          = SettingName("replica-rebuilding-bandwidth-limit")
+	SettingNameDefaultUblkQueueDepth                                    = SettingName("default-ublk-queue-depth")
+	SettingNameDefaultUblkNumberOfQueue                                 = SettingName("default-ublk-number-of-queue")
 	SettingNameDefaultBackupBlockSize                                   = SettingName("default-backup-block-size")
 	SettingNameInstanceManagerPodLivenessProbeTimeout                   = SettingName("instance-manager-pod-liveness-probe-timeout")
 	SettingNameLogPath                                                  = SettingName("log-path")
-
-	// These three backup target parameters are used in the "longhorn-default-resource" ConfigMap
-	// to update the default BackupTarget resource.
-	// Longhorn won't create the Setting resources for these three parameters.
-	SettingNameBackupTarget                 = SettingName("backup-target")
-	SettingNameBackupTargetCredentialSecret = SettingName("backup-target-credential-secret")
-	SettingNameBackupstorePollInterval      = SettingName("backupstore-poll-interval")
+	SettingNameSnapshotHeavyTaskConcurrentLimit                         = SettingName("snapshot-heavy-task-concurrent-limit")
+	SettingNameNodeDiskHealthMonitoring                                 = SettingName("node-disk-health-monitoring")
 
 	// The settings are deprecated and Longhorn won't create Setting Resources for these parameters.
 	// TODO: Remove these settings in the future releases.
+	SettingNameStorageNetworkForRWXVolumeEnabled        = SettingName("storage-network-for-rwx-volume-enabled")
 	SettingNameV2DataEngineHugepageLimit                = SettingName("v2-data-engine-hugepage-limit")
 	SettingNameV2DataEngineGuaranteedInstanceManagerCPU = SettingName("v2-data-engine-guaranteed-instance-manager-cpu")
 	SettingNameV2DataEngineCPUMask                      = SettingName("v2-data-engine-cpu-mask")
@@ -196,6 +197,7 @@ var (
 		SettingNameStorageReservedPercentageForDefaultDisk,
 		SettingNameUpgradeChecker,
 		SettingNameUpgradeResponderURL,
+		SettingNameManagerURL,
 		SettingNameAllowCollectingLonghornUsage,
 		SettingNameCurrentLonghornVersion,
 		SettingNameLatestLonghornVersion,
@@ -205,6 +207,7 @@ var (
 		SettingNameDefaultLonghornStaticStorageClass,
 		SettingNameTaintToleration,
 		SettingNameSystemManagedComponentsNodeSelector,
+		SettingNameSystemManagedCSIComponentsResourceLimits,
 		SettingNameCRDAPIVersion,
 		SettingNameAutoSalvage,
 		SettingNameAutoDeletePodWhenVolumeDetachedUnexpectedly,
@@ -219,6 +222,7 @@ var (
 		SettingNameDisableRevisionCounter,
 		SettingNameReplicaReplenishmentWaitInterval,
 		SettingNameConcurrentReplicaRebuildPerNodeLimit,
+		SettingNameReplicaRebuildConcurrentSyncLimit,
 		SettingNameConcurrentBackingImageCopyReplenishPerNodeLimit,
 		SettingNameConcurrentBackupRestorePerNodeLimit,
 		SettingNameSystemManagedPodsImagePullPolicy,
@@ -233,7 +237,7 @@ var (
 		SettingNameOrphanResourceAutoDeletion,
 		SettingNameOrphanResourceAutoDeletionGracePeriod,
 		SettingNameStorageNetwork,
-		SettingNameStorageNetworkForRWXVolumeEnabled,
+		SettingNameEndpointNetworkForRWXVolume,
 		SettingNameFailedBackupTTL,
 		SettingNameRecurringSuccessfulJobsHistoryLimit,
 		SettingNameRecurringFailedJobsHistoryLimit,
@@ -276,14 +280,19 @@ var (
 		SettingNameRWXVolumeFastFailover,
 		SettingNameOfflineReplicaRebuilding,
 		SettingNameReplicaRebuildingBandwidthLimit,
+		SettingNameDefaultUblkQueueDepth,
+		SettingNameDefaultUblkNumberOfQueue,
 		SettingNameDefaultBackupBlockSize,
 		SettingNameInstanceManagerPodLivenessProbeTimeout,
 		SettingNameLogPath,
+		SettingNameNodeDiskHealthMonitoring,
+		SettingNameSnapshotHeavyTaskConcurrentLimit,
 	}
 )
 
 var replacedSettingNames = map[SettingName]bool{
 	SettingNameOrphanAutoDeletion:                       true, // SettingNameOrphanResourceAutoDeletion
+	SettingNameStorageNetworkForRWXVolumeEnabled:        true, // SettingNameEndpointNetworkForRWXVolume
 	SettingNameV2DataEngineHugepageLimit:                true, // SettingNameHugepageLimit
 	SettingNameV2DataEngineGuaranteedInstanceManagerCPU: true, // SettingNameGuaranteedInstanceManagerCPU
 	SettingNameV2DataEngineCPUMask:                      true, // SettingNameDataEngineCPUMask
@@ -343,6 +352,7 @@ var (
 		SettingNameStorageReservedPercentageForDefaultDisk:                  SettingDefinitionStorageReservedPercentageForDefaultDisk,
 		SettingNameUpgradeChecker:                                           SettingDefinitionUpgradeChecker,
 		SettingNameUpgradeResponderURL:                                      SettingDefinitionUpgradeResponderURL,
+		SettingNameManagerURL:                                               SettingDefinitionManagerURL,
 		SettingNameAllowCollectingLonghornUsage:                             SettingDefinitionAllowCollectingLonghornUsageMetrics,
 		SettingNameCurrentLonghornVersion:                                   SettingDefinitionCurrentLonghornVersion,
 		SettingNameLatestLonghornVersion:                                    SettingDefinitionLatestLonghornVersion,
@@ -352,6 +362,7 @@ var (
 		SettingNameDefaultLonghornStaticStorageClass:                        SettingDefinitionDefaultLonghornStaticStorageClass,
 		SettingNameTaintToleration:                                          SettingDefinitionTaintToleration,
 		SettingNameSystemManagedComponentsNodeSelector:                      SettingDefinitionSystemManagedComponentsNodeSelector,
+		SettingNameSystemManagedCSIComponentsResourceLimits:                 SettingDefinitionSystemManagedCSIComponentsResourceLimits,
 		SettingNameCRDAPIVersion:                                            SettingDefinitionCRDAPIVersion,
 		SettingNameAutoSalvage:                                              SettingDefinitionAutoSalvage,
 		SettingNameAutoDeletePodWhenVolumeDetachedUnexpectedly:              SettingDefinitionAutoDeletePodWhenVolumeDetachedUnexpectedly,
@@ -366,6 +377,7 @@ var (
 		SettingNameDisableRevisionCounter:                                   SettingDefinitionDisableRevisionCounter,
 		SettingNameReplicaReplenishmentWaitInterval:                         SettingDefinitionReplicaReplenishmentWaitInterval,
 		SettingNameConcurrentReplicaRebuildPerNodeLimit:                     SettingDefinitionConcurrentReplicaRebuildPerNodeLimit,
+		SettingNameReplicaRebuildConcurrentSyncLimit:                        SettingDefinitionReplicaRebuildConcurrentSyncLimit,
 		SettingNameConcurrentBackingImageCopyReplenishPerNodeLimit:          SettingDefinitionConcurrentBackingImageCopyReplenishPerNodeLimit,
 		SettingNameConcurrentBackupRestorePerNodeLimit:                      SettingDefinitionConcurrentVolumeBackupRestorePerNodeLimit,
 		SettingNameSystemManagedPodsImagePullPolicy:                         SettingDefinitionSystemManagedPodsImagePullPolicy,
@@ -380,7 +392,7 @@ var (
 		SettingNameOrphanResourceAutoDeletion:                               SettingDefinitionOrphanResourceAutoDeletion,
 		SettingNameOrphanResourceAutoDeletionGracePeriod:                    SettingDefinitionOrphanResourceAutoDeletionGracePeriod,
 		SettingNameStorageNetwork:                                           SettingDefinitionStorageNetwork,
-		SettingNameStorageNetworkForRWXVolumeEnabled:                        SettingDefinitionStorageNetworkForRWXVolumeEnabled,
+		SettingNameEndpointNetworkForRWXVolume:                              SettingDefinitionEndpointNetworkForRWXVolume,
 		SettingNameFailedBackupTTL:                                          SettingDefinitionFailedBackupTTL,
 		SettingNameRecurringSuccessfulJobsHistoryLimit:                      SettingDefinitionRecurringSuccessfulJobsHistoryLimit,
 		SettingNameRecurringFailedJobsHistoryLimit:                          SettingDefinitionRecurringFailedJobsHistoryLimit,
@@ -422,9 +434,13 @@ var (
 		SettingNameRWXVolumeFastFailover:                                    SettingDefinitionRWXVolumeFastFailover,
 		SettingNameOfflineReplicaRebuilding:                                 SettingDefinitionOfflineReplicaRebuilding,
 		SettingNameReplicaRebuildingBandwidthLimit:                          SettingDefinitionReplicaRebuildingBandwidthLimit,
+		SettingNameDefaultUblkQueueDepth:                                    SettingDefinitionDefaultUblkQueueDepth,
+		SettingNameDefaultUblkNumberOfQueue:                                 SettingDefinitionDefaultUblkNumberOfQueue,
 		SettingNameDefaultBackupBlockSize:                                   SettingDefinitionDefaultBackupBlockSize,
 		SettingNameInstanceManagerPodLivenessProbeTimeout:                   SettingDefinitionInstanceManagerPodLivenessProbeTimeout,
 		SettingNameLogPath:                                                  SettingDefinitionLogPath,
+		SettingNameNodeDiskHealthMonitoring:                                 SettingDefinitionNodeDiskHealthMonitoring,
+		SettingNameSnapshotHeavyTaskConcurrentLimit:                         SettingDefinitionSnapshotHeavyTaskConcurrentLimit,
 	}
 
 	SettingDefinitionAllowRecurringJobWhileVolumeDetached = SettingDefinition{
@@ -686,6 +702,17 @@ var (
 		Default:            "https://longhorn-upgrade-responder.rancher.io/v1/checkupgrade",
 	}
 
+	SettingDefinitionManagerURL = SettingDefinition{
+		DisplayName:        "Manager URL",
+		Description:        "The external URL used to access the Longhorn Manager API. When set, this URL is returned in API responses (the actions and links fields) instead of the internal pod IP. This is useful when accessing the API through Ingress or Gateway API HTTPRoute. Format: scheme://host[:port] (for example, https://longhorn.example.com or https://longhorn.example.com:8443). Leave it empty to use the default behavior.",
+		Category:           SettingCategoryGeneral,
+		Type:               SettingTypeString,
+		Required:           false,
+		ReadOnly:           false,
+		DataEngineSpecific: false,
+		Default:            "",
+	}
+
 	SettingDefinitionAllowCollectingLonghornUsageMetrics = SettingDefinition{
 		DisplayName: "Allow Collecting Longhorn Usage Metrics",
 		Description: "Enabling this setting will allow Longhorn to provide additional usage metrics to https://metrics.longhorn.io/.\n" +
@@ -807,6 +834,46 @@ var (
 			"Multiple label key-value pairs are separated by semicolon. For example: \n\n" +
 			"* `label-key1=label-value1; label-key2=label-value2` \n\n" +
 			"Please see the documentation at https://longhorn.io for more detailed instructions about changing node selector",
+		Category:           SettingCategoryDangerZone,
+		Type:               SettingTypeString,
+		Required:           false,
+		ReadOnly:           false,
+		DataEngineSpecific: false,
+	}
+
+	SettingDefinitionSystemManagedCSIComponentsResourceLimits = SettingDefinition{
+		DisplayName: "System Managed CSI Components Resource Limits",
+		Description: "This setting allows you to configure CPU and memory requests/limits for system-managed CSI components. " +
+			"Supported components include: csi-attacher, csi-provisioner, csi-resizer, csi-snapshotter, " +
+			"longhorn-csi-plugin, node-driver-registrar, and longhorn-liveness-probe. " +
+			"The value must be a JSON object with component names as keys and Kubernetes ResourceRequirements " +
+			"(requests and limits) as values. Only the components defined in the JSON object will have their " +
+			"resource requirements overridden; all others will continue using Longhorn's defaults. " +
+			"Updating resource limits will restart the affected CSI components. During this period, new volume " +
+			"provisioning, expansion, snapshot, or attach/detach operations may be temporarily delayed. Existing " +
+			"mounted volumes remain usable.\n\n" +
+			"Example:\n\n" +
+			"```json\n" +
+			"{\n" +
+			"  \"csi-attacher\": {\n" +
+			"    \"requests\": {\"cpu\": \"100m\", \"memory\": \"128Mi\"},\n" +
+			"    \"limits\": {\"cpu\": \"200m\", \"memory\": \"256Mi\"}\n" +
+			"  },\n" +
+			"  \"csi-provisioner\": {\n" +
+			"    \"requests\": {\"cpu\": \"100m\", \"memory\": \"128Mi\"},\n" +
+			"    \"limits\": {\"cpu\": \"200m\", \"memory\": \"256Mi\"}\n" +
+			"  },\n" +
+			"  \"longhorn-csi-plugin\": {\n" +
+			"    \"requests\": {\"cpu\": \"100m\", \"memory\": \"128Mi\"},\n" +
+			"    \"limits\": {\"cpu\": \"200m\", \"memory\": \"256Mi\"}\n" +
+			"  },\n" +
+			"  \"node-driver-registrar\": {\n" +
+			"    \"requests\": {\"cpu\": \"50m\", \"memory\": \"64Mi\"},\n" +
+			"    \"limits\": {\"cpu\": \"100m\", \"memory\": \"128Mi\"}\n" +
+			"  }\n" +
+			"}\n" +
+			"```\n\n" +
+			"Supported components: csi-attacher, csi-provisioner, csi-resizer, csi-snapshotter, longhorn-csi-plugin, node-driver-registrar, longhorn-liveness-probe",
 		Category:           SettingCategoryDangerZone,
 		Type:               SettingTypeString,
 		Required:           false,
@@ -1005,6 +1072,22 @@ var (
 		Default:            "5",
 		ValueIntRange: map[string]int{
 			ValueIntRangeMinimum: 0,
+		},
+	}
+
+	SettingDefinitionReplicaRebuildConcurrentSyncLimit = SettingDefinition{
+		DisplayName: "Replica Rebuild Concurrent Sync Limit",
+		Description: "This setting controls the maximum number of file synchronization operations that can run concurrently during a single replica rebuild. \n\n" +
+			"Right now, it's for v1 data engine only.",
+		Category:           SettingCategoryGeneral,
+		Type:               SettingTypeInt,
+		Required:           true,
+		ReadOnly:           false,
+		DataEngineSpecific: true,
+		Default:            fmt.Sprintf("{%q:\"1\"}", longhorn.DataEngineTypeV1),
+		ValueIntRange: map[string]int{
+			ValueIntRangeMinimum: 1,
+			ValueIntRangeMaximum: 5,
 		},
 	}
 
@@ -1213,7 +1296,7 @@ var (
 		DisplayName: "Storage Network",
 		Description: "Longhorn uses the storage network for in-cluster data traffic. Leave this blank to use the Kubernetes cluster network. \n\n" +
 			"To segregate the storage network, input the pre-existing NetworkAttachmentDefinition in **<namespace>/<name>** format. \n\n" +
-			"By default, this setting applies only to RWO (Read-Write-Once) volumes. For RWX (Read-Write-Many) volumes, enable 'Storage Network for RWX Volume' setting.\n\n" +
+			"This setting applies only to Longhorn's data-plan traffic. For RWX (Read-Write-Many) volume endpoint traffic, use the 'Endpoint Network for RWX Volume' setting.\n\n" +
 			"WARNING: \n\n" +
 			"  - The cluster must have pre-existing Multus installed, and NetworkAttachmentDefinition IPs are reachable between nodes. \n\n" +
 			"  - When applying the setting, Longhorn will try to restart all instance-manager, and backing-image-manager pods if all volumes are detached and eventually restart the instance manager pod without instances running on the instance manager. \n\n",
@@ -1225,18 +1308,20 @@ var (
 		Default:            CniNetworkNone,
 	}
 
-	SettingDefinitionStorageNetworkForRWXVolumeEnabled = SettingDefinition{
-		DisplayName: "Storage Network for RWX Volume Enabled",
-		Description: "This setting allows Longhorn to use the storage network for RWX (Read-Write-Many) volume.\n\n" +
+	SettingDefinitionEndpointNetworkForRWXVolume = SettingDefinition{
+		DisplayName: "Endpoint Network for RWX Volume",
+		Description: "Specifies a dedicated network for mounting RWX (ReadWriteMany) volumes. Leave this blank to use the default Kubernetes cluster network. \n\n" +
+			"To segregate the endpoint network for RWX volume, input the pre-existing NetworkAttachmentDefinition in **<namespace>/<name>** format. \n\n" +
 			"WARNING: \n\n" +
+			"  - The cluster must have pre-existing Multus installed, and NetworkAttachmentDefinition IPs are reachable between nodes. \n\n" +
 			"  - This setting should change after all Longhorn RWX volumes are detached because some Longhorn component pods will be recreated to apply the setting. \n\n" +
-			"  - When this setting is enabled, the RWX volumes are mounted with the storage network within the CSI plugin pod container network namespace. As a result, restarting the CSI plugin pod when there are attached RWX volumes may lead to its data path become unresponsive. When this occurs, you must restart the workload pod to re-establish the mount connection. Alternatively, you can enable the 'Automatically Delete Workload Pod when The Volume Is Detached Unexpectedly' setting to allow Longhorn to automatically delete the workload pod.\n\n",
+			"  - When this setting is defined, RWX volumes are mounted using the specified network inside the CSI plugin pod's containernetwork namespace. As a result, restarting the CSI plugin pod when there are attached RWX volumes may lead to its data path become unresponsive. When this occurs, you must restart the workload pod to re-establish the mount connection. Alternatively, you can enable the 'Automatically Delete Workload Pod when The Volume Is Detached Unexpectedly' setting to allow Longhorn to automatically delete the workload pod.\n\n",
 		Category:           SettingCategoryDangerZone,
-		Type:               SettingTypeBool,
+		Type:               SettingTypeString,
 		Required:           false,
 		ReadOnly:           false,
 		DataEngineSpecific: false,
-		Default:            "false",
+		Default:            CniNetworkNone,
 	}
 
 	SettingDefinitionRecurringSuccessfulJobsHistoryLimit = SettingDefinition{
@@ -1558,7 +1643,7 @@ var (
 
 	SettingDefinitionV2DataEngine = SettingDefinition{
 		DisplayName: "V2 Data Engine",
-		Description: "This setting allows users to activate v2 data engine which is based on SPDK. Currently, it is in the experimental phase and should not be utilized in a production environment.\n\n" +
+		Description: "This setting allows users to activate v2 data engine which is based on SPDK. Currently, it is in the Technical Preview phase and should be explored extensively before being used in production environments.\n\n" +
 			"  - DO NOT CHANGE THIS SETTING WITH ATTACHED VOLUMES. Longhorn will block this setting update when there are attached v2 volumes. \n\n" +
 			"  - When the V2 Data Engine is enabled, each instance-manager pod utilizes 1 CPU core. This high CPU usage is attributed to the Storage Performance Development Kit (SPDK) target daemon running within each instance-manager pod. The the SPDK target daemon is responsible for handling input/output (IO) operations and requires intensive polling. As a result, it consumes 100% of a dedicated CPU core to efficiently manage and process the IO requests, ensuring optimal performance and responsiveness for storage operations. \n\n",
 		Category:           SettingCategoryDangerZone,
@@ -1700,6 +1785,34 @@ var (
 		Default:            fmt.Sprintf("{%q:\"0\"}", longhorn.DataEngineTypeV2),
 	}
 
+	SettingDefinitionDefaultUblkQueueDepth = SettingDefinition{
+		DisplayName:        "Default Ublk Queue Depth",
+		Description:        "The default depth of each queue for Ublk frontend. This setting applies to volumes using the V2 Data Engine with Ublk front end.",
+		Category:           SettingCategoryGeneral,
+		Type:               SettingTypeInt,
+		Required:           true,
+		ReadOnly:           false,
+		DataEngineSpecific: true,
+		Default:            fmt.Sprintf("{%q:\"128\"}", longhorn.DataEngineTypeV2),
+		ValueIntRange: map[string]int{
+			ValueIntRangeMinimum: 32,
+		},
+	}
+
+	SettingDefinitionDefaultUblkNumberOfQueue = SettingDefinition{
+		DisplayName:        "Default Ublk Number Of Queue",
+		Description:        "The default the number of queues for ublk frontend. This setting applies to volumes using the V2 Data Engine with Ublk front end.",
+		Category:           SettingCategoryGeneral,
+		Type:               SettingTypeInt,
+		Required:           true,
+		ReadOnly:           false,
+		DataEngineSpecific: true,
+		Default:            fmt.Sprintf("{%q:\"1\"}", longhorn.DataEngineTypeV2),
+		ValueIntRange: map[string]int{
+			ValueIntRangeMinimum: 1,
+		},
+	}
+
 	SettingDefinitionAutoCleanupSnapshotWhenDeleteBackup = SettingDefinition{
 		DisplayName:        "Automatically Cleanup Snapshot When Deleting Backup",
 		Description:        "This setting enables Longhorn to automatically cleanup snapshots when removing backup.",
@@ -1758,8 +1871,8 @@ var (
 		Type:               SettingTypeBool,
 		Required:           true,
 		ReadOnly:           false,
-		DataEngineSpecific: true,
-		Default:            fmt.Sprintf("{%q:\"false\",%q:\"false\"}", longhorn.DataEngineTypeV1, longhorn.DataEngineTypeV2),
+		DataEngineSpecific: false,
+		Default:            "false",
 	}
 
 	SettingDefinitionLogPath = SettingDefinition{
@@ -1771,6 +1884,33 @@ var (
 		ReadOnly:           false,
 		DataEngineSpecific: false,
 		Default:            DefaultLogDirectoryOnHost,
+	}
+
+	SettingDefinitionNodeDiskHealthMonitoring = SettingDefinition{
+		DisplayName:        "Node Disk Health Monitoring",
+		Description:        "Controls whether Longhorn monitors and records health information for node disks. When disabled, disk health checks and status updates are skipped.",
+		Category:           SettingCategoryGeneral,
+		Type:               SettingTypeBool,
+		Required:           true,
+		ReadOnly:           false,
+		DataEngineSpecific: false,
+		Default:            "true",
+	}
+
+	SettingDefinitionSnapshotHeavyTaskConcurrentLimit = SettingDefinition{
+		DisplayName: "Snapshot Heavy Task Concurrent Limit",
+		Description: "This setting controls how many snapshot heavy task operations (such as purge and clone) can run concurrently per node. " +
+			"This is a best-effort mechanism: due to the distributed nature of the system, temporary oversubscription may occur. " +
+			"The limiter reduces worst-case overload but does not guarantee perfect enforcement.",
+		Category:           SettingCategoryGeneral,
+		Type:               SettingTypeInt,
+		Required:           true,
+		ReadOnly:           false,
+		DataEngineSpecific: false,
+		Default:            "5",
+		ValueIntRange: map[string]int{
+			ValueIntRangeMinimum: 0,
+		},
 	}
 )
 
@@ -1993,6 +2133,31 @@ func UnmarshalNodeSelector(nodeSelectorSetting string) (map[string]string, error
 	return nodeSelector, nil
 }
 
+type ComponentResourceLimits struct {
+	CSIAttacher            *corev1.ResourceRequirements `json:"csi-attacher,omitempty"`
+	CSIProvisioner         *corev1.ResourceRequirements `json:"csi-provisioner,omitempty"`
+	CSIResizer             *corev1.ResourceRequirements `json:"csi-resizer,omitempty"`
+	CSISnapshotter         *corev1.ResourceRequirements `json:"csi-snapshotter,omitempty"`
+	CSIPlugin              *corev1.ResourceRequirements `json:"longhorn-csi-plugin,omitempty"`
+	CSINodeDriverRegistrar *corev1.ResourceRequirements `json:"node-driver-registrar,omitempty"`
+	CSILivenessProbe       *corev1.ResourceRequirements `json:"longhorn-liveness-probe,omitempty"`
+}
+
+func UnmarshalCSIComponentResourceLimits(resourceLimitsSetting string) (*ComponentResourceLimits, error) {
+	resourceLimitsSetting = strings.Trim(resourceLimitsSetting, " ")
+	if resourceLimitsSetting == "" {
+		// Return empty struct instead of nil to avoid nil checks in callers
+		return &ComponentResourceLimits{}, nil
+	}
+
+	var limits ComponentResourceLimits
+	if err := json.Unmarshal([]byte(resourceLimitsSetting), &limits); err != nil {
+		return nil, errors.Wrapf(err, "failed to unmarshal CSI component resource limits %v", resourceLimitsSetting)
+	}
+
+	return &limits, nil
+}
+
 func UnmarshalOrphanResourceTypes(resourceTypesSetting string) (map[OrphanResourceType]bool, error) {
 	resourceTypes := map[OrphanResourceType]bool{
 		OrphanResourceTypeReplicaData: false,
@@ -2060,7 +2225,7 @@ func validateSettingBool(definition SettingDefinition, value string) (err error)
 	var values map[longhorn.DataEngineType]any
 	var defaultValues map[longhorn.DataEngineType]any
 
-	if IsJSONFormat(strings.TrimSpace(value)) {
+	if definition.DataEngineSpecific && IsJSONFormat(strings.TrimSpace(value)) {
 		values, err = ParseDataEngineSpecificSetting(definition, value)
 	} else {
 		values, err = parseSettingSingleBool(definition, value)
@@ -2073,7 +2238,7 @@ func validateSettingBool(definition SettingDefinition, value string) (err error)
 		return fmt.Errorf("failed to parse value %s for setting %s, value cannot be empty", value, definition.DisplayName)
 	}
 
-	if IsJSONFormat(strings.TrimSpace(definition.Default)) {
+	if definition.DataEngineSpecific && IsJSONFormat(strings.TrimSpace(definition.Default)) {
 		defaultValues, err = ParseDataEngineSpecificSetting(definition, definition.Default)
 	} else {
 		defaultValues, err = parseSettingSingleBool(definition, definition.Default)
@@ -2183,7 +2348,7 @@ func validateSettingInt(definition SettingDefinition, value string) (err error) 
 	var values map[longhorn.DataEngineType]any
 	var defaultValues map[longhorn.DataEngineType]any
 
-	if IsJSONFormat(strings.TrimSpace(value)) {
+	if definition.DataEngineSpecific && IsJSONFormat(strings.TrimSpace(value)) {
 		values, err = ParseDataEngineSpecificSetting(definition, value)
 	} else {
 		values, err = ParseSettingSingleValue(definition, value)
@@ -2196,7 +2361,7 @@ func validateSettingInt(definition SettingDefinition, value string) (err error) 
 		return fmt.Errorf("failed to parse value %s for setting %s, value cannot be empty", value, definition.DisplayName)
 	}
 
-	if IsJSONFormat(strings.TrimSpace(definition.Default)) {
+	if definition.DataEngineSpecific && IsJSONFormat(strings.TrimSpace(definition.Default)) {
 		defaultValues, err = ParseDataEngineSpecificSetting(definition, definition.Default)
 	} else {
 		defaultValues, err = ParseSettingSingleValue(definition, definition.Default)
@@ -2302,7 +2467,7 @@ func validateSettingFloat(definition SettingDefinition, value string) (err error
 	var values map[longhorn.DataEngineType]any
 	var defaultValues map[longhorn.DataEngineType]any
 
-	if IsJSONFormat(strings.TrimSpace(value)) {
+	if definition.DataEngineSpecific && IsJSONFormat(strings.TrimSpace(value)) {
 		values, err = ParseDataEngineSpecificSetting(definition, value)
 	} else {
 		values, err = ParseSettingSingleValue(definition, value)
@@ -2315,7 +2480,7 @@ func validateSettingFloat(definition SettingDefinition, value string) (err error
 		return fmt.Errorf("failed to parse value %s for setting %s, value cannot be empty", value, definition.DisplayName)
 	}
 
-	if IsJSONFormat(strings.TrimSpace(definition.Default)) {
+	if definition.DataEngineSpecific && IsJSONFormat(strings.TrimSpace(definition.Default)) {
 		defaultValues, err = ParseDataEngineSpecificSetting(definition, definition.Default)
 	} else {
 		defaultValues, err = parseSettingSingleFloat(definition, definition.Default)
@@ -2415,7 +2580,7 @@ func validateSettingString(name SettingName, definition SettingDefinition, value
 	var values map[longhorn.DataEngineType]any
 	var defaultValues map[longhorn.DataEngineType]any
 
-	if IsJSONFormat(strings.TrimSpace(value)) {
+	if definition.DataEngineSpecific && IsJSONFormat(strings.TrimSpace(value)) {
 		values, err = ParseDataEngineSpecificSetting(definition, value)
 	} else {
 		values, err = ParseSettingSingleValue(definition, value)
@@ -2428,7 +2593,7 @@ func validateSettingString(name SettingName, definition SettingDefinition, value
 		return fmt.Errorf("failed to parse value %s for setting %s, value cannot be empty", value, definition.DisplayName)
 	}
 
-	if IsJSONFormat(strings.TrimSpace(definition.Default)) {
+	if definition.DataEngineSpecific && IsJSONFormat(strings.TrimSpace(definition.Default)) {
 		defaultValues, err = ParseDataEngineSpecificSetting(definition, definition.Default)
 	} else {
 		defaultValues, err = ParseSettingSingleValue(definition, definition.Default)
@@ -2481,8 +2646,20 @@ func validateSettingString(name SettingName, definition SettingDefinition, value
 				return errors.Wrapf(err, "the value of %v is invalid", name)
 			}
 
+		case SettingNameSystemManagedCSIComponentsResourceLimits:
+			if _, err := UnmarshalCSIComponentResourceLimits(strValue); err != nil {
+				return errors.Wrapf(err, "the value of %v is invalid", name)
+			}
+
 		case SettingNameStorageNetwork:
-			if err := ValidateStorageNetwork(strValue); err != nil {
+			fallthrough
+		case SettingNameEndpointNetworkForRWXVolume:
+			if err := ValidateCNINetwork(strValue); err != nil {
+				return errors.Wrapf(err, "the value of %v is invalid", name)
+			}
+
+		case SettingNameManagerURL:
+			if err := ValidateManagerURL(strValue); err != nil {
 				return errors.Wrapf(err, "the value of %v is invalid", name)
 			}
 
