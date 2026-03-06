@@ -16,21 +16,10 @@ builds:
     goos:
       - linux
       - darwin
-      - windows
-      - freebsd
     goarch:
       - amd64
       - arm64
       - arm
-    ignore:
-      - goos: windows
-        goarch: arm64
-      - goos: windows
-        goarch: arm
-      - goos: freebsd
-        goarch: arm64
-      - goos: freebsd
-        goarch: arm
 
   - id: beszel-agent
     binary: beszel-agent
@@ -97,9 +86,6 @@ archives:
       {{ .Binary }}_
       {{- .Os }}_
       {{- .Arch }}
-    format_overrides:
-      - goos: windows
-        formats: [zip]
 
 nfpms:
   - id: beszel-agent

@@ -126,6 +126,7 @@ require (
 )
 
 replace (
+	github.com/henrygd/beszel => github.com/longhorn/beszel v0.16.2-0.20260114090315-332709c32c7d
 	k8s.io/cloud-provider => k8s.io/cloud-provider v0.35.1
 	k8s.io/kubelet => k8s.io/kubelet v0.35.1
 )

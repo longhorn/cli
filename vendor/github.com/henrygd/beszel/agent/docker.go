@@ -14,7 +14,6 @@ import (
 	"net/url"
 	"os"
 	"path"
-	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -24,10 +23,6 @@ import (
 
 	"github.com/blang/semver"
 )
-
-// ansiEscapePattern matches ANSI escape sequences (colors, cursor movement, etc.)
-// This includes CSI sequences like \x1b[...m and simple escapes like \x1b[K
-var ansiEscapePattern = regexp.MustCompile(`\x1b\[[0-9;]*[a-zA-Z]|\x1b\][^\x07]*\x07|\x1b[@-Z\\-_]`)
 
 const (
 	// Docker API timeout in milliseconds
@@ -697,17 +692,13 @@ func (dm *dockerManager) getLogs(ctx context.Context, containerID string) (strin
 		return "", err
 	}
 
-	// Strip ANSI escape sequences from logs for clean display in web UI
-	logs := builder.String()
-	if strings.Contains(logs, "\x1b") {
-		logs = ansiEscapePattern.ReplaceAllString(logs, "")
-	}
-	return logs, nil
+	return builder.String(), nil
 }
 
 func decodeDockerLogStream(reader io.Reader, builder *strings.Builder) error {
 	const headerSize = 8
 	var header [headerSize]byte
+	buf := make([]byte, 0, dockerLogsTail*200)
 	totalBytesRead := 0
 
 	for {
@@ -731,18 +722,36 @@ func decodeDockerLogStream(reader io.Reader, builder *strings.Builder) error {
 		// Check if reading this frame would exceed total log size limit
 		if totalBytesRead+int(frameLen) > maxTotalLogSize {
 			// Read and discard remaining data to avoid blocking
-			_, _ = io.CopyN(io.Discard, reader, int64(frameLen))
+			_, _ = io.Copy(io.Discard, io.LimitReader(reader, int64(frameLen)))
 			slog.Debug("Truncating logs: limit reached", "read", totalBytesRead, "limit", maxTotalLogSize)
 			return nil
 		}
 
-		n, err := io.CopyN(builder, reader, int64(frameLen))
-		if err != nil {
+		buf = allocateBuffer(buf, int(frameLen))
+		if _, err := io.ReadFull(reader, buf[:frameLen]); err != nil {
 			if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
+				if len(buf) > 0 {
+					builder.Write(buf[:min(int(frameLen), len(buf))])
+				}
 				return nil
 			}
 			return err
 		}
-		totalBytesRead += int(n)
+		builder.Write(buf[:frameLen])
+		totalBytesRead += int(frameLen)
 	}
+}
+
+func allocateBuffer(current []byte, needed int) []byte {
+	if cap(current) >= needed {
+		return current[:needed]
+	}
+	return make([]byte, needed)
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }

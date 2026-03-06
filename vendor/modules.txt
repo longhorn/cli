@@ -165,8 +165,8 @@ github.com/gorilla/websocket
 # github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
 ## explicit
 github.com/gregjones/httpcache
-# github.com/henrygd/beszel v0.17.0
-## explicit; go 1.25.5
+# github.com/henrygd/beszel v0.17.0 => github.com/longhorn/beszel v0.16.2-0.20260114090315-332709c32c7d
+## explicit; go 1.25.3
 github.com/henrygd/beszel
 github.com/henrygd/beszel/agent
 github.com/henrygd/beszel/agent/battery
@@ -1068,5 +1068,6 @@ sigs.k8s.io/structured-merge-diff/v6/value
 ## explicit; go 1.22
 sigs.k8s.io/yaml
 sigs.k8s.io/yaml/kyaml
+# github.com/henrygd/beszel => github.com/longhorn/beszel v0.16.2-0.20260114090315-332709c32c7d
 # k8s.io/cloud-provider => k8s.io/cloud-provider v0.35.1
 # k8s.io/kubelet => k8s.io/kubelet v0.35.1
