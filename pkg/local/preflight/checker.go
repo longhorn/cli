@@ -704,9 +704,9 @@ func wrapMultItems(msg string, items map[string]any) string {
 	index := 1
 	for set, content := range items {
 		if content == nil {
-			msgBuilder.WriteString(fmt.Sprintf("  (%d) %s", index, set))
+			fmt.Fprintf(&msgBuilder, "  (%d) %s", index, set)
 		} else {
-			msgBuilder.WriteString(fmt.Sprintf("  (%d) %s: %v", index, set, content))
+			fmt.Fprintf(&msgBuilder, "  (%d) %s: %v", index, set, content)
 		}
 		index++
 	}
