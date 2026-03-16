@@ -1,11 +1,9 @@
 module github.com/longhorn/cli
 
-go 1.24.0
-
-toolchain go1.24.6
+go 1.25.0
 
 require (
-	github.com/longhorn/go-common-libs v0.0.0-20260120075236-9a9dafa0a7ea
+	github.com/longhorn/go-common-libs v0.0.0-20260316031529-b1112faa59bd
 	github.com/longhorn/longhorn-manager v1.10.1
 	github.com/otiai10/copy v1.14.1
 	github.com/pkg/errors v0.9.1
@@ -85,10 +83,10 @@ require (
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.yaml.in/yaml/v2 v2.4.2 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.org/x/exp v0.0.0-20260112195511-716be5621a96 // indirect
+	golang.org/x/exp v0.0.0-20260312153236-7ab1446f8b90 // indirect
 	golang.org/x/net v0.47.0 // indirect
 	golang.org/x/oauth2 v0.32.0 // indirect
-	golang.org/x/sync v0.19.0 // indirect
+	golang.org/x/sync v0.20.0 // indirect
 	golang.org/x/sys v0.38.0 // indirect
 	golang.org/x/term v0.37.0 // indirect
 	golang.org/x/text v0.31.0 // indirect
