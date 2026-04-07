@@ -63,12 +63,13 @@ const (
 	DataLocalityStrictLocal = DataLocality("strict-local")
 )
 
-// +kubebuilder:validation:Enum=rwo;rwx
+// +kubebuilder:validation:Enum=rwo;rwop;rwx
 type AccessMode string
 
 const (
-	AccessModeReadWriteOnce = AccessMode("rwo")
-	AccessModeReadWriteMany = AccessMode("rwx")
+	AccessModeReadWriteOnce    = AccessMode("rwo")
+	AccessModeReadWriteOncePod = AccessMode("rwop")
+	AccessModeReadWriteMany    = AccessMode("rwx")
 )
 
 // +kubebuilder:validation:Enum=ignored;disabled;least-effort;best-effort
@@ -126,6 +127,7 @@ const (
 	VolumeConditionTypeRestore             = "Restore"
 	VolumeConditionTypeTooManySnapshots    = "TooManySnapshots"
 	VolumeConditionTypeWaitForBackingImage = "WaitForBackingImage"
+	VolumeConditionTypeOfflineRebuilding   = "OfflineRebuilding"
 )
 
 const (
@@ -136,6 +138,7 @@ const (
 	VolumeConditionReasonTooManySnapshots              = "TooManySnapshots"
 	VolumeConditionReasonWaitForBackingImageFailed     = "GetBackingImageFailed"
 	VolumeConditionReasonWaitForBackingImageWaiting    = "Waiting"
+	VolumeConditionReasonOfflineRebuildingInProgress   = "OfflineRebuildingInProgress"
 )
 
 type SnapshotDataIntegrity string
@@ -238,6 +241,12 @@ type VolumeSpec struct {
 	Size int64 `json:"size,string"`
 	// +optional
 	Frontend VolumeFrontend `json:"frontend"`
+	// ublkQueueDepth controls the depth of each queue for ublk frontend.
+	// +optional
+	UblkQueueDepth int `json:"ublkQueueDepth,omitempty"`
+	// ublkNumberOfQueue controls the number of queues for ublk frontend.
+	// +optional
+	UblkNumberOfQueue int `json:"ublkNumberOfQueue,omitempty"`
 	// +optional
 	FromBackup string `json:"fromBackup"`
 	// +optional
@@ -257,6 +266,7 @@ type VolumeSpec struct {
 	// +optional
 	Image string `json:"image"`
 	// +optional
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="BackingImage is immutable"
 	BackingImage string `json:"backingImage"`
 	// +optional
 	Standby bool `json:"Standby"`
@@ -286,6 +296,7 @@ type VolumeSpec struct {
 	// +optional
 	Migratable bool `json:"migratable"`
 	// +optional
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Encrypted is immutable"
 	Encrypted bool `json:"encrypted"`
 	// +optional
 	NumberOfReplicas int `json:"numberOfReplicas"`
@@ -327,6 +338,13 @@ type VolumeSpec struct {
 	// +kubebuilder:validation:Minimum=0
 	// +optional
 	ReplicaRebuildingBandwidthLimit int64 `json:"replicaRebuildingBandwidthLimit"`
+	// +optional
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=5
+	// RebuildConcurrentSyncLimit controls the maximum number of file synchronization operations that can run
+	// concurrently during a single replica rebuild.
+	// When set to 0, it means following the global setting.
+	RebuildConcurrentSyncLimit int `json:"rebuildConcurrentSyncLimit"`
 }
 
 // VolumeStatus defines the observed state of the Longhorn volume

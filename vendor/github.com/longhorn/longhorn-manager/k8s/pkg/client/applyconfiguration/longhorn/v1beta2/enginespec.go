@@ -24,8 +24,14 @@ import (
 
 // EngineSpecApplyConfiguration represents a declarative configuration of the EngineSpec type for use
 // with apply.
+//
+// EngineSpec defines the desired state of the Longhorn engine
 type EngineSpecApplyConfiguration struct {
-	Frontend                         *longhornv1beta2.VolumeFrontend   `json:"frontend,omitempty"`
+	Frontend *longhornv1beta2.VolumeFrontend `json:"frontend,omitempty"`
+	// ublkQueueDepth controls the depth of each queue for ublk frontend.
+	UblkQueueDepth *int `json:"ublkQueueDepth,omitempty"`
+	// ublkNumberOfQueue controls the number of queues for ublk frontend.
+	UblkNumberOfQueue                *int                              `json:"ublkNumberOfQueue,omitempty"`
 	ReplicaAddressMap                map[string]string                 `json:"replicaAddressMap,omitempty"`
 	UpgradedReplicaAddressMap        map[string]string                 `json:"upgradedReplicaAddressMap,omitempty"`
 	BackupVolume                     *string                           `json:"backupVolume,omitempty"`
@@ -37,6 +43,10 @@ type EngineSpecApplyConfiguration struct {
 	Active                           *bool                             `json:"active,omitempty"`
 	SnapshotMaxCount                 *int                              `json:"snapshotMaxCount,omitempty"`
 	SnapshotMaxSize                  *int64                            `json:"snapshotMaxSize,omitempty"`
+	// RebuildConcurrentSyncLimit controls the maximum number of file synchronization operations that can run
+	// concurrently during a single replica rebuild.
+	// It is determined by the global setting or the volume spec field with the same name.
+	RebuildConcurrentSyncLimit *int `json:"rebuildConcurrentSyncLimit,omitempty"`
 }
 
 // EngineSpecApplyConfiguration constructs a declarative configuration of the EngineSpec type for use with
@@ -50,6 +60,22 @@ func EngineSpec() *EngineSpecApplyConfiguration {
 // If called multiple times, the Frontend field is set to the value of the last call.
 func (b *EngineSpecApplyConfiguration) WithFrontend(value longhornv1beta2.VolumeFrontend) *EngineSpecApplyConfiguration {
 	b.Frontend = &value
+	return b
+}
+
+// WithUblkQueueDepth sets the UblkQueueDepth field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the UblkQueueDepth field is set to the value of the last call.
+func (b *EngineSpecApplyConfiguration) WithUblkQueueDepth(value int) *EngineSpecApplyConfiguration {
+	b.UblkQueueDepth = &value
+	return b
+}
+
+// WithUblkNumberOfQueue sets the UblkNumberOfQueue field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the UblkNumberOfQueue field is set to the value of the last call.
+func (b *EngineSpecApplyConfiguration) WithUblkNumberOfQueue(value int) *EngineSpecApplyConfiguration {
+	b.UblkNumberOfQueue = &value
 	return b
 }
 
@@ -150,5 +176,13 @@ func (b *EngineSpecApplyConfiguration) WithSnapshotMaxCount(value int) *EngineSp
 // If called multiple times, the SnapshotMaxSize field is set to the value of the last call.
 func (b *EngineSpecApplyConfiguration) WithSnapshotMaxSize(value int64) *EngineSpecApplyConfiguration {
 	b.SnapshotMaxSize = &value
+	return b
+}
+
+// WithRebuildConcurrentSyncLimit sets the RebuildConcurrentSyncLimit field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the RebuildConcurrentSyncLimit field is set to the value of the last call.
+func (b *EngineSpecApplyConfiguration) WithRebuildConcurrentSyncLimit(value int) *EngineSpecApplyConfiguration {
+	b.RebuildConcurrentSyncLimit = &value
 	return b
 }

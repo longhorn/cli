@@ -26,6 +26,8 @@ import (
 
 // BackupTargetApplyConfiguration represents a declarative configuration of the BackupTarget type for use
 // with apply.
+//
+// BackupTarget is where Longhorn stores backup target object.
 type BackupTargetApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
 	*v1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
@@ -43,6 +45,8 @@ func BackupTarget(name, namespace string) *BackupTargetApplyConfiguration {
 	b.WithAPIVersion("longhorn.io/v1beta2")
 	return b
 }
+
+func (b BackupTargetApplyConfiguration) IsApplyConfiguration() {}
 
 // WithKind sets the Kind field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
@@ -218,8 +222,24 @@ func (b *BackupTargetApplyConfiguration) WithStatus(value *BackupTargetStatusApp
 	return b
 }
 
+// GetKind retrieves the value of the Kind field in the declarative configuration.
+func (b *BackupTargetApplyConfiguration) GetKind() *string {
+	return b.TypeMetaApplyConfiguration.Kind
+}
+
+// GetAPIVersion retrieves the value of the APIVersion field in the declarative configuration.
+func (b *BackupTargetApplyConfiguration) GetAPIVersion() *string {
+	return b.TypeMetaApplyConfiguration.APIVersion
+}
+
 // GetName retrieves the value of the Name field in the declarative configuration.
 func (b *BackupTargetApplyConfiguration) GetName() *string {
 	b.ensureObjectMetaApplyConfigurationExists()
 	return b.ObjectMetaApplyConfiguration.Name
+}
+
+// GetNamespace retrieves the value of the Namespace field in the declarative configuration.
+func (b *BackupTargetApplyConfiguration) GetNamespace() *string {
+	b.ensureObjectMetaApplyConfigurationExists()
+	return b.ObjectMetaApplyConfiguration.Namespace
 }
