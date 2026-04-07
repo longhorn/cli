@@ -26,11 +26,17 @@ import (
 
 // SettingApplyConfiguration represents a declarative configuration of the Setting type for use
 // with apply.
+//
+// Setting is where Longhorn stores setting object.
 type SettingApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
 	*v1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
-	Value                            *string                          `json:"value,omitempty"`
-	Status                           *SettingStatusApplyConfiguration `json:"status,omitempty"`
+	// The value of the setting.
+	// - It can be a non-JSON formatted string that is applied to all the applicable data engines listed in the setting definition.
+	// - It can be a JSON formatted string that contains values for applicable data engines listed in the setting definition's Default.
+	Value *string `json:"value,omitempty"`
+	// The status of the setting.
+	Status *SettingStatusApplyConfiguration `json:"status,omitempty"`
 }
 
 // Setting constructs a declarative configuration of the Setting type for use with
@@ -43,6 +49,8 @@ func Setting(name, namespace string) *SettingApplyConfiguration {
 	b.WithAPIVersion("longhorn.io/v1beta2")
 	return b
 }
+
+func (b SettingApplyConfiguration) IsApplyConfiguration() {}
 
 // WithKind sets the Kind field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
@@ -218,8 +226,24 @@ func (b *SettingApplyConfiguration) WithStatus(value *SettingStatusApplyConfigur
 	return b
 }
 
+// GetKind retrieves the value of the Kind field in the declarative configuration.
+func (b *SettingApplyConfiguration) GetKind() *string {
+	return b.TypeMetaApplyConfiguration.Kind
+}
+
+// GetAPIVersion retrieves the value of the APIVersion field in the declarative configuration.
+func (b *SettingApplyConfiguration) GetAPIVersion() *string {
+	return b.TypeMetaApplyConfiguration.APIVersion
+}
+
 // GetName retrieves the value of the Name field in the declarative configuration.
 func (b *SettingApplyConfiguration) GetName() *string {
 	b.ensureObjectMetaApplyConfigurationExists()
 	return b.ObjectMetaApplyConfiguration.Name
+}
+
+// GetNamespace retrieves the value of the Namespace field in the declarative configuration.
+func (b *SettingApplyConfiguration) GetNamespace() *string {
+	b.ensureObjectMetaApplyConfigurationExists()
+	return b.ObjectMetaApplyConfiguration.Namespace
 }
