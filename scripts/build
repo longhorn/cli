@@ -1,6 +1,7 @@
 #!/bin/bash
 set -e -x
 
+source $(dirname $0)/version
 
 ROOT_DIR=$(cd "$(dirname "$0")"/.. && pwd)
 echo "Root dir: ${ROOT_DIR}"
@@ -22,8 +23,6 @@ build_app() {
      -X github.com/longhorn/cli/meta.BuildDate=$BUILDDATE \
      $LINKFLAGS" -o ${ROOT_DIR}/bin/${_app}-${_os}-${_arch}
 }
-
-source "${ROOT_DIR}/dapper/version"
 
 mkdir -p "${ROOT_DIR}/bin"
 echo "Making binary at ${ROOT_DIR}/bin"

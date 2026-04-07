@@ -1,0 +1,18 @@
+#!/bin/bash
+set -e
+
+cd $(dirname $0)/..
+
+echo Running validation
+
+PACKAGES="$(go list ./...)"
+
+echo Running: go vet
+# shellcheck disable=SC2086
+go vet ${PACKAGES}
+
+echo Running: golangci-lint
+golangci-lint run --timeout=5m
+
+echo Running: go fmt
+test -z "$(go fmt ${PACKAGES} | tee /dev/stderr)"
