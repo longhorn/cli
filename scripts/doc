@@ -34,4 +34,3 @@ echo "Root dir: ${ROOT_DIR}"
 rm -rf ${ROOT_DIR}/docs
 mkdir -p ${ROOT_DIR}/docs
 ${ROOT_DIR}/bin/longhornctl-${OS}-${ARCH} doc ${ROOT_DIR}/docs
-

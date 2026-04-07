@@ -7,10 +7,10 @@ WORKDIR /app
 COPY . /app
 
 # Make the build script executable
-RUN chmod +x /app/dapper/build
+RUN chmod +x /app/scripts/build
 
 # Run the build script
-RUN /app/dapper/build
+RUN /app/scripts/build
 
 
 FROM registry.suse.com/bci/golang:1.26 AS spdk_builder
