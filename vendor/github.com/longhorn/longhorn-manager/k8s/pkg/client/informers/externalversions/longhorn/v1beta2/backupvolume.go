@@ -57,20 +57,32 @@ func NewBackupVolumeInformer(client versioned.Interface, namespace string, resyn
 // one. This reduces memory footprint and number of connections to the server.
 func NewFilteredBackupVolumeInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
 	return cache.NewSharedIndexInformer(
-		&cache.ListWatch{
+		cache.ToListWatcherWithWatchListSemantics(&cache.ListWatch{
 			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.LonghornV1beta2().BackupVolumes(namespace).List(context.TODO(), options)
+				return client.LonghornV1beta2().BackupVolumes(namespace).List(context.Background(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.LonghornV1beta2().BackupVolumes(namespace).Watch(context.TODO(), options)
+				return client.LonghornV1beta2().BackupVolumes(namespace).Watch(context.Background(), options)
 			},
-		},
+			ListWithContextFunc: func(ctx context.Context, options v1.ListOptions) (runtime.Object, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&options)
+				}
+				return client.LonghornV1beta2().BackupVolumes(namespace).List(ctx, options)
+			},
+			WatchFuncWithContext: func(ctx context.Context, options v1.ListOptions) (watch.Interface, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&options)
+				}
+				return client.LonghornV1beta2().BackupVolumes(namespace).Watch(ctx, options)
+			},
+		}, client),
 		&apislonghornv1beta2.BackupVolume{},
 		resyncPeriod,
 		indexers,
