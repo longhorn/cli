@@ -80,7 +80,6 @@ jobs:
         permission-metadata: read
         permission-actions: read
         permission-issues: read
-        permission-deployments: write
 
     # Upload binaries to release
     - name: Upload binaries to release
