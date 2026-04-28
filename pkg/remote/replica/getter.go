@@ -57,7 +57,7 @@ func (remote *Getter) Init() error {
 // init container and the output container completes before collecting the
 // replica information and returning it as a YAML string.
 func (remote *Getter) Run() (string, error) {
-	newDaemonSet, err := kubeutils.PrepareDaemonSet(remote.newDaemonSet(), remote.kubeClient, remote.NodeSelector, remote.ImagePullSecret)
+	newDaemonSet, err := kubeutils.PrepareDaemonSet(remote.newDaemonSet(), remote.kubeClient, remote.NodeSelector, remote.ImagePullSecret, remote.Tolerations)
 	if err != nil {
 		return "", err
 	}

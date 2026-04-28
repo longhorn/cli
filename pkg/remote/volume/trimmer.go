@@ -59,7 +59,7 @@ func (remote *Trimmer) Init() error {
 
 // Run creates the DaemonSet for the volume trimmer, and waits for it to complete.
 func (remote *Trimmer) Run() error {
-	newDaemonSet, err := kubeutils.PrepareDaemonSet(remote.newDaemonSet(), remote.kubeClient, remote.NodeSelector, remote.ImagePullSecret)
+	newDaemonSet, err := kubeutils.PrepareDaemonSet(remote.newDaemonSet(), remote.kubeClient, remote.NodeSelector, remote.ImagePullSecret, remote.Tolerations)
 	if err != nil {
 		return err
 	}

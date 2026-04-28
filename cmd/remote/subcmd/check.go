@@ -63,6 +63,7 @@ INFO[2024-07-16T17:17:42+08:00] Completed preflight checker`,
 			preflightChecker.ImagePullSecret = globalOpts.ImagePullSecret
 			preflightChecker.KubeConfigPath = globalOpts.KubeConfigPath
 			preflightChecker.NodeSelector = globalOpts.NodeSelector
+			preflightChecker.Tolerations = globalOpts.Tolerations
 			preflightChecker.Namespace = globalOpts.Namespace
 
 			logrus.Info("Initializing preflight checker")

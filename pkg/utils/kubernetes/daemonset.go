@@ -14,6 +14,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeclient "k8s.io/client-go/kubernetes"
 
+	lhtypes "github.com/longhorn/longhorn-manager/types"
+
 	"github.com/longhorn/cli/pkg/consts"
 	"github.com/longhorn/cli/pkg/types"
 )
@@ -114,8 +116,8 @@ func GetDaemonSetPodCollections(kubeClient *kubeclient.Clientset, daemonSet *app
 	return collections, nil
 }
 
-// PrepareDaemonSet takes DaemonSet object and populates common fields such as NodeSelector and ImagePullSecrets
-func PrepareDaemonSet(daemonSet *appsv1.DaemonSet, kubeClient *kubeclient.Clientset, nodeSelectorRaw, imagePullSecretRaw string) (*appsv1.DaemonSet, error) {
+// PrepareDaemonSet takes DaemonSet object and populates common fields such as NodeSelector, ImagePullSecrets and Tolerations
+func PrepareDaemonSet(daemonSet *appsv1.DaemonSet, kubeClient *kubeclient.Clientset, nodeSelectorRaw, imagePullSecretRaw, tolerationsRaw string) (*appsv1.DaemonSet, error) {
 	nodeSelector, err := parseNodeSelector(nodeSelectorRaw)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to parse %q argument", consts.CmdOptNodeSelector)
@@ -127,6 +129,12 @@ func PrepareDaemonSet(daemonSet *appsv1.DaemonSet, kubeClient *kubeclient.Client
 		return nil, errors.Wrapf(err, "failed to parse %q argument", consts.CmdOptImagePullSecret)
 	}
 	daemonSet.Spec.Template.Spec.ImagePullSecrets = imagePullSecret
+
+	tolerations, err := lhtypes.UnmarshalTolerations(tolerationsRaw)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to parse %q argument", consts.CmdOptTolerations)
+	}
+	daemonSet.Spec.Template.Spec.Tolerations = tolerations
 
 	return daemonSet, nil
 }
