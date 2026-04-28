@@ -8,5 +8,6 @@ type GlobalCmdOptions struct {
 	ImageRegistry   string // The container image registry to use for all images (CLI, engine, pause, BCI, etc.)
 	ImagePullSecret string // The secret with registry credentials for pulling images
 	NodeSelector    string // The node selector to choose nodes on which to run DaemonSet pods
+	Tolerations     string // The tolerations for DaemonSet pods
 	Namespace       string // The namespace to run DaemonSet pods
 }

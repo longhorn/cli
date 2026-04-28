@@ -80,7 +80,7 @@ func (remote *Checker) Run() (string, error) {
 		return "", err
 	}
 
-	newDaemonSet, err := kubeutils.PrepareDaemonSet(remote.newDaemonSet(), remote.kubeClient, remote.NodeSelector, remote.ImagePullSecret)
+	newDaemonSet, err := kubeutils.PrepareDaemonSet(remote.newDaemonSet(), remote.kubeClient, remote.NodeSelector, remote.ImagePullSecret, remote.Tolerations)
 	if err != nil {
 		return "", err
 	}

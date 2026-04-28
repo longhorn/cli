@@ -69,6 +69,7 @@ lost+found`,
 			replicaExporter.ImagePullSecret = globalOpts.ImagePullSecret
 			replicaExporter.KubeConfigPath = globalOpts.KubeConfigPath
 			replicaExporter.NodeSelector = globalOpts.NodeSelector
+			replicaExporter.Tolerations = globalOpts.Tolerations
 			replicaExporter.Namespace = globalOpts.Namespace
 
 			utils.CheckErr(replicaExporter.Validate())

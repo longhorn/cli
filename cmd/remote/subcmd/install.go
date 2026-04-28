@@ -69,6 +69,7 @@ If a reboot is required, the following message will be displayed:
 			preflightInstaller.ImagePullSecret = globalOpts.ImagePullSecret
 			preflightInstaller.KubeConfigPath = globalOpts.KubeConfigPath
 			preflightInstaller.NodeSelector = globalOpts.NodeSelector
+			preflightInstaller.Tolerations = globalOpts.Tolerations
 			preflightInstaller.Namespace = globalOpts.Namespace
 
 			logrus.Info("Initializing preflight installer")

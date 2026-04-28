@@ -147,7 +147,7 @@ func (remote *Installer) InstallByContainerOptimizedOS() error {
 		return err
 	}
 
-	newDaemonSet, err := kubeutils.PrepareDaemonSet(remote.newDaemonSetForContainerOptimizedOS(), remote.kubeClient, remote.NodeSelector, remote.ImagePullSecret)
+	newDaemonSet, err := kubeutils.PrepareDaemonSet(remote.newDaemonSetForContainerOptimizedOS(), remote.kubeClient, remote.NodeSelector, remote.ImagePullSecret, remote.Tolerations)
 	if err != nil {
 		return err
 	}
@@ -172,7 +172,7 @@ func (remote *Installer) InstallByContainerOptimizedOS() error {
 //	- Successfully probed module dm_crypt
 //	- Successfully started service iscsid
 func (remote *Installer) InstallByPackageManager() (string, error) {
-	newDaemonSet, err := kubeutils.PrepareDaemonSet(remote.newDaemonSetForPackageManager(), remote.kubeClient, remote.NodeSelector, remote.ImagePullSecret)
+	newDaemonSet, err := kubeutils.PrepareDaemonSet(remote.newDaemonSetForPackageManager(), remote.kubeClient, remote.NodeSelector, remote.ImagePullSecret, remote.Tolerations)
 	if err != nil {
 		return "", err
 	}
