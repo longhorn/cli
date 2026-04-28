@@ -43,6 +43,7 @@ const (
 	CmdOptTargetDirectory = "target-dir"
 	CmdOptUpdatePackages  = "update-packages"
 	CmdOptNodeSelector    = "node-selector"
+	CmdOptTolerations     = "tolerations"
 	CmdOptAll             = "all"
 
 	// SPDK options

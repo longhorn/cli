@@ -67,6 +67,7 @@ INFO[2024-07-16T17:23:51+08:00] Completed replica getter`,
 			replicaGetter.ImagePullSecret = globalOpts.ImagePullSecret
 			replicaGetter.KubeConfigPath = globalOpts.KubeConfigPath
 			replicaGetter.NodeSelector = globalOpts.NodeSelector
+			replicaGetter.Tolerations = globalOpts.Tolerations
 			replicaGetter.Namespace = globalOpts.Namespace
 
 			logrus.Info("Initializing replica getter")

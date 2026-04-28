@@ -50,6 +50,7 @@ INFO[2024-07-16T17:32:01+08:00] Completed volume trimmer                      vo
 			volumeTrimmer.ImagePullSecret = globalOpts.ImagePullSecret
 			volumeTrimmer.KubeConfigPath = globalOpts.KubeConfigPath
 			volumeTrimmer.NodeSelector = globalOpts.NodeSelector
+			volumeTrimmer.Tolerations = globalOpts.Tolerations
 			volumeTrimmer.Namespace = globalOpts.Namespace
 
 			utils.CheckErr(volumeTrimmer.Validate())
