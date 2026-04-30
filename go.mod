@@ -2,8 +2,6 @@ module github.com/longhorn/cli
 
 go 1.25.9
 
-toolchain go1.24.6
-
 require (
 	github.com/longhorn/go-common-libs v0.0.0-20260120075236-9a9dafa0a7ea
 	github.com/longhorn/longhorn-manager v1.10.1
