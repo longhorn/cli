@@ -13,9 +13,9 @@ import (
 	"github.com/robfig/cron"
 	"github.com/sirupsen/logrus"
 
-	corev1 "k8s.io/api/core/v1"
-
 	"k8s.io/apimachinery/pkg/util/sets"
+
+	corev1 "k8s.io/api/core/v1"
 
 	"github.com/longhorn/longhorn-manager/meta"
 	"github.com/longhorn/longhorn-manager/util"
@@ -131,6 +131,7 @@ const (
 	SettingNameSnapshotDataIntegrityImmediateCheckAfterSnapshotCreation = SettingName("snapshot-data-integrity-immediate-check-after-snapshot-creation")
 	SettingNameSnapshotDataIntegrityCronJob                             = SettingName("snapshot-data-integrity-cronjob")
 	SettingNameSnapshotMaxCount                                         = SettingName("snapshot-max-count")
+	SettingNameSnapshotCountWarningThreshold                            = SettingName("snapshot-count-warning-threshold")
 	SettingNameRestoreVolumeRecurringJobs                               = SettingName("restore-volume-recurring-jobs")
 	SettingNameRemoveSnapshotsDuringFilesystemTrim                      = SettingName("remove-snapshots-during-filesystem-trim")
 	SettingNameFastReplicaRebuildEnabled                                = SettingName("fast-replica-rebuild-enabled")
@@ -163,6 +164,9 @@ const (
 	SettingNameDefaultUblkQueueDepth                                    = SettingName("default-ublk-queue-depth")
 	SettingNameDefaultUblkNumberOfQueue                                 = SettingName("default-ublk-number-of-queue")
 	SettingNameDefaultBackupBlockSize                                   = SettingName("default-backup-block-size")
+	SettingNameEngineImagePodLivenessProbePeriod                        = SettingName("engine-image-pod-liveness-probe-period")
+	SettingNameEngineImagePodLivenessProbeTimeout                       = SettingName("engine-image-pod-liveness-probe-timeout")
+	SettingNameEngineImagePodLivenessProbeFailureThreshold              = SettingName("engine-image-pod-liveness-probe-failure-threshold")
 	SettingNameInstanceManagerPodLivenessProbeTimeout                   = SettingName("instance-manager-pod-liveness-probe-timeout")
 	SettingNameLogPath                                                  = SettingName("log-path")
 	SettingNameSnapshotHeavyTaskConcurrentLimit                         = SettingName("snapshot-heavy-task-concurrent-limit")
@@ -251,6 +255,7 @@ var (
 		SettingNameSnapshotDataIntegrityCronJob,
 		SettingNameSnapshotDataIntegrityImmediateCheckAfterSnapshotCreation,
 		SettingNameSnapshotMaxCount,
+		SettingNameSnapshotCountWarningThreshold,
 		SettingNameRestoreVolumeRecurringJobs,
 		SettingNameRemoveSnapshotsDuringFilesystemTrim,
 		SettingNameFastReplicaRebuildEnabled,
@@ -284,6 +289,9 @@ var (
 		SettingNameDefaultUblkQueueDepth,
 		SettingNameDefaultUblkNumberOfQueue,
 		SettingNameDefaultBackupBlockSize,
+		SettingNameEngineImagePodLivenessProbePeriod,
+		SettingNameEngineImagePodLivenessProbeTimeout,
+		SettingNameEngineImagePodLivenessProbeFailureThreshold,
 		SettingNameInstanceManagerPodLivenessProbeTimeout,
 		SettingNameLogPath,
 		SettingNameNodeDiskHealthMonitoring,
@@ -407,6 +415,7 @@ var (
 		SettingNameSnapshotDataIntegrityImmediateCheckAfterSnapshotCreation: SettingDefinitionSnapshotDataIntegrityImmediateCheckAfterSnapshotCreation,
 		SettingNameSnapshotDataIntegrityCronJob:                             SettingDefinitionSnapshotDataIntegrityCronJob,
 		SettingNameSnapshotMaxCount:                                         SettingDefinitionSnapshotMaxCount,
+		SettingNameSnapshotCountWarningThreshold:                            SettingDefinitionSnapshotCountWarningThreshold,
 		SettingNameRestoreVolumeRecurringJobs:                               SettingDefinitionRestoreVolumeRecurringJobs,
 		SettingNameRemoveSnapshotsDuringFilesystemTrim:                      SettingDefinitionRemoveSnapshotsDuringFilesystemTrim,
 		SettingNameFastReplicaRebuildEnabled:                                SettingDefinitionFastReplicaRebuildEnabled,
@@ -439,6 +448,9 @@ var (
 		SettingNameDefaultUblkQueueDepth:                                    SettingDefinitionDefaultUblkQueueDepth,
 		SettingNameDefaultUblkNumberOfQueue:                                 SettingDefinitionDefaultUblkNumberOfQueue,
 		SettingNameDefaultBackupBlockSize:                                   SettingDefinitionDefaultBackupBlockSize,
+		SettingNameEngineImagePodLivenessProbePeriod:                        SettingDefinitionEngineImagePodLivenessProbePeriod,
+		SettingNameEngineImagePodLivenessProbeTimeout:                       SettingDefinitionEngineImagePodLivenessProbeTimeout,
+		SettingNameEngineImagePodLivenessProbeFailureThreshold:              SettingDefinitionEngineImagePodLivenessProbeFailureThreshold,
 		SettingNameInstanceManagerPodLivenessProbeTimeout:                   SettingDefinitionInstanceManagerPodLivenessProbeTimeout,
 		SettingNameLogPath:                                                  SettingDefinitionLogPath,
 		SettingNameNodeDiskHealthMonitoring:                                 SettingDefinitionNodeDiskHealthMonitoring,
@@ -707,7 +719,7 @@ var (
 
 	SettingDefinitionManagerURL = SettingDefinition{
 		DisplayName:        "Manager URL",
-		Description:        "The external URL used to access the Longhorn Manager API. When set, this URL is returned in API responses (the actions and links fields) instead of the internal pod IP. This is useful when accessing the API through Ingress or Gateway API HTTPRoute. Format: scheme://host[:port] (for example, https://longhorn.example.com or https://longhorn.example.com:8443). Leave it empty to use the default behavior.",
+		Description:        "The external URL used to access the Longhorn Manager API. When set, this URL is returned in API responses (the actions and links fields) instead of the internal pod IP. This is useful when accessing the API through Ingress or Gateway API HTTPRoute. Format: scheme://host[:port] (for example, https://longhorn.example.com or https://longhorn.example.com:8443). Leave it empty to use the default behavior. Warning: Internal components (including longhorn-driver-deployer and longhorn-csi-plugin) follow the links returned in API responses. If this URL passes through proxy middleware (such as an OAuth2 proxy, ingress auth, or any other HTTP-intercepting layer), those components may receive an unexpected response (such as an HTML redirect) instead of JSON, causing errors such as \"invalid character '<' looking for beginning of value\" and CSI driver deployment failure.",
 		Category:           SettingCategoryGeneral,
 		Type:               SettingTypeString,
 		Required:           false,
@@ -1489,6 +1501,23 @@ var (
 		Default:            strconv.Itoa(MaxSnapshotNum),
 	}
 
+	SettingDefinitionSnapshotCountWarningThreshold = SettingDefinition{
+		DisplayName: "Snapshot Count Warning Threshold",
+		Description: "Warning threshold for the TooManySnapshots volume condition. " +
+			"The condition is triggered when the snapshot count exceeds the smaller of this value and snapshot-max-count." +
+			"Valid range: 2–250.",
+		Category:           SettingCategorySnapshot,
+		Type:               SettingTypeInt,
+		Required:           true,
+		ReadOnly:           false,
+		DataEngineSpecific: false,
+		Default:            "100",
+		ValueIntRange: map[string]int{
+			ValueIntRangeMinimum: 2,
+			ValueIntRangeMaximum: MaxSnapshotNum,
+		},
+	}
+
 	SettingDefinitionRemoveSnapshotsDuringFilesystemTrim = SettingDefinition{
 		DisplayName: "Remove Snapshots During Filesystem Trim",
 		Description: "This setting allows Longhorn filesystem trim feature to automatically mark the latest snapshot and its ancestors as removed and stops at the snapshot containing multiple children.\n\n" +
@@ -1601,6 +1630,57 @@ var (
 		DataEngineSpecific: false,
 		Choices:            []any{int64(2), int64(16)},
 		Default:            "2",
+	}
+
+	SettingDefinitionEngineImagePodLivenessProbePeriod = SettingDefinition{
+		DisplayName: "Engine Image Pod Liveness Probe Period",
+		Description: "In seconds. The setting specifies the interval between liveness probes for engine image pods. The default value is 5 seconds.\n\n" +
+			"WARNING: \n\n" +
+			"  - Applying this setting causes Longhorn to update existing engine image DaemonSets immediately.\n\n",
+		Category:           SettingCategoryDangerZone,
+		Type:               SettingTypeInt,
+		Required:           true,
+		ReadOnly:           false,
+		DataEngineSpecific: false,
+		Default:            "5",
+		ValueIntRange: map[string]int{
+			ValueIntRangeMinimum: 1,
+			ValueIntRangeMaximum: 60,
+		},
+	}
+
+	SettingDefinitionEngineImagePodLivenessProbeTimeout = SettingDefinition{
+		DisplayName: "Engine Image Pod Liveness Probe Timeout",
+		Description: "In seconds. The setting specifies the timeout for the engine image pod liveness probe. The default value is 4 seconds.\n\n" +
+			"WARNING: \n\n" +
+			"  - Applying this setting causes Longhorn to update existing engine image DaemonSets immediately.\n\n",
+		Category:           SettingCategoryDangerZone,
+		Type:               SettingTypeInt,
+		Required:           true,
+		ReadOnly:           false,
+		DataEngineSpecific: false,
+		Default:            "4",
+		ValueIntRange: map[string]int{
+			ValueIntRangeMinimum: 1,
+			ValueIntRangeMaximum: 60,
+		},
+	}
+
+	SettingDefinitionEngineImagePodLivenessProbeFailureThreshold = SettingDefinition{
+		DisplayName: "Engine Image Pod Liveness Probe Failure Threshold",
+		Description: "The setting specifies the number of consecutive failed liveness probes before an engine image pod is restarted. The default value is 3.\n\n" +
+			"WARNING: \n\n" +
+			"  - Applying this setting causes Longhorn to update existing engine image DaemonSets immediately.\n\n",
+		Category:           SettingCategoryDangerZone,
+		Type:               SettingTypeInt,
+		Required:           true,
+		ReadOnly:           false,
+		DataEngineSpecific: false,
+		Default:            "3",
+		ValueIntRange: map[string]int{
+			ValueIntRangeMinimum: 1,
+			ValueIntRangeMaximum: 60,
+		},
 	}
 
 	SettingDefinitionInstanceManagerPodLivenessProbeTimeout = SettingDefinition{
