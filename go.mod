@@ -4,18 +4,18 @@ go 1.25.7
 
 require (
 	github.com/longhorn/go-common-libs v0.0.0-20260328134226-cafa38fc4ce8
-	github.com/longhorn/longhorn-manager v1.12.0-dev-20260322
+	github.com/longhorn/longhorn-manager v1.12.0-dev-20260419
 	github.com/otiai10/copy v1.14.1
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.4
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/api v0.35.3
-	k8s.io/apimachinery v0.35.3
-	k8s.io/cli-runtime v0.35.3
-	k8s.io/client-go v0.35.3
-	k8s.io/kubectl v0.35.3
+	k8s.io/api v0.35.4
+	k8s.io/apimachinery v0.35.4
+	k8s.io/cli-runtime v0.35.4
+	k8s.io/client-go v0.35.4
+	k8s.io/kubectl v0.35.4
 	k8s.io/utils v0.0.0-20260319190234-28399d86e0b5
 	sigs.k8s.io/kustomize/kyaml v0.21.1
 )
@@ -81,7 +81,7 @@ require (
 	github.com/lxzan/gws v1.8.9 // indirect
 	github.com/mitchellh/go-ps v1.0.0 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
-	github.com/moby/spdystream v0.5.0 // indirect
+	github.com/moby/spdystream v0.5.1 // indirect
 	github.com/moby/sys/mountinfo v0.7.2 // indirect
 	github.com/moby/term v0.5.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
@@ -111,7 +111,7 @@ require (
 	golang.org/x/net v0.49.0 // indirect
 	golang.org/x/oauth2 v0.34.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
-	golang.org/x/sys v0.42.0 // indirect
+	golang.org/x/sys v0.43.0 // indirect
 	golang.org/x/term v0.39.0 // indirect
 	golang.org/x/text v0.35.0 // indirect
 	golang.org/x/time v0.15.0 // indirect
@@ -120,11 +120,11 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	howett.net/plist v1.0.1 // indirect
-	k8s.io/component-base v0.35.3 // indirect
-	k8s.io/component-helpers v0.35.3 // indirect
+	k8s.io/component-base v0.35.4 // indirect
+	k8s.io/component-helpers v0.35.4 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20251125145642-4e65d59e963e // indirect
-	k8s.io/mount-utils v0.35.2 // indirect
+	k8s.io/mount-utils v0.35.3 // indirect
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
 	sigs.k8s.io/kustomize/api v0.20.1 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
@@ -135,6 +135,6 @@ require (
 replace (
 	// align to longhorn-manager's beszel version
 	github.com/henrygd/beszel => github.com/longhorn/beszel v0.16.2-0.20260114090315-332709c32c7d
-	k8s.io/cloud-provider => k8s.io/cloud-provider v0.35.3
-	k8s.io/kubelet => k8s.io/kubelet v0.35.3
+	k8s.io/cloud-provider => k8s.io/cloud-provider v0.35.4
+	k8s.io/kubelet => k8s.io/kubelet v0.35.4
 )
