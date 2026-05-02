@@ -354,8 +354,12 @@ func getPodContainerLogs(ctx context.Context, logger *logrus.Entry, kubeClient *
 
 	// Start a goroutine to copy logs from the stream to the pipe
 	go func() {
-		defer podLogs.Close()
-		defer writer.Close()
+		defer func() {
+			_ = podLogs.Close()
+		}()
+		defer func() {
+			_ = writer.Close()
+		}()
 
 		_, err := io.Copy(writer, podLogs)
 		if err != nil {
