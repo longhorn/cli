@@ -3,7 +3,7 @@ module github.com/longhorn/cli
 go 1.25.7
 
 require (
-	github.com/longhorn/go-common-libs v0.0.0-20260328134226-cafa38fc4ce8
+	github.com/longhorn/go-common-libs v0.0.0-20260502033232-8cc14de85b45
 	github.com/longhorn/longhorn-manager v1.12.0-dev-20260419
 	github.com/otiai10/copy v1.14.1
 	github.com/pkg/errors v0.9.1
@@ -107,7 +107,7 @@ require (
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/crypto v0.47.0 // indirect
-	golang.org/x/exp v0.0.0-20260312153236-7ab1446f8b90 // indirect
+	golang.org/x/exp v0.0.0-20260410095643-746e56fc9e2f // indirect
 	golang.org/x/net v0.49.0 // indirect
 	golang.org/x/oauth2 v0.34.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
