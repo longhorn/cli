@@ -50,4 +50,3 @@ You can obtain `longhornctl` either through downloading a prebuilt binary or by 
     > **Note:** This process will generate two binaries:
     >   - `longhornctl`: A command-line interface for remote Longhorn operations, designed to be run outside the Kubernetes cluster. It executes `longhornctl-local` for operations within the cluster.
     >   - `longhornctl-local`: A command-line interface to be used within a DaemonSet pod inside the Kubernetes cluster, handling in-cluster and host operations.
-
