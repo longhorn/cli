@@ -45,13 +45,27 @@ type Installer struct {
 	osRelease      string
 	packageManager pkgmgr.PackageManager
 
-	packages        []string
-	modules         []string
-	services        []string
-	spdkDepPackages []string
-	spdkDepModules  []string
+	packages        []Package
+	modules         []Package
+	services        []Package
+	spdkDepPackages []Package
+	spdkDepModules  []Package
 
 	collection types.NodeCollection
+}
+
+type Package struct {
+	Name     string
+	Required bool
+}
+
+func requiredPackages(required bool, names ...string) []Package {
+	packages := make([]Package, 0, len(names))
+	for _, name := range names {
+		packages = append(packages, Package{Name: name, Required: required})
+	}
+
+	return packages
 }
 
 // Init initializes the Installer.
@@ -105,80 +119,40 @@ func (local *Installer) Init() error {
 	switch packageManagerType {
 	case pkgmgr.PackageManagerApt:
 		local.packageManager = pkgMgr
-		local.packages = []string{
-			"nfs-common", "open-iscsi", "cryptsetup",
-		}
-		local.modules = []string{
-			"nfs", "dm_crypt",
-		}
-		local.services = []string{
-			"iscsid",
-		}
-		local.spdkDepPackages = []string{
-			"linux-modules-extra-" + kernelRelease,
-		}
-		local.spdkDepModules = []string{
-			"nvme_tcp",
-			"uio_pci_generic",
-			"vfio_pci",
-		}
+		local.packages = requiredPackages(true, "nfs-common", "open-iscsi", "cryptsetup")
+		local.modules = requiredPackages(true, "nfs", "dm_crypt")
+		local.services = requiredPackages(true, "iscsid")
+		// Kernel module nvme_tcp is shipped with the distro by default since ubuntu 26.04. linux-modules-extra is not required any more.
+		// The installation is kept for older ubuntu versions to ensure the module is present, and it won't cause issue on newer versions as the package manager will skip installation if the package is not found.
+		local.spdkDepPackages = requiredPackages(false, "linux-modules-extra-"+kernelRelease)
+		local.spdkDepModules = requiredPackages(true, "nvme_tcp", "uio_pci_generic", "vfio_pci")
 		return nil
 
 	case pkgmgr.PackageManagerYum:
 		local.packageManager = pkgMgr
-		local.packages = []string{
-			"nfs-utils", "iscsi-initiator-utils", "cryptsetup",
-		}
-		local.modules = []string{
-			"nfs", "iscsi_tcp", "dm_crypt",
-		}
-		local.services = []string{
-			"iscsid",
-		}
-		local.spdkDepPackages = []string{}
-		local.spdkDepModules = []string{
-			"nvme_tcp",
-			"uio_pci_generic",
-			"vfio_pci",
-		}
+		local.packages = requiredPackages(true, "nfs-utils", "iscsi-initiator-utils", "cryptsetup")
+		local.modules = requiredPackages(true, "nfs", "iscsi_tcp", "dm_crypt")
+		local.services = requiredPackages(true, "iscsid")
+		local.spdkDepPackages = requiredPackages(true)
+		local.spdkDepModules = requiredPackages(true, "nvme_tcp", "uio_pci_generic", "vfio_pci")
 		return nil
 
 	case pkgmgr.PackageManagerZypper, pkgmgr.PackageManagerTransactionalUpdate:
 		local.packageManager = pkgMgr
-		local.packages = []string{
-			"nfs-client", "open-iscsi", "cryptsetup",
-		}
-		local.modules = []string{
-			"nfs", "iscsi_tcp", "dm_crypt",
-		}
-		local.services = []string{
-			"iscsid",
-		}
-		local.spdkDepPackages = []string{}
-		local.spdkDepModules = []string{
-			"nvme_tcp",
-			"uio_pci_generic",
-			"vfio_pci",
-		}
+		local.packages = requiredPackages(true, "nfs-client", "open-iscsi", "cryptsetup")
+		local.modules = requiredPackages(true, "nfs", "iscsi_tcp", "dm_crypt")
+		local.services = requiredPackages(true, "iscsid")
+		local.spdkDepPackages = requiredPackages(true)
+		local.spdkDepModules = requiredPackages(true, "nvme_tcp", "uio_pci_generic", "vfio_pci")
 		return nil
 
 	case pkgmgr.PackageManagerPacman:
 		local.packageManager = pkgMgr
-		local.packages = []string{
-			"nfs-utils", "open-iscsi", "cryptsetup",
-		}
-		local.modules = []string{
-			"nfs", "iscsi_tcp", "dm_crypt",
-		}
-		local.services = []string{
-			"iscsid",
-		}
-		local.spdkDepPackages = []string{}
-		local.spdkDepModules = []string{
-			"nvme_tcp",
-			"uio_pci_generic",
-			"vfio_pci",
-		}
+		local.packages = requiredPackages(true, "nfs-utils", "open-iscsi", "cryptsetup")
+		local.modules = requiredPackages(true, "nfs", "iscsi_tcp", "dm_crypt")
+		local.services = requiredPackages(true, "iscsid")
+		local.spdkDepPackages = requiredPackages(true)
+		local.spdkDepModules = requiredPackages(true, "nvme_tcp", "uio_pci_generic", "vfio_pci")
 		return nil
 
 	default:
@@ -222,7 +196,7 @@ func (local *Installer) Run() error {
 				"ublk_drv cannot be loaded: ublk is not included in this kernel. Install or upgrade to a kernel with ublk included.")
 			logrus.Warnf("ublk_drv module can not be loaded: %v", err)
 		} else {
-			local.spdkDepModules = append(local.spdkDepModules, "ublk_drv")
+			local.spdkDepModules = append(local.spdkDepModules, Package{Name: "ublk_drv", Required: true})
 		}
 
 		if err := local.probeModules(consts.DependencyModuleSpdk); err != nil {
@@ -257,15 +231,15 @@ func (local *Installer) Output() error {
 // startServices starts services.
 func (local *Installer) startServices() error {
 	for _, svc := range local.services {
-		logrus.Infof("Starting service %s", svc)
+		logrus.Infof("Starting service %s", svc.Name)
 
-		_, err := local.packageManager.StartService(svc)
+		_, err := local.packageManager.StartService(svc.Name)
 		if err != nil {
-			return errors.Wrapf(err, "failed to start service %s", svc)
+			return errors.Wrapf(err, "failed to start service %s", svc.Name)
 		}
 
-		logrus.Infof("Successfully started service %s", svc)
-		local.collection.Log.Info = append(local.collection.Log.Info, fmt.Sprintf("Successfully started service %s", svc))
+		logrus.Infof("Successfully started service %s", svc.Name)
+		local.collection.Log.Info = append(local.collection.Log.Info, fmt.Sprintf("Successfully started service %s", svc.Name))
 	}
 
 	return nil
@@ -273,7 +247,7 @@ func (local *Installer) startServices() error {
 
 // probeModules probes kernel modules.
 func (local *Installer) probeModules(dependencyModule consts.DependencyModuleType) error {
-	var modules []string
+	var modules []Package
 	switch dependencyModule {
 	case consts.DependencyModuleSpdk:
 		modules = local.spdkDepModules
@@ -283,15 +257,15 @@ func (local *Installer) probeModules(dependencyModule consts.DependencyModuleTyp
 		return errors.Errorf("dependency module type (%d) is not supported", dependencyModule)
 	}
 	for _, mod := range modules {
-		logrus.Infof("Probing module %s", mod)
+		logrus.Infof("Probing module %s", mod.Name)
 
-		_, err := local.packageManager.Modprobe(mod)
+		_, err := local.packageManager.Modprobe(mod.Name)
 		if err != nil {
-			return errors.Wrapf(err, "failed to probe module %s", mod)
+			return errors.Wrapf(err, "failed to probe module %s", mod.Name)
 		}
 
-		logrus.Infof("Successfully probed module %s", mod)
-		local.collection.Log.Info = append(local.collection.Log.Info, fmt.Sprintf("Successfully probed module %s", mod))
+		logrus.Infof("Successfully probed module %s", mod.Name)
+		local.collection.Log.Info = append(local.collection.Log.Info, fmt.Sprintf("Successfully probed module %s", mod.Name))
 	}
 
 	return nil
@@ -311,25 +285,29 @@ func (local *Installer) checkAndinstallPackages(spdkDependent bool) (bool, error
 		packages = append(packages, local.spdkDepPackages...)
 	}
 	for _, pkg := range packages {
-		logrus.Infof("Checking package %s", pkg)
+		logrus.Infof("Checking package %s", pkg.Name)
 
-		_, err := local.packageManager.CheckPackageInstalled(pkg)
+		_, err := local.packageManager.CheckPackageInstalled(pkg.Name)
 		if err != nil {
-			logrus.Infof("Installing package %s", pkg)
+			logrus.Infof("Installing package %s", pkg.Name)
 
-			_, err := local.packageManager.InstallPackage(pkg)
+			_, err := local.packageManager.InstallPackage(pkg.Name)
 			if err != nil {
-				return false, errors.Wrapf(err, "failed to install package %s", pkg)
+				if pkg.Required {
+					return false, errors.Wrapf(err, "failed to install package %s", pkg.Name)
+				} else {
+					local.collection.Log.Warn = append(local.collection.Log.Warn, fmt.Sprintf("Failed to install package %s: %v", pkg.Name, err))
+				}
 			} else {
-				logrus.Infof("Successfully installed package %s", pkg)
-				local.collection.Log.Info = append(local.collection.Log.Info, fmt.Sprintf("Successfully installed package %s", pkg))
+				logrus.Infof("Successfully installed package %s", pkg.Name)
+				local.collection.Log.Info = append(local.collection.Log.Info, fmt.Sprintf("Successfully installed package %s", pkg.Name))
 
 				if local.packageManager.NeedReboot() {
 					rebootRequired = true
 				}
 			}
 		} else {
-			logrus.Infof("Package %s already installed", pkg)
+			logrus.Infof("Package %s already installed", pkg.Name)
 		}
 	}
 
