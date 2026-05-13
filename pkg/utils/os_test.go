@@ -28,6 +28,14 @@ func TestParseOSreleaseFile(t *testing.T) {
 			output: "my-os",
 		},
 		{
+			input:  []string{"ID=\"sl-micro\"", "ID_LIKE=\"suse sle-micro opensuse-microos microos\""},
+			output: "sl-micro",
+		},
+		{
+			input:  []string{"ID=\"sl-micro\"", "ID_LIKE=\"suse sl-micro\""},
+			output: "sl-micro",
+		},
+		{
 			input:  []string{""},
 			output: "",
 		},
