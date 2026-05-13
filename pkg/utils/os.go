@@ -122,31 +122,55 @@ func GetOSRelease() (string, error) {
 func parseOSreleaseFile(lines []string) (string, error) {
 	// First, try using `ID_LIKE` because some users might be on customized OS with a modified `ID`,
 	// making it difficult to determine things like the proper package manager. If `ID_LIKE` is not found, use `ID`.
-	platformRexp := regexp.MustCompile(`^ID_LIKE=["']?(.+?)["']?\n?$`)
-	platform := parsePlatform(lines, platformRexp)
-	if platform == "" {
-		platformRexp = regexp.MustCompile(`^ID=["']?(.+?)["']?\n?$`)
-		platform = parsePlatform(lines, platformRexp)
+
+	// Priority keywords that should be preferred over the first word in multi-word values.
+	// SLE Micro 6.1 has ID_LIKE="suse sle-micro ..." but we need "sl-micro" for transactional-update support.
+	// Map from any variant to the canonical form expected by GetPackageManagerType.
+	platformKeywordMap := map[string]string{
+		"sle-micro": "sl-micro",
+		"sl-micro":  "sl-micro",
 	}
 
-	if platform == "" {
-		return "", fmt.Errorf("could not find platform information in os-release: %v", lines)
+	// Try ID_LIKE first, then ID, using the same parsing logic for both
+	regexPatterns := []string{
+		`^ID_LIKE=["']?(.+?)["']?\n?$`,
+		`^ID=["']?(.+?)["']?\n?$`,
 	}
 
-	return platform, nil
+	for _, pattern := range regexPatterns {
+		platformRexp := regexp.MustCompile(pattern)
+		if platform := parsePlatform(lines, platformRexp, platformKeywordMap); platform != "" {
+			return platform, nil
+		}
+	}
+
+	return "", fmt.Errorf("could not find platform information in os-release: %v", lines)
 }
 
-func parsePlatform(lines []string, platformRexp *regexp.Regexp) (platforms string) {
+// parsePlatform extracts platform information from os-release lines.
+// If platformKeywordMap is provided, it checks if any key exists in the full matched value
+// and returns the corresponding canonical value instead of just taking the first word.
+// This handles cases like ID_LIKE="suse sle-micro ..." where we want "sl-micro" not "suse".
+// If platformKeywordMap is nil or empty, it returns the first word of the matched value.
+func parsePlatform(lines []string, platformRexp *regexp.Regexp, platformKeywordMap map[string]string) string {
 	for _, line := range lines {
 		match := platformRexp.FindStringSubmatch(line)
 		if len(match) > 0 {
-			platforms = match[1]
-			break
+			fullValue := match[1]
+
+			// Check if any priority keyword exists in the full value
+			for keyword, canonical := range platformKeywordMap {
+				if strings.Contains(fullValue, keyword) {
+					return canonical
+				}
+			}
+
+			// Fall back to first-word behavior
+			fields := strings.Fields(fullValue)
+			if len(fields) > 0 {
+				return fields[0]
+			}
 		}
-	}
-	fields := strings.Fields(platforms)
-	if len(fields) > 0 {
-		return fields[0]
 	}
 	return ""
 }
