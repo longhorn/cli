@@ -119,60 +119,89 @@ func GetOSRelease() (string, error) {
 	return parseOSreleaseFile(lines)
 }
 
+// extractOSReleaseField extracts a specific field from os-release lines
+func extractOSReleaseField(lines []string, fieldName string) string {
+	pattern := fmt.Sprintf(`^%s=["']?(.+?)["']?\n?$`, fieldName)
+	fieldRexp := regexp.MustCompile(pattern)
+	for _, line := range lines {
+		match := fieldRexp.FindStringSubmatch(line)
+		if len(match) > 1 {
+			return match[1]
+		}
+	}
+	return ""
+}
+
 func parseOSreleaseFile(lines []string) (string, error) {
-	// First, try using `ID_LIKE` because some users might be on customized OS with a modified `ID`,
-	// making it difficult to determine things like the proper package manager. If `ID_LIKE` is not found, use `ID`.
+	// Extract key fields from os-release
+	id := extractOSReleaseField(lines, "ID")
+	idLike := extractOSReleaseField(lines, "ID_LIKE")
+	variantID := extractOSReleaseField(lines, "VARIANT_ID")
 
-	// Priority keywords that should be preferred over the first word in multi-word values.
-	// SLE Micro 6.1 has ID_LIKE="suse sle-micro ..." but we need "sl-micro" for transactional-update support.
-	// Map from any variant to the canonical form expected by GetPackageManagerType.
-	platformKeywordMap := map[string]string{
-		"sle-micro": "sl-micro",
-		"sl-micro":  "sl-micro",
+	// For SUSE-based systems, determine if transactional or regular
+	if isSUSEBased(id, idLike) {
+		// Priority 1: Check if ID or ID_LIKE contains "sle-micro" or "sl-micro"
+		// Example (SLE 6.1):
+		//     ID="sl-micro"
+		//     ID_LIKE="suse sle-micro opensuse-microos microos"
+		idLower := strings.ToLower(id)
+		idLikeLower := strings.ToLower(idLike)
+		if strings.Contains(idLower, "sle-micro") || strings.Contains(idLower, "sl-micro") ||
+			strings.Contains(idLikeLower, "sle-micro") || strings.Contains(idLikeLower, "sl-micro") {
+			return "sl-micro", nil
+		}
+
+		// Priority 2: Check if VARIANT_ID indicates transactional system
+		// Example (SLE 6.2):
+		//     ID="sles"
+		//     ID_LIKE="suse opensuse"
+		//     VARIANT="Micro"
+		//     VARIANT_ID="transactional"
+		variantLower := strings.ToLower(variantID)
+		if variantLower == "transactional" {
+			return "sl-micro", nil
+		}
+
+		// Default: Non-transactional SUSE system
+		return "suse", nil
 	}
 
-	// Try ID_LIKE first, then ID, using the same parsing logic for both
-	regexPatterns := []string{
-		`^ID_LIKE=["']?(.+?)["']?\n?$`,
-		`^ID=["']?(.+?)["']?\n?$`,
+	// For non-SUSE systems, prefer ID_LIKE over ID (use first word from ID_LIKE)
+	if idLike != "" {
+		fields := strings.Fields(idLike)
+		if len(fields) > 0 {
+			return fields[0], nil
+		}
 	}
 
-	for _, pattern := range regexPatterns {
-		platformRexp := regexp.MustCompile(pattern)
-		if platform := parsePlatform(lines, platformRexp, platformKeywordMap); platform != "" {
-			return platform, nil
+	// Fall back to ID if ID_LIKE is not available (use first word)
+	if id != "" {
+		fields := strings.Fields(id)
+		if len(fields) > 0 {
+			return fields[0], nil
 		}
 	}
 
 	return "", fmt.Errorf("could not find platform information in os-release: %v", lines)
 }
 
-// parsePlatform extracts platform information from os-release lines.
-// If platformKeywordMap is provided, it checks if any key exists in the full matched value
-// and returns the corresponding canonical value instead of just taking the first word.
-// This handles cases like ID_LIKE="suse sle-micro ..." where we want "sl-micro" not "suse".
-// If platformKeywordMap is nil or empty, it returns the first word of the matched value.
-func parsePlatform(lines []string, platformRexp *regexp.Regexp, platformKeywordMap map[string]string) string {
-	for _, line := range lines {
-		match := platformRexp.FindStringSubmatch(line)
-		if len(match) > 0 {
-			fullValue := match[1]
-
-			// Check if any priority keyword exists in the full value
-			for keyword, canonical := range platformKeywordMap {
-				if strings.Contains(fullValue, keyword) {
-					return canonical
-				}
-			}
-
-			// Fall back to first-word behavior
-			fields := strings.Fields(fullValue)
-			if len(fields) > 0 {
-				return fields[0]
-			}
-		}
+// isSUSEBased checks if the system is SUSE-based by examining ID and ID_LIKE fields
+func isSUSEBased(id, idLike string) bool {
+	// Check ID field
+	idLower := strings.ToLower(id)
+	if strings.Contains(idLower, "suse") || strings.Contains(idLower, "sles") ||
+		strings.Contains(idLower, "opensuse") || idLower == "sl-micro" || idLower == "sle-micro" {
+		return true
 	}
-	return ""
+
+	// Check ID_LIKE field
+	idLikeLower := strings.ToLower(idLike)
+	if strings.Contains(idLikeLower, "suse") || strings.Contains(idLikeLower, "sles") ||
+		strings.Contains(idLikeLower, "opensuse") {
+		return true
+	}
+
+	return false
 }
 
 func readFileLines(path string) ([]string, error) {

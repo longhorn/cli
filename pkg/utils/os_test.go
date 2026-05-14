@@ -8,42 +8,77 @@ import (
 
 func TestParseOSreleaseFile(t *testing.T) {
 	for _, test := range []struct {
+		name   string
 		input  []string
 		output string
 	}{
 		{
+			name:   "Non-SUSE system with ID_LIKE",
 			input:  []string{"ID=\"my-os\"", "ID_LIKE=\"rhel centos fedora\""},
 			output: "rhel",
 		},
 		{
+			name:   "Non-SUSE system with single ID_LIKE",
 			input:  []string{"ID=\"my-os\"", "ID_LIKE=\"rhel\""},
 			output: "rhel",
 		},
 		{
+			name:   "Non-SUSE system with whitespace",
 			input:  []string{"ID=\"my-os\"", "ID_LIKE=\"  rhel  \""},
 			output: "rhel",
 		},
 		{
+			name:   "System with only ID",
 			input:  []string{"ID=\"my-os\""},
 			output: "my-os",
 		},
 		{
-			input:  []string{"ID=\"sl-micro\"", "ID_LIKE=\"suse sle-micro opensuse-microos microos\""},
+			name:   "SLE Micro 6.1 with sl-micro ID",
+			input:  []string{"ID=\"sl-micro\"", "ID_LIKE=\"suse sle-micro opensuse-microos microos\"", "VARIANT_ID=\"SLE-Micro-Rancher\""},
 			output: "sl-micro",
 		},
 		{
-			input:  []string{"ID=\"sl-micro\"", "ID_LIKE=\"suse sl-micro\""},
+			name:   "SLE Micro 6.1 variant 2",
+			input:  []string{"ID=\"sl-micro\"", "ID_LIKE=\"suse sl-micro\"", "VARIANT_ID=\"SLE-Micro\""},
 			output: "sl-micro",
 		},
 		{
+			name:   "SLE Micro 6.2 (official format from documentation)",
+			input:  []string{"ID=\"sles\"", "ID_LIKE=\"suse opensuse\"", "VARIANT_ID=\"transactional\""},
+			output: "sl-micro",
+		},
+		{
+			name:   "SLE Micro 6.2 variant with SLE-Micro VARIANT_ID",
+			input:  []string{"ID=\"sles\"", "ID_LIKE=\"suse opensuse\"", "VARIANT_ID=\"other variant\""},
+			output: "suse",
+		},
+		{
+			name:   "Regular SLES without micro variant",
+			input:  []string{"ID=\"sles\"", "ID_LIKE=\"suse opensuse\"", "VARIANT_ID=\"\""},
+			output: "suse",
+		},
+		{
+			name:   "Regular SLES without VARIANT_ID field",
+			input:  []string{"ID=\"sles\"", "ID_LIKE=\"suse\""},
+			output: "suse",
+		},
+		{
+			name:   "openSUSE Leap",
+			input:  []string{"ID=\"opensuse-leap\"", "ID_LIKE=\"suse opensuse\""},
+			output: "suse",
+		},
+		{
+			name:   "Empty input",
 			input:  []string{""},
 			output: "",
 		},
 	} {
-		result, _ := parseOSreleaseFile(test.input)
-		if result != test.output {
-			t.Errorf("expected: %s, got: %s", test.output, result)
-		}
+		t.Run(test.name, func(t *testing.T) {
+			result, _ := parseOSreleaseFile(test.input)
+			if result != test.output {
+				t.Errorf("expected: %s, got: %s", test.output, result)
+			}
+		})
 	}
 }
 
