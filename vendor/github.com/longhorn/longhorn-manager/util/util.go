@@ -925,3 +925,23 @@ func IsHigherPriorityVATicketExisting(va *longhorn.VolumeAttachment, ticketType 
 	}
 	return false
 }
+
+func GetActualBackendSize(size int64, encrypted bool, cliAPIVersion int) (int64, error) {
+	namespaces := []lhtypes.Namespace{lhtypes.NamespaceMnt, lhtypes.NamespaceIpc}
+	nsexec, err := lhns.NewNamespaceExecutor(lhtypes.ProcessNone, lhtypes.HostProcDirectory, namespaces)
+	if err != nil {
+		return size, err
+	}
+
+	return nsexec.GetLuksBackendSize(size, encrypted, cliAPIVersion)
+}
+
+func IsCryptsetupVerWithFixed16MiBHeaderSize() (bool, error) {
+	namespaces := []lhtypes.Namespace{lhtypes.NamespaceMnt, lhtypes.NamespaceIpc}
+	nsexec, err := lhns.NewNamespaceExecutor(lhtypes.ProcessNone, lhtypes.HostProcDirectory, namespaces)
+	if err != nil {
+		return false, err
+	}
+
+	return nsexec.IsLuksFixed16MiBHeaderSize()
+}
