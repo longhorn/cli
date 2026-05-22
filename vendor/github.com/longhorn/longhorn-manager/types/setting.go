@@ -168,6 +168,7 @@ const (
 	SettingNameSnapshotHeavyTaskConcurrentLimit                         = SettingName("snapshot-heavy-task-concurrent-limit")
 	SettingNameNodeDiskHealthMonitoring                                 = SettingName("node-disk-health-monitoring")
 	SettingNameCSIAllowedTopologyKeys                                   = SettingName("csi-allowed-topology-keys")
+	SettingNameCSIStorageCapacityTracking                               = SettingName("csi-storage-capacity-tracking")
 
 	// The settings are deprecated and Longhorn won't create Setting Resources for these parameters.
 	// TODO: Remove these settings in the future releases.
@@ -289,6 +290,7 @@ var (
 		SettingNameNodeDiskHealthMonitoring,
 		SettingNameSnapshotHeavyTaskConcurrentLimit,
 		SettingNameCSIAllowedTopologyKeys,
+		SettingNameCSIStorageCapacityTracking,
 	}
 )
 
@@ -444,6 +446,7 @@ var (
 		SettingNameNodeDiskHealthMonitoring:                                 SettingDefinitionNodeDiskHealthMonitoring,
 		SettingNameSnapshotHeavyTaskConcurrentLimit:                         SettingDefinitionSnapshotHeavyTaskConcurrentLimit,
 		SettingNameCSIAllowedTopologyKeys:                                   SettingDefinitionCSIAllowedTopologyKeys,
+		SettingNameCSIStorageCapacityTracking:                               SettingDefinitionCSIStorageCapacityTracking,
 	}
 
 	SettingDefinitionAllowRecurringJobWhileVolumeDetached = SettingDefinition{
@@ -707,7 +710,7 @@ var (
 
 	SettingDefinitionManagerURL = SettingDefinition{
 		DisplayName:        "Manager URL",
-		Description:        "The external URL used to access the Longhorn Manager API. When set, this URL is returned in API responses (the actions and links fields) instead of the internal pod IP. This is useful when accessing the API through Ingress or Gateway API HTTPRoute. Format: scheme://host[:port] (for example, https://longhorn.example.com or https://longhorn.example.com:8443). Leave it empty to use the default behavior.",
+		Description:        "The external URL used to access the Longhorn Manager API. When set, this URL is returned in API responses (the actions and links fields) instead of the internal pod IP. This is useful when accessing the API through Ingress or Gateway API HTTPRoute. Format: scheme://host[:port] (for example, https://longhorn.example.com or https://longhorn.example.com:8443). Leave it empty to use the default behavior. Warning: Internal components (including longhorn-driver-deployer and longhorn-csi-plugin) follow the links returned in API responses. If this URL passes through proxy middleware (such as an OAuth2 proxy, ingress auth, or any other HTTP-intercepting layer), those components may receive an unexpected response (such as an HTML redirect) instead of JSON, causing errors such as \"invalid character '<' looking for beginning of value\" and CSI driver deployment failure.",
 		Category:           SettingCategoryGeneral,
 		Type:               SettingTypeString,
 		Required:           false,
@@ -1921,7 +1924,8 @@ var (
 		Description: "Comma-separated list of topology keys to keep in CreateVolumeResponse AccessibleTopology. " +
 			"Only the specified keys remain in topology segments and are used for PV nodeAffinity " +
 			"(e.g., \"topology.kubernetes.io/zone,topology.kubernetes.io/region\"). " +
-			"When empty (default), no topology keys are allowed and AccessibleTopology will be empty.",
+			"When empty (default), no topology keys are allowed and AccessibleTopology will be empty. " +
+			"Note: The longhorn-csi-plugin daemonset must be restarted for changes to take effect.",
 		Category:           SettingCategoryGeneral,
 		Type:               SettingTypeString,
 		Required:           false,
@@ -1929,6 +1933,25 @@ var (
 		DataEngineSpecific: false,
 		Default:            "",
 	}
+
+	SettingDefinitionCSIStorageCapacityTracking = SettingDefinition{
+		DisplayName: "CSI Storage Capacity Tracking",
+		Description: "Controls CSI storage capacity tracking, which allows the kube-scheduler to filter " +
+			"nodes that cannot fit the requested volume.",
+		Category:           SettingCategoryGeneral,
+		Type:               SettingTypeBool,
+		Required:           true,
+		ReadOnly:           false,
+		DataEngineSpecific: false,
+		Default:            "false",
+	}
+)
+
+type CSIStorageCapacityTrackingMode string
+
+const (
+	CSIStorageCapacityTrackingModeNode = CSIStorageCapacityTrackingMode("node")
+	CSIStorageCapacityTrackingModeZone = CSIStorageCapacityTrackingMode("zone")
 )
 
 type NodeDownPodDeletionPolicy string
@@ -2070,6 +2093,18 @@ func GetCustomizedDefaultSettings(defaultSettingCM *corev1.ConfigMap) (defaultSe
 	}
 
 	return defaultSettings, nil
+}
+
+// ParseCSIAllowedTopologyKeys parses a comma-separated topology key list into a set.
+func ParseCSIAllowedTopologyKeys(value string) map[string]bool {
+	allowedKeys := make(map[string]bool)
+	for _, key := range strings.Split(value, ",") {
+		key = strings.TrimSpace(key)
+		if key != "" {
+			allowedKeys[key] = true
+		}
+	}
+	return allowedKeys
 }
 
 // UnmarshalTolerations unmarshals the given toleration setting string into a slice of Toleration.
