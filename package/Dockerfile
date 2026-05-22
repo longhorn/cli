@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.20.0@sha256:26147acbda4f14c5add9946e2fd2ed543fc402884fd75146bd342a7f6271dc1d
-FROM registry.suse.com/bci/golang:1.25@sha256:6fa6b8d34f8f220805f75d148e656bc6b6503778074188b95a966238934f2a94 AS app_builder
+FROM registry.suse.com/bci/golang:1.25@sha256:ddf55c9d81a8255b6de7ca74e0c2aed4e425fa845c936cf62a03a99bfb5deaed AS app_builder
 
 WORKDIR /app
 
@@ -13,7 +13,7 @@ RUN chmod +x /app/dapper/build
 RUN /app/dapper/build
 
 
-FROM registry.suse.com/bci/golang:1.25@sha256:6fa6b8d34f8f220805f75d148e656bc6b6503778074188b95a966238934f2a94 AS spdk_builder
+FROM registry.suse.com/bci/golang:1.25@sha256:ddf55c9d81a8255b6de7ca74e0c2aed4e425fa845c936cf62a03a99bfb5deaed AS spdk_builder
 
 ARG ARCH=amd64
 
@@ -27,7 +27,7 @@ RUN cd /usr/src && \
     git checkout ${SPDK_COMMIT_ID} && \
     rm -rf .git
 
-FROM registry.suse.com/bci/bci-base:15.7@sha256:10b5206297031aeeb405f74eebc192ae16c27eae9076662dbe28ecdc837d1030 AS release
+FROM registry.suse.com/bci/bci-base:15.7@sha256:725aee61c55c30995c8dfb4ee5aee62759970a5e0ec88de0039ead15114b7de0 AS release
 
 ARG TARGETPLATFORM
 RUN if [ "$TARGETPLATFORM" != "linux/amd64" ] && [ "$TARGETPLATFORM" != "linux/arm64" ]; then \
