@@ -54,7 +54,7 @@ func GetDataDirectory(logger *logrus.Entry, hostDirectory, inputDataDirectory st
 					return "", err
 				}
 			} else {
-				return "", errors.Wrapf(err, "directory %s does not exist", dataDir)
+				return "", errors.Wrapf(err, "failed to stat directory %s", dataDir)
 			}
 		}
 	}
