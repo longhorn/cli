@@ -160,7 +160,7 @@ func NewWorkload(kubeClient *kubeclient.Clientset, obj interface{}, kind, labelS
 		"kind":            kind,
 		"namespace":       namespace,
 		"name":            name,
-		"lable-selectors": labelSelector,
+		"label-selectors": labelSelector,
 	})
 	return &Workload{
 		logger:         logger,
