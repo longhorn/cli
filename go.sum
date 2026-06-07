@@ -137,8 +137,10 @@ github.com/longhorn/beszel v0.16.2-0.20260114090315-332709c32c7d h1:Fu1U1CyaxN42
 github.com/longhorn/beszel v0.16.2-0.20260114090315-332709c32c7d/go.mod h1:369q8Fv+iqznDYF3++boASEe1+fKS8Q4vdSb8isEI1c=
 github.com/longhorn/go-common-libs v0.0.0-20260502161928-1e84fa75a8f1 h1:sjDswhcTrEqeXSjcHjaeccYT1v1WW9wNHB3fWFArM38=
 github.com/longhorn/go-common-libs v0.0.0-20260502161928-1e84fa75a8f1/go.mod h1:+aXFI8DmHTX4Az9pZF16/XKfrVKWIESJjw+hcxdMslw=
-github.com/longhorn/longhorn-manager v1.12.0-rc2 h1:X1J/vd340Pq2SzE+pHz+Hxmj6Ys9a69IS80Dm3awBnU=
-github.com/longhorn/longhorn-manager v1.12.0-rc2/go.mod h1:gMtcENFnfAREpud+BwUVlhKHAid362zkImu8wok+fEM=
+github.com/longhorn/go-spdk-helper v0.6.2-0.20260514102642-789b2a1cb467 h1:qwlSBgqM4tRclTcVPHOukZVu4jQjM5BZVgUseiORSk0=
+github.com/longhorn/go-spdk-helper v0.6.2-0.20260514102642-789b2a1cb467/go.mod h1:ZxbMkGsbC2TpzuGLjn9yXXExolt8/F3dl/C8O9/Qa7s=
+github.com/longhorn/longhorn-manager v1.12.0-rc3 h1:D2HZOmPQvVqVkbcj/QgQgbk3lQ1pu/aJ+JzfIDWm2ZY=
+github.com/longhorn/longhorn-manager v1.12.0-rc3/go.mod h1:MdI3sFzoPKWBYYaEciToVh14Sbpw83Xv90053kKZufs=
 github.com/lufia/plan9stats v0.0.0-20251013123823-9fd1530e3ec3 h1:PwQumkgq4/acIiZhtifTV5OUqqiP82UAl0h87xj/l9k=
 github.com/lufia/plan9stats v0.0.0-20251013123823-9fd1530e3ec3/go.mod h1:autxFIvghDt3jPTLoqZ9OZ7s9qTGNAWmYCjVFWPX/zg=
 github.com/lxzan/gws v1.8.9 h1:VU3SGUeWlQrEwfUSfokcZep8mdg/BrUF+y73YYshdBM=
@@ -315,8 +317,8 @@ k8s.io/kube-openapi v0.0.0-20260317180543-43fb72c5454a h1:xCeOEAOoGYl2jnJoHkC3hk
 k8s.io/kube-openapi v0.0.0-20260317180543-43fb72c5454a/go.mod h1:uGBT7iTA6c6MvqUvSXIaYZo9ukscABYi2btjhvgKGZ0=
 k8s.io/kubectl v0.36.1 h1:96HqS9twIdHM0MlJLTwbo14b9kUKPkOzZ4tlRDLv4qI=
 k8s.io/kubectl v0.36.1/go.mod h1:/DGPAIewKsFWF9VFgGvkPhao2Ev4SNuE3BioZo8yPbk=
-k8s.io/mount-utils v0.36.0 h1:ufsqGyCoPDh7p+6OIa1wv6oH9GqkQQ8XIfEOVfCV3g0=
-k8s.io/mount-utils v0.36.0/go.mod h1:+I47UOG6FiUGVSy7VanjU/mQXLShMo3M7xBpGLzCub8=
+k8s.io/mount-utils v0.36.1 h1:NWDFsdv+jfqPfa/LisnbEn1QyPNYjMNkmfEORXhyvZA=
+k8s.io/mount-utils v0.36.1/go.mod h1:+I47UOG6FiUGVSy7VanjU/mQXLShMo3M7xBpGLzCub8=
 k8s.io/streaming v0.36.1 h1:L+K68n4Gg940BGNNYtUBvL1WTLL0YnKT3s+P1MNAmR4=
 k8s.io/streaming v0.36.1/go.mod h1:z6fV3D+NVkoeqRMtWwlUZK6U17SY/LqNzOxWL6GyR/s=
 k8s.io/utils v0.0.0-20260507154919-ff6756f316d2 h1:wU4tMEhLGgIbLvXQb1cfN+EcM0wf7zC6CPF+C79jroc=
