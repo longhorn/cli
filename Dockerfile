@@ -1,11 +1,11 @@
 # syntax=docker/dockerfile:1.24.0@sha256:87999aa3d42bdc6bea60565083ee17e86d1f3339802f543c0d03998580f9cb89
+FROM golangci/golangci-lint:v2.12.2 AS golangci-lint
+
 FROM registry.suse.com/bci/golang:1.26@sha256:f413accb043d80ea904e972958c06543e5fa3225652b29b44c51f027246b3b81 AS base
 
 ARG TARGETARCH
 ARG http_proxy
 ARG https_proxy
-
-ENV GOLANGCI_LINT_VERSION=v2.11.4
 
 ENV ARCH=${TARGETARCH}
 ENV GOFLAGS=-mod=vendor
@@ -15,10 +15,8 @@ RUN zypper update -y && \
     zypper -n install curl awk && \
     rm -rf /var/cache/zypp/*
 
-# Install golangci-lint
-RUN curl -fsSL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh -o /tmp/install.sh \
-    && chmod +x /tmp/install.sh \
-    && /tmp/install.sh -b /usr/local/bin ${GOLANGCI_LINT_VERSION}
+# Copy golangci-lint binary from official image
+COPY --from=golangci-lint /usr/bin/golangci-lint /usr/local/bin/golangci-lint
 
 WORKDIR /go/src/github.com/longhorn/cli
 COPY . .
