@@ -1,6 +1,6 @@
 module github.com/longhorn/cli
 
-go 1.26.0
+go 1.26
 
 require (
 	github.com/longhorn/go-common-libs v0.0.0-20260502161928-1e84fa75a8f1
