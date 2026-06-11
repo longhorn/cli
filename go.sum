@@ -135,12 +135,12 @@ github.com/lithammer/dedent v1.1.0 h1:VNzHMVCBNG1j0fh3OrsFRkVUwStdDArbgBWoPAffkt
 github.com/lithammer/dedent v1.1.0/go.mod h1:jrXYCQtgg0nJiN+StA2KgR7w6CiQNv9Fd/Z9BP0jIOc=
 github.com/longhorn/beszel v0.16.2-0.20260114090315-332709c32c7d h1:Fu1U1CyaxN42AItajvTu4iKdyjOJitKIu0NtQc1jye8=
 github.com/longhorn/beszel v0.16.2-0.20260114090315-332709c32c7d/go.mod h1:369q8Fv+iqznDYF3++boASEe1+fKS8Q4vdSb8isEI1c=
-github.com/longhorn/go-common-libs v0.0.0-20260502161928-1e84fa75a8f1 h1:sjDswhcTrEqeXSjcHjaeccYT1v1WW9wNHB3fWFArM38=
-github.com/longhorn/go-common-libs v0.0.0-20260502161928-1e84fa75a8f1/go.mod h1:+aXFI8DmHTX4Az9pZF16/XKfrVKWIESJjw+hcxdMslw=
+github.com/longhorn/go-common-libs v0.0.0-20260512083219-bb6c10ce1050 h1:2Jaa2XhhkE8dpSWxI+buMzUM6IgQ4wby3SmYd494Bac=
+github.com/longhorn/go-common-libs v0.0.0-20260512083219-bb6c10ce1050/go.mod h1:+aXFI8DmHTX4Az9pZF16/XKfrVKWIESJjw+hcxdMslw=
 github.com/longhorn/go-spdk-helper v0.6.2-0.20260514102642-789b2a1cb467 h1:qwlSBgqM4tRclTcVPHOukZVu4jQjM5BZVgUseiORSk0=
 github.com/longhorn/go-spdk-helper v0.6.2-0.20260514102642-789b2a1cb467/go.mod h1:ZxbMkGsbC2TpzuGLjn9yXXExolt8/F3dl/C8O9/Qa7s=
-github.com/longhorn/longhorn-manager v1.12.0-rc3 h1:D2HZOmPQvVqVkbcj/QgQgbk3lQ1pu/aJ+JzfIDWm2ZY=
-github.com/longhorn/longhorn-manager v1.12.0-rc3/go.mod h1:MdI3sFzoPKWBYYaEciToVh14Sbpw83Xv90053kKZufs=
+github.com/longhorn/longhorn-manager v1.12.0-rc4 h1:evNI3JJo6aNkeYH9PfKK8e897PK9n6y8l4AeTqqO5tw=
+github.com/longhorn/longhorn-manager v1.12.0-rc4/go.mod h1:LW10bT3mFoB/XHHU+x8NQJTNUh28Wn6BQwHNzLeh6+k=
 github.com/lufia/plan9stats v0.0.0-20251013123823-9fd1530e3ec3 h1:PwQumkgq4/acIiZhtifTV5OUqqiP82UAl0h87xj/l9k=
 github.com/lufia/plan9stats v0.0.0-20251013123823-9fd1530e3ec3/go.mod h1:autxFIvghDt3jPTLoqZ9OZ7s9qTGNAWmYCjVFWPX/zg=
 github.com/lxzan/gws v1.8.9 h1:VU3SGUeWlQrEwfUSfokcZep8mdg/BrUF+y73YYshdBM=
