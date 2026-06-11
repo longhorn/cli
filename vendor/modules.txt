@@ -229,7 +229,7 @@ github.com/kr/text
 # github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de
 ## explicit
 github.com/liggitt/tabwriter
-# github.com/longhorn/go-common-libs v0.0.0-20260502161928-1e84fa75a8f1
+# github.com/longhorn/go-common-libs v0.0.0-20260512083219-bb6c10ce1050
 ## explicit; go 1.25.0
 github.com/longhorn/go-common-libs/exec
 github.com/longhorn/go-common-libs/io
@@ -246,7 +246,7 @@ github.com/longhorn/go-common-libs/utils
 ## explicit; go 1.25.3
 github.com/longhorn/go-spdk-helper/pkg/types
 github.com/longhorn/go-spdk-helper/pkg/util
-# github.com/longhorn/longhorn-manager v1.12.0-rc3
+# github.com/longhorn/longhorn-manager v1.12.0-rc4
 ## explicit; go 1.26.0
 github.com/longhorn/longhorn-manager/k8s/pkg/apis/longhorn
 github.com/longhorn/longhorn-manager/k8s/pkg/apis/longhorn/v1beta2
