@@ -1,10 +1,10 @@
 module github.com/longhorn/cli
 
-go 1.26
+go 1.26.0
 
 require (
-	github.com/longhorn/go-common-libs v0.0.0-20260502161928-1e84fa75a8f1
-	github.com/longhorn/longhorn-manager v1.12.0-rc3
+	github.com/longhorn/go-common-libs v0.0.0-20260512083219-bb6c10ce1050
+	github.com/longhorn/longhorn-manager v1.12.0-rc4
 	github.com/otiai10/copy v1.14.1
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.4
