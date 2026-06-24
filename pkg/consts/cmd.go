@@ -13,6 +13,7 @@ const (
 	SubCmdGet     = "get"
 	SubCmdInstall = "install"
 	SubCmdTrim    = "trim"
+	SubCmdUpgrade = "upgrade"
 
 	// The second layer of subcommands (noun)
 	SubCmdPreflight = "preflight"

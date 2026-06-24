@@ -1,6 +1,8 @@
 package subcmd
 
 import (
+	"os"
+
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -8,6 +10,7 @@ import (
 	"github.com/longhorn/cli/pkg/consts"
 	"github.com/longhorn/cli/pkg/remote/preflight"
 	"github.com/longhorn/cli/pkg/types"
+	"github.com/longhorn/cli/pkg/upgrade"
 	"github.com/longhorn/cli/pkg/utils"
 )
 
@@ -20,6 +23,7 @@ func NewCmdCheck(globalOpts *types.GlobalCmdOptions) *cobra.Command {
 	utils.SetGlobalOptionsRemote(cmd, globalOpts)
 
 	cmd.AddCommand(newCmdCheckPreflight(globalOpts))
+	cmd.AddCommand(newCmdCheckUpgrade(globalOpts))
 
 	return cmd
 }
@@ -102,6 +106,55 @@ INFO[2024-07-16T17:17:42+08:00] Completed preflight checker`,
 	cmd.Flags().BoolVar(&preflightChecker.EnableSpdk, consts.CmdOptEnableSpdk, false, "Enable checking of SPDK required packages, modules, and setup.")
 	cmd.Flags().IntVar(&preflightChecker.HugePageSize, consts.CmdOptHugePageSize, 2048, "Specify the huge page size in MiB for SPDK.")
 	cmd.Flags().StringVar(&preflightChecker.UserspaceDriver, consts.CmdOptUserspaceDriver, "", "Userspace I/O driver for SPDK.")
+
+	return cmd
+}
+
+func newCmdCheckUpgrade(globalOpts *types.GlobalCmdOptions) *cobra.Command {
+	var checker = upgrade.Checker{}
+	var runErr error
+
+	cmd := &cobra.Command{
+		Use:   consts.SubCmdUpgrade,
+		Short: "Check V2 instance-manager live-upgrade readiness",
+		Long: `This command performs a point-in-time readiness check for the V2 instance-manager rolling live upgrade.
+Run it immediately before the upgrade operation and avoid concurrent volume changes while checking.`,
+		Args: cobra.NoArgs,
+
+		PreRun: func(cmd *cobra.Command, args []string) {
+			checker.LogLevel = globalOpts.LogLevel
+			checker.KubeConfigPath = globalOpts.KubeConfigPath
+			checker.Namespace = globalOpts.Namespace
+
+			logrus.Info("Initializing upgrade checker")
+			if err := checker.Init(); err != nil {
+				utils.CheckErr(errors.Wrap(err, "Failed to initialize upgrade checker"))
+			}
+		},
+
+		Run: func(cmd *cobra.Command, args []string) {
+			logrus.Info("Running upgrade checker")
+			runErr = checker.Run()
+			if runErr == nil {
+				logrus.Info("Completed upgrade checker")
+			}
+		},
+
+		PostRun: func(cmd *cobra.Command, args []string) {
+			logrus.Info("Outputting upgrade check result")
+			if err := checker.Output(); err != nil {
+				utils.CheckErr(errors.Wrap(err, "Failed to output upgrade checker result"))
+			}
+
+			if runErr != nil {
+				os.Exit(1)
+			}
+		},
+	}
+
+	utils.SetGlobalOptionsRemote(cmd, globalOpts)
+
+	cmd.Flags().StringVarP(&checker.OutputFilePath, consts.CmdOptOutputFile, "o", os.Getenv(consts.EnvOutputFilePath), "Output the result to a file, default to stdout.")
 
 	return cmd
 }
