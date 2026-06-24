@@ -79,3 +79,50 @@ func (s *LonghornClient) ListEngineImages(ctx context.Context) (*longhorn.Engine
 func (s *LonghornClient) ListInstanceManagers(ctx context.Context) (*longhorn.InstanceManagerList, error) {
 	return s.clientset.LonghornV1beta2().InstanceManagers(s.namespace).List(ctx, metav1.ListOptions{})
 }
+
+func (s *LonghornClient) ListVolumesByDataEngine(ctx context.Context, dataEngine longhorn.DataEngineType) (*longhorn.VolumeList, error) {
+	volumes, err := s.ListVolumes(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	filtered := &longhorn.VolumeList{}
+	for _, volume := range volumes.Items {
+		if volume.Spec.DataEngine != dataEngine {
+			continue
+		}
+		filtered.Items = append(filtered.Items, volume)
+	}
+
+	return filtered, nil
+}
+
+func (s *LonghornClient) ListVolumeReplicas(volumeName string) (*longhorn.ReplicaList, error) {
+	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
+		MatchLabels: lhTypes.GetVolumeLabels(volumeName),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return s.clientset.LonghornV1beta2().Replicas(s.namespace).List(context.Background(), metav1.ListOptions{
+		LabelSelector: selector.String(),
+	})
+}
+
+func (s *LonghornClient) ListVolumeEngines(volumeName string) (*longhorn.EngineList, error) {
+	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
+		MatchLabels: lhTypes.GetVolumeLabels(volumeName),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return s.clientset.LonghornV1beta2().Engines(s.namespace).List(context.Background(), metav1.ListOptions{
+		LabelSelector: selector.String(),
+	})
+}
+
+func (s *LonghornClient) GetSetting(name string) (*longhorn.Setting, error) {
+	return s.clientset.LonghornV1beta2().Settings(s.namespace).Get(context.Background(), name, metav1.GetOptions{})
+}
