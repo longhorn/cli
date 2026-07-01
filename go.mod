@@ -4,7 +4,7 @@ go 1.25.3
 
 require (
 	github.com/longhorn/go-common-libs v0.0.0-20260330053112-1eb5d5e4dc8c
-	github.com/longhorn/longhorn-manager v1.11.2
+	github.com/longhorn/longhorn-manager v1.12.0
 	github.com/otiai10/copy v1.14.1
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.4
