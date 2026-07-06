@@ -342,8 +342,9 @@ func (local *Installer) configureSPDKEnv() error {
 
 	// Configure SPDK environment
 	logrus.Info("Configuring SPDK environment")
-	args := getArgsForConfiguringSPDKEnv(local.SpdkOptions)
-	if _, err := local.packageManager.Execute([]string{}, "bash", args, commontypes.ExecuteNoTimeout); err != nil {
+	envs := getEnvsForConfiguringSPDKEnv(local.SpdkOptions)
+	args := []string{filepath.Join(consts.SpdkPath, "scripts/setup.sh")}
+	if _, err := local.packageManager.Execute(envs, "bash", args, commontypes.ExecuteNoTimeout); err != nil {
 		logrus.WithError(err).Error("Failed to configure SPDK environment")
 	} else {
 		logrus.Info("Successfully configured SPDK environment")
@@ -353,14 +354,18 @@ func (local *Installer) configureSPDKEnv() error {
 	return nil
 }
 
-func getArgsForConfiguringSPDKEnv(options string) []string {
-	args := []string{filepath.Join(consts.SpdkPath, "scripts/setup.sh")}
-	if options != "" {
-		logrus.Infof("Configuring SPDK environment with custom options: %v", options)
-		customOptions := strings.Split(options, consts.CmdOptSeperator)
-		args = append(args, customOptions...)
+// getEnvsForConfiguringSPDKEnv parses the comma-separated --spdk-options string
+// into a list of KEY=VALUE environment variables. SPDK's scripts/setup.sh reads
+// its tunables (e.g. HUGEMEM, HUGENODE, PERSIST_HUGE, PCI_ALLOWED) from the
+// environment, not from positional arguments, so the options must be passed as
+// envs. Passing them as positional args instead sets setup.sh's $1 "mode" and
+// makes the script exit with "Invalid argument", skipping hugepage allocation.
+func getEnvsForConfiguringSPDKEnv(options string) []string {
+	if options == "" {
+		return []string{}
 	}
-	return args
+	logrus.Infof("Configuring SPDK environment with custom options: %v", options)
+	return strings.Split(options, consts.CmdOptSeperator)
 }
 
 func (local *Installer) restartKubelet() error {
