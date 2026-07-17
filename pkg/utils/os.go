@@ -23,7 +23,7 @@ func GetPackageManagerType(osRelease string) (pkgmgr.PackageManagerType, error) 
 		return pkgmgr.PackageManagerTransactionalUpdate, nil
 	case "ubuntu", "debian":
 		return pkgmgr.PackageManagerApt, nil
-	case "rhel", "ol", "rocky", "centos", "fedora", "amzn":
+	case "rhel", "ol", "rocky", "centos", "fedora", "amzn", "opencloudos":
 		return pkgmgr.PackageManagerYum, nil
 	case "arch":
 		return pkgmgr.PackageManagerPacman, nil
