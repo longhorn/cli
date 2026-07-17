@@ -144,6 +144,12 @@ func TestGetPackageManagerType(t *testing.T) {
 			shouldFail: false,
 		},
 		{
+			name:       "OpenCloudOS",
+			osRelease:  "opencloudos",
+			wantType:   pkgmgr.PackageManagerYum,
+			shouldFail: false,
+		},
+		{
 			name:       "Arch Linux",
 			osRelease:  "arch",
 			wantType:   pkgmgr.PackageManagerPacman,
