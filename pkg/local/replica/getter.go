@@ -64,7 +64,15 @@ func (local *Getter) Init() error {
 func (local *Getter) Run() error {
 	var err error
 
-	local.replicaNames, err = local.getReplicaNamesInDirectory()
+	log := local.logger
+	if local.VolumeName != "" {
+		log = log.WithField("volume", local.VolumeName)
+	}
+	if local.ReplicaName != "" {
+		log = log.WithField("replica", local.ReplicaName)
+	}
+
+	local.replicaNames, err = getReplicaNamesInDirectory(log, local.replicasDirectory, local.VolumeName, local.ReplicaName)
 	if err != nil {
 		return err
 	}
@@ -99,16 +107,7 @@ func (local *Getter) Output() error {
 
 // getReplicaNamesInDirectory returns a list of replica names in the given directory that match the given volume name.
 // If the volume name is empty, it returns all replica names in the given directory.
-func (local *Getter) getReplicaNamesInDirectory() ([]string, error) {
-	log := local.logger
-	replicasDirectory := local.replicasDirectory
-
-	if local.VolumeName != "" {
-		log = log.WithField("volume", local.VolumeName)
-	}
-	if local.ReplicaName != "" {
-		log = log.WithField("replica", local.ReplicaName)
-	}
+func getReplicaNamesInDirectory(log *logrus.Entry, replicasDirectory, volumeNameFilter, replicaNameFilter string) ([]string, error) {
 	log.Infof("Searching for replicas in %s", replicasDirectory)
 
 	filePaths, err := commonio.FindFiles(replicasDirectory, "", 1)
@@ -135,12 +134,12 @@ func (local *Getter) getReplicaNamesInDirectory() ([]string, error) {
 			continue
 		}
 
-		if local.ReplicaName != "" && local.ReplicaName != replicaName {
+		if replicaNameFilter != "" && replicaNameFilter != replicaName {
 			continue
 		}
 
 		volumeName := replicaName[:strings.LastIndex(replicaName, "-")]
-		if local.VolumeName != "" && local.VolumeName != volumeName {
+		if volumeNameFilter != "" && volumeNameFilter != volumeName {
 			continue
 		}
 
@@ -179,7 +178,7 @@ func (local *Getter) getReplicaInfo(replicaName string) (replicaInfo *types.Repl
 		return replicaInfo, nil
 	}
 
-	isReplicaInUse, err := local.isReplicaInUse(replicaName)
+	isReplicaInUse, err := isReplicaDirectoryInUse(replicaDirectory)
 	if err != nil {
 		replicaInfo.Error = errors.Wrapf(err, "failed to check if replica %s is in use", replicaName).Error()
 		return replicaInfo, nil
@@ -189,9 +188,7 @@ func (local *Getter) getReplicaInfo(replicaName string) (replicaInfo *types.Repl
 	return replicaInfo, nil
 }
 
-func (local *Getter) isReplicaInUse(name string) (bool, error) {
-	replicaDirectory := filepath.Join(local.replicasDirectory, name)
-
+func isReplicaDirectoryInUse(replicaDirectory string) (bool, error) {
 	// Check if replica path exists
 	if _, err := os.Stat(replicaDirectory); os.IsNotExist(err) {
 		return false, errors.Wrapf(err, "replica directory %s does not exist", replicaDirectory)
