@@ -18,7 +18,9 @@ spec:
       initContainers:
       - name: longhorn-preflight
         command:
-        - longhorn-preflight
+        - longhornctl-local
+        - install
+        - preflight
         - check
         image: longhornio/longhorn-cli:master-head
         securityContext:
