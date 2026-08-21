@@ -11,16 +11,6 @@ import (
 func (c *Chain) DumpExtents() error {
 	newestToOldest := c.Sequence
 	totalSectors := c.TotalSectors
-	backingFileName := c.BackingFile
-	if backingFileName != "" {
-		f, err := c.GetFile(backingFileName)
-		if err != nil {
-			return fmt.Errorf("no open file for backing file %s", backingFileName)
-		}
-		if err := dumpExtentsForFile(backingFileName, f, totalSectors); err != nil {
-			return err
-		}
-	}
 
 	for _, fName := range newestToOldest {
 		f, err := c.GetFile(fName)
@@ -49,36 +39,30 @@ func dumpExtentsForFile(name string, f *os.File, totalSectors int64) error {
 	return nil
 }
 
-// PrintSectorRanges walks the resolved location[] table and prints
+// PrintSectorLocationTable walks the resolved location[] table and prints
 // collapsed [start,end): owner ranges instead of one line per sector.
 // This is the view you actually want to eyeball for correctness.
-func PrintSectorRanges(smap *SectorMapping, totalSectors int64, fallbackName string) {
+func PrintSectorLocationTable(smap *SectorMapping, totalSectors int64) {
 	if totalSectors == 0 {
 		return
 	}
 
+	fmt.Println("### does ownerfiles have head??? ", smap.OwnerFiles)
 	location, names := smap.Location, smap.OwnerFiles
 
 	runStart := int64(0)
-	runOwner := Owner(location, names, 0, fallbackName)
+	runOwnerIdx := location[0]
 
 	for s := int64(1); s < totalSectors; s++ {
-		owner := Owner(location, names, s, fallbackName)
-		if owner != runOwner {
-			fmt.Printf("[%d, %d): %s  (%d sectors)\n", runStart, s, runOwner, s-runStart)
-			runStart, runOwner = s, owner
+		idx := location[s]
+		if idx != runOwnerIdx {
+			if runOwnerIdx != 0 {
+				fmt.Printf("[%d, %d): %s  (%d sectors)\n", runStart, s, names[runOwnerIdx], s-runStart)
+			}
+			runStart, runOwnerIdx = s, idx
 		}
 	}
-	fmt.Printf("[%d, %d): %s  (%d sectors)\n", runStart, totalSectors, runOwner, totalSectors-runStart)
-}
-
-// Owner resolves a sector to its owning filename. Sectors nobody ever
-// wrote to (still sectorNil after the loop above) fall back to
-// fallbackName -- pass the backing file's name if present, else head's.
-func Owner(location []byte, names []string, sector int64, fallbackName string) string {
-	idx := location[sector]
-	if idx == sectorNil {
-		return fallbackName
+	if runOwnerIdx != 0 {
+		fmt.Printf("[%d, %d): %s  (%d sectors)\n", runStart, totalSectors, names[runOwnerIdx], totalSectors-runStart)
 	}
-	return names[idx]
 }

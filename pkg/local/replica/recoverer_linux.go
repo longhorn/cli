@@ -57,17 +57,17 @@ func (r *Recoverer) Init() error {
 }
 
 func (r *Recoverer) Run() (err error) {
-	backingFileName := r.volMeta.BackingFileName
+	//backingFileName := r.volMeta.BackingFileName
 
 	sMap, err := r.chain.BuildSectorLocationMap()
 	if err != nil {
 		return errors.Wrap(err, "failed to build sector location map")
 	}
 
-	fallbackName := r.volMeta.Head
-	if backingFileName != "" {
-		fallbackName = backingFileName
-	}
+	//fallbackName := r.volMeta.Head
+	//if backingFileName != "" {
+	//	fallbackName = backingFileName
+	//}
 
 	logrus.Info("--- raw extents per file ---")
 	if err := r.chain.DumpExtents(); err != nil {
@@ -75,7 +75,7 @@ func (r *Recoverer) Run() (err error) {
 	}
 
 	logrus.Info("--- resolved sector ranges ---")
-	sectormap.PrintSectorRanges(sMap, r.chain.TotalSectors, fallbackName)
+	sectormap.PrintSectorLocationTable(sMap, r.chain.TotalSectors)
 
 	logrus.Info("--- punching obsolete ranges in ancestors ---")
 	r.Recovered, err = prune.PunchSnapshots(sMap, r.chain, r.DryRun)
