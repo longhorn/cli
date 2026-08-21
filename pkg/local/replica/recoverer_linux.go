@@ -70,7 +70,7 @@ func (r *Recoverer) Run() (err error) {
 	//}
 
 	logrus.Info("--- raw extents per file ---")
-	if err := r.chain.DumpExtents(); err != nil {
+	if err := r.chain.DumpExtents(sMap); err != nil {
 		return errors.Wrap(err, "failed to dump extents")
 	}
 
