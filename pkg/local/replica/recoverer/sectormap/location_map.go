@@ -33,7 +33,7 @@ func (c *Chain) BuildSectorLocationMap() (*SectorMapping, error) {
 	for _, fName := range newestToOldest {
 		if remaining == 0 {
 			obsoleteFiles = append(obsoleteFiles, fName)
-			continue // still need to record the name, just nothing left to resolve
+			continue
 		}
 
 		idx := nextIndex

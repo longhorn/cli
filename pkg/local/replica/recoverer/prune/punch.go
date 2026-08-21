@@ -3,12 +3,14 @@ package prune
 import (
 	"fmt"
 	"os"
+	"sort"
 
 	"github.com/dustin/go-humanize"
 	"github.com/longhorn/cli/pkg/local/replica/recoverer/common"
 	"github.com/longhorn/cli/pkg/local/replica/recoverer/sectormap"
 	"github.com/longhorn/sparse-tools/sparse"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/sys/unix"
 )
 
 // PunchSnapshots for every sector range with a resolved owner, it punches a hole for that range in
@@ -53,7 +55,7 @@ func PunchSnapshots(smap *sectormap.SectorMapping, chain *sectormap.Chain, dryRu
 				return fmt.Errorf("failed to get file %v: %w", ancestor, err)
 			}
 
-			blockSize, err := common.BlockSize(file)
+			blockSize, err := blockSize(file)
 			if err != nil {
 				return fmt.Errorf("failed to get block size for %v: %w", ancestor, err)
 			}
@@ -69,7 +71,7 @@ func PunchSnapshots(smap *sectormap.SectorMapping, chain *sectormap.Chain, dryRu
 					logrus.Infof("punched %v at [%d,+%d]", ancestor, offset, length)
 				} else {
 					anyOps = true
-					estimateSize := common.EstimateReclaimable(offset, length, blockSize)
+					estimateSize := estimateReclaimable(offset, length, blockSize)
 					totalEstimated += estimateSize
 					fmt.Printf("[dry-run] would punch %v at offset=%d length=%d (~%v)\n", ancestor, offset, length, humanize.Bytes(uint64(estimateSize)))
 				}
@@ -134,8 +136,15 @@ func PunchSnapshots(smap *sectormap.SectorMapping, chain *sectormap.Chain, dryRu
 // intersect returns the portions of [runStart, runEnd) that overlap with sectorRanges,
 // i.e. the parts of the run that are actually allocated in this file and thus worth punching.
 func intersect(runStart, runEnd int64, ranges []sectormap.SectorRange) []sectormap.SectorRange {
+	i := sort.Search(len(ranges), func(i int) bool {
+		return ranges[i].End > runStart
+	})
 	var out []sectormap.SectorRange
-	for _, r := range ranges {
+	for ; i < len(ranges); i++ {
+		r := ranges[i]
+		if r.Start >= runEnd {
+			break
+		}
 		s, e := max(runStart, r.Start), min(runEnd, r.End)
 		if s < e {
 			out = append(out, sectormap.SectorRange{Start: s, End: e})
@@ -151,4 +160,26 @@ func deleteObsoleteFiles(obsoleteFiles []string) error {
 		}
 	}
 	return nil
+}
+
+// blockSize returns the filesystem block size backing given file.
+func blockSize(file *os.File) (int64, error) {
+	var st unix.Statfs_t
+	if err := unix.Fstatfs(int(file.Fd()), &st); err != nil {
+		return 0, fmt.Errorf("failed to statfs: %w", err)
+	}
+	return int64(st.Bsize), nil
+}
+
+// estimateReclaimable returns the number of bytes covered by blocks that are fully
+// contained within [offset, offset+length).
+func estimateReclaimable(offset, length, blockSize int64) int64 {
+	end := offset + length
+	alignedStart := (offset + blockSize - 1) / blockSize * blockSize
+	alignedEnd := end / blockSize * blockSize
+
+	if alignedEnd <= alignedStart {
+		return 0
+	}
+	return alignedEnd - alignedStart
 }
