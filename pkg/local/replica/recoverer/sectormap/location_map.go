@@ -22,21 +22,23 @@ func (c *Chain) BuildSectorLocationMap() (*SectorMapping, error) {
 		return &SectorMapping{}, fmt.Errorf("chain too long for a byte index: %d layers", len(newestToOldest))
 	}
 
-	location := make([]byte, totalSectors) // zero-value = sectorNil
-	names := []string{"", c.BackingFile}   // index 0 = reserved, index 1 = backing (possibly "")
+	location := make([]byte, totalSectors)     // zero-value = sectorNil
+	ownerFNames := []string{"", c.BackingFile} // index 0 = reserved, index 1 = backing (possibly "")
 	extentCache := make(map[string][]SectorRange, len(newestToOldest))
 
+	var obsoleteFiles []string
 	nextIndex := byte(2)
 	remaining := totalSectors
 
 	for _, fName := range newestToOldest {
-		idx := nextIndex
-		names = append(names, fName)
-		nextIndex++
-
 		if remaining == 0 {
+			obsoleteFiles = append(obsoleteFiles, fName)
 			continue // still need to record the name, just nothing left to resolve
 		}
+
+		idx := nextIndex
+		ownerFNames = append(ownerFNames, fName)
+		nextIndex++
 
 		file, ok := c.Layers[fName]
 		if !ok {
@@ -67,7 +69,7 @@ func (c *Chain) BuildSectorLocationMap() (*SectorMapping, error) {
 		extentCache[fName] = secRanges
 	}
 
-	return &SectorMapping{Location: location, Names: names, ExtentCache: extentCache}, nil
+	return &SectorMapping{Location: location, OwnerFiles: ownerFNames, ExtentCache: extentCache, ObsoleteFiles: obsoleteFiles}, nil
 }
 
 // getAllExtents pulls the complete FIEMAP extent list for a file, paging

@@ -2,6 +2,7 @@ package prune
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/dustin/go-humanize"
 	"github.com/longhorn/cli/pkg/local/replica/recoverer/common"
@@ -9,14 +10,6 @@ import (
 	"github.com/longhorn/sparse-tools/sparse"
 	"github.com/sirupsen/logrus"
 )
-
-type punchOp struct {
-	fiemapFile sparse.FiemapFile
-	punchTo    string
-	offset     int64
-	length     int64
-	estimated  int64
-}
 
 // PunchSnapshots for every sector range with a resolved owner, it punches a hole for that range in
 // every ancestor of the owner. Sectors with no resolved owner are left untouched.
@@ -27,16 +20,18 @@ func PunchSnapshots(smap *sectormap.SectorMapping, chain *sectormap.Chain, dryRu
 	totalSectors := chain.TotalSectors
 	sectorSize := chain.SectorSize
 
-	var ops []punchOp
+	var totalEstimated int64
+	var anyOps bool
 
-	punchRun := func(runStart, runEnd int64, ownerIdx byte) error {
+	// TODO: Add direct deletion for obsoleteFiles now.
+
+	punchRun := func(runStart, runEnd int64, ownerIdx byte, execute bool) error {
 		if ownerIdx == 0 {
 			// Implicitly owned by the base/oldest layer, nothing newer shadows it, nothing to punch.
 			return nil
 		}
 
-		ownerName := smap.Names[ownerIdx]
-		//ancestors, err := diskMetas.AncestorsOf(ownerName)
+		ownerName := smap.OwnerFiles[ownerIdx]
 		ancestors := chain.Ancestors[ownerName]
 		if ancestors == nil {
 			// e.g. owner is the oldest snapshot, or a base image with no *.meta. Nothing older exists, so nothing to punch.
@@ -67,63 +62,71 @@ func PunchSnapshots(smap *sectormap.SectorMapping, chain *sectormap.Chain, dryRu
 			for _, r := range allocated {
 				offset := r.Start * sectorSize
 				length := (r.End - r.Start) * sectorSize
-				if dryRun {
-					fmt.Printf("[dry-run] would punch %v at offset=%d length=%d\n", ancestor, offset, length)
-					ops = append(ops, punchOp{
-						fiemapFile: fiemapFile,
-						punchTo:    ancestor,
-						offset:     offset,
-						length:     length,
-						estimated:  common.EstimateReclaimable(offset, length, blockSize),
-					})
-				} else {
+				if execute {
 					if err := fiemapFile.PunchHole(offset, length); err != nil {
 						return fmt.Errorf("failed to punch hole in %v at [%d,+%d): %w", ancestor, offset, length, err)
 					}
 					logrus.Infof("punched %v at [%d,+%d]", ancestor, offset, length)
+				} else {
+					anyOps = true
+					estimateSize := common.EstimateReclaimable(offset, length, blockSize)
+					totalEstimated += estimateSize
+					fmt.Printf("[dry-run] would punch %v at offset=%d length=%d (~%v)\n", ancestor, offset, length, humanize.Bytes(uint64(estimateSize)))
 				}
 			}
 		}
 		return nil
 	}
 
-	runStart := int64(0)
-	runOwnerIdx := smap.Location[0]
-
-	for s := int64(1); s < totalSectors; s++ {
-		idx := smap.Location[s]
-		if idx != runOwnerIdx {
-			if err := punchRun(runStart, s, runOwnerIdx); err != nil {
-				return false, err
+	scan := func(execute bool) error {
+		runStart := int64(0)
+		runOwnerIdx := smap.Location[0]
+		for s := int64(1); s < totalSectors; s++ {
+			if idx := smap.Location[s]; idx != runOwnerIdx {
+				if err := punchRun(runStart, s, runOwnerIdx, execute); err != nil {
+					return err
+				}
+				runStart, runOwnerIdx = s, idx
 			}
-			runStart, runOwnerIdx = s, idx
 		}
+		return punchRun(runStart, totalSectors, runOwnerIdx, execute)
 	}
 
-	if err := punchRun(runStart, totalSectors, runOwnerIdx); err != nil {
+	// Scan 1: compute + report, nothing retained beyond a running total.
+	if err := scan(false); err != nil {
 		return false, err
 	}
 
+	// Calculate estimatedReclaimable size for obsoleteFiles too
+	var obsoleteEstimate int64
+	for _, fName := range smap.ObsoleteFiles {
+		if info, err := os.Stat(fName); err == nil {
+			obsoleteEstimate += info.Size()
+			fmt.Printf("[dry-run] would delete obsolete file %v (~%v)\n", fName, humanize.Bytes(uint64(info.Size())))
+		}
+	}
+	totalEstimated += obsoleteEstimate
+
+	// If no operations are to be performed (i.e. nothing is allocated), and no obsoleteFile exist, nothing to do.
+	if !anyOps && len(smap.ObsoleteFiles) == 0 {
+		fmt.Println("Nothing to do.")
+		return false, nil
+	}
+
 	if dryRun {
-		if len(ops) == 0 {
-			fmt.Println("[dry-run] No holes to punch.")
-			return false, nil
-		}
-		var totalEstimated int64
-		for _, op := range ops {
-			totalEstimated += op.estimated
-		}
-		logrus.Infof("Punching will reclaim approximately %v of disk space", humanize.Bytes(uint64(totalEstimated)))
-		if !common.Confirm("Do you want to proceed with hole punching?") {
+		logrus.Infof("Will reclaim approximately %v of disk space", humanize.Bytes(uint64(totalEstimated)))
+		if !common.Confirm("Do you want to proceed with hole punching and deletion?") {
 			fmt.Println("Operation canceled.")
 			return false, nil
 		}
-		for _, op := range ops {
-			if err := op.fiemapFile.PunchHole(op.offset, op.length); err != nil {
-				return false, fmt.Errorf("failed to punch hole in %v at [%d,+%d): %w", op.punchTo, op.offset, op.length, err)
-			}
-			logrus.Infof("punched %v at [%d,+%d]", op.punchTo, op.offset, op.length)
-		}
+	}
+
+	// Scan 2: execute for real, walking the same runs again.
+	if err := deleteObsoleteFiles(smap.ObsoleteFiles); err != nil {
+		return false, err
+	}
+	if err := scan(true); err != nil {
+		return false, err
 	}
 	return true, nil
 }
@@ -139,4 +142,13 @@ func intersect(runStart, runEnd int64, ranges []sectormap.SectorRange) []sectorm
 		}
 	}
 	return out
+}
+
+func deleteObsoleteFiles(obsoleteFiles []string) error {
+	for _, file := range obsoleteFiles {
+		if err := os.Remove(file); err != nil {
+			return fmt.Errorf("failed to remove obsolete file %v: %w", file, err)
+		}
+	}
+	return nil
 }

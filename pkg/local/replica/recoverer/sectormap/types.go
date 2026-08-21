@@ -41,9 +41,10 @@ type VolumeMeta struct {
 }
 
 type SectorMapping struct {
-	Location     []byte
-	Names        []string
-	TotalSectors int64
-	SectorSize   int64
-	ExtentCache  map[string][]SectorRange
+	Location      []byte
+	OwnerFiles    []string // list of files that own ≥1 sector. Indexed by Location values
+	TotalSectors  int64
+	SectorSize    int64
+	ExtentCache   map[string][]SectorRange
+	ObsoleteFiles []string
 }

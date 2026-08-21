@@ -57,7 +57,7 @@ func PrintSectorRanges(smap *SectorMapping, totalSectors int64, fallbackName str
 		return
 	}
 
-	location, names := smap.Location, smap.Names
+	location, names := smap.Location, smap.OwnerFiles
 
 	runStart := int64(0)
 	runOwner := Owner(location, names, 0, fallbackName)

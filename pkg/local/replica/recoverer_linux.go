@@ -83,9 +83,11 @@ func (r *Recoverer) Run() (err error) {
 		return errors.Wrap(err, "punch failed")
 	}
 
-	logrus.Info("--- promoting non-head data into head ---")
-	if err := coalesce.PromoteToHead(sMap, r.chain, r.volMeta.Head, r.DryRun); err != nil {
-		return errors.Wrap(err, "promote failed")
+	if r.Recovered {
+		logrus.Info("--- promoting non-head data into head ---")
+		if err := coalesce.PromoteToHead(sMap, r.chain, r.volMeta.Head, r.DryRun); err != nil {
+			return errors.Wrap(err, "promote failed")
+		}
 	}
 
 	return nil
