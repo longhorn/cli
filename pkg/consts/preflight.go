@@ -10,6 +10,7 @@ const (
 	PreflightCheckTopicContainerOptimizedOS = "ContainerOptimizedOS"
 	PreflightCheckTopicMultipathService     = "MultipathService"
 	PreflightCheckTopicIscsidService        = "IscsidService"
+	PreflightCheckTopicIOMMU                = "IOMMU"
 	PreflightCheckTopicHugePages            = "HugePages"
 	PreflightCheckTopicCpuInstructionSet    = "CPUInstructionSet"
 	PreflightCheckTopicPackages             = "Packages"
