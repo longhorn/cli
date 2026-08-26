@@ -210,6 +210,7 @@ func (local *Checker) Run() error {
 
 			checkTasks = append(checkTasks,
 				local.checkHugePages,
+				local.checkIOMMUSupport,
 				func() error { return local.checkCpuInstructionSet(instructionSets) },
 				func() error { return local.checkPackagesInstalled(true) },
 				func() error { return local.checkModulesLoaded(true) },
@@ -431,6 +432,40 @@ func (local *Checker) isHugePagesTotalEqualOrLargerThan(requiredHugePages int) (
 	}
 
 	return hugePagesTotalNum >= requiredHugePages, hugePagesTotalNum, requiredHugePages, nil
+}
+
+// checkIOMMUSupport checks if IOMMU is supported.
+func (local *Checker) checkIOMMUSupport() error {
+	logrus.Info("Checking if IOMMU is supported")
+	topic := formatTopic(consts.PreflightCheckTopicIOMMU)
+
+	output, err := local.packageManager.Execute(
+		[]string{},
+		"sh",
+		[]string{"-c",
+			"test ! -d /sys/kernel/iommu_groups || find /sys/kernel/iommu_groups -mindepth 1 -maxdepth 1 -type d",
+		},
+		commontypes.ExecuteNoTimeout,
+	)
+	if err != nil {
+		return wrapInternalError(topic, errors.Wrap(err, "failed to check IOMMU groups"))
+	}
+
+	// Example:
+	//   $ output=$(test ! -d /sys/kernel/iommu_groups/ || find /sys/kernel/iommu_groups/ -mindepth 1 -maxdepth 1 -type d)
+	//   $ echo "$output"
+	//   /sys/kernel/iommu_groups/2\n
+	//   /sys/kernel/iommu_groups/1\n
+	groupCount := strings.Count(output, "\n")
+	if groupCount == 0 {
+		local.collection.Log.Error = append(local.collection.Log.Error,
+			wrapMsgWithTopic(topic, "IOMMU is not enabled: no groups found under /sys/kernel/iommu_groups"))
+		return nil
+	}
+
+	local.collection.Log.Info = append(local.collection.Log.Info,
+		wrapMsgWithTopic(topic, fmt.Sprintf("IOMMU is enabled (%d IOMMU groups found)", groupCount)))
+	return nil
 }
 
 // CheckCpuInstructionSet checks if the CPU instruction set is supported.
