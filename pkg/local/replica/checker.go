@@ -134,7 +134,9 @@ func (local *Checker) checkReplica(replicaName string) (*types.ReplicaCheckInfo,
 
 	replicaCheckInfo := &types.ReplicaCheckInfo{}
 	replicaCheckInfo.Node = local.CurrentNodeID
-	replicaCheckInfo.VolumeName = replicaName[:strings.LastIndex(replicaName, "-")]
+	if volumeName, ok := getVolumeNameFromReplicaDirectoryName(replicaName); ok {
+		replicaCheckInfo.VolumeName = volumeName
+	}
 
 	replicaDirectory := filepath.Join(local.replicasDirectory, replicaName)
 	replicaCheckInfo.Directory = strings.TrimPrefix(replicaDirectory, consts.VolumeMountHostDirectory)

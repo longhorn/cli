@@ -138,7 +138,11 @@ func getReplicaNamesInDirectory(log *logrus.Entry, replicasDirectory, volumeName
 			continue
 		}
 
-		volumeName := replicaName[:strings.LastIndex(replicaName, "-")]
+		volumeName, ok := getVolumeNameFromReplicaDirectoryName(replicaName)
+		if !ok {
+			log.Warnf("Skipping unexpected directory %s in the replicas directory", replicaName)
+			continue
+		}
 		if volumeNameFilter != "" && volumeNameFilter != volumeName {
 			continue
 		}
@@ -171,7 +175,9 @@ func (local *Getter) getReplicaInfo(replicaName string) (replicaInfo *types.Repl
 		return nil, nil
 	}
 
-	replicaInfo.VolumeName = replicaName[:strings.LastIndex(replicaName, "-")]
+	if volumeName, ok := getVolumeNameFromReplicaDirectoryName(replicaName); ok {
+		replicaInfo.VolumeName = volumeName
+	}
 	replicaInfo.Metadata, err = lhmgrutil.GetVolumeMeta(filepath.Join(replicaInfo.Directory, "volume.meta"))
 	if err != nil {
 		replicaInfo.Error = errors.Wrapf(err, "failed to get volume metadata for %s", replicaName).Error()
@@ -186,6 +192,17 @@ func (local *Getter) getReplicaInfo(replicaName string) (replicaInfo *types.Repl
 	replicaInfo.IsInUse = &isReplicaInUse
 
 	return replicaInfo, nil
+}
+
+// getVolumeNameFromReplicaDirectoryName derives the volume name from a replica
+// data directory name (<volume-name>-<8-character suffix>). It returns false
+// when the name does not follow the expected pattern.
+func getVolumeNameFromReplicaDirectoryName(replicaDirectoryName string) (string, bool) {
+	index := strings.LastIndex(replicaDirectoryName, "-")
+	if index <= 0 {
+		return "", false
+	}
+	return replicaDirectoryName[:index], true
 }
 
 func isReplicaDirectoryInUse(replicaDirectory string) (bool, error) {
