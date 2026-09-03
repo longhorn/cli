@@ -10,7 +10,7 @@ import (
 // BuildSectorLocationMap resolves the first owner of each sector by scanning
 // layer files from newest to oldest. It returns a per-sector location map,
 // where each byte is an index into the returned names slice (0 = unclaimed,
-// 1 = backing file, 2+ = layer files in scan order).
+// 1+ = layer files in scan order).
 func (c *Chain) BuildSectorLocationMap() (*SectorMapping, error) {
 	newestToOldest := c.Sequence
 	totalSectors := c.TotalSectors
@@ -22,17 +22,17 @@ func (c *Chain) BuildSectorLocationMap() (*SectorMapping, error) {
 		return &SectorMapping{}, fmt.Errorf("chain too long for a byte index: %d layers", len(newestToOldest))
 	}
 
-	location := make([]byte, totalSectors)     // zero-value = sectorNil
-	ownerFNames := []string{"", c.BackingFile} // index 0 = reserved, index 1 = backing (possibly "")
+	location := make([]byte, totalSectors) // zero-value = sectorNil
+	ownerFNames := []string{""}            // index 0 = reserved
 	extentCache := make(map[string][]SectorRange, len(newestToOldest))
 
-	var obsoleteFiles []string
-	nextIndex := byte(2)
+	var obsoleteFNames []string
+	nextIndex := byte(1)
 	remaining := totalSectors
 
 	for _, fName := range newestToOldest {
 		if remaining == 0 {
-			obsoleteFiles = append(obsoleteFiles, fName)
+			obsoleteFNames = append(obsoleteFNames, fName)
 			continue
 		}
 
@@ -69,7 +69,7 @@ func (c *Chain) BuildSectorLocationMap() (*SectorMapping, error) {
 		extentCache[fName] = secRanges
 	}
 
-	return &SectorMapping{Location: location, OwnerFiles: ownerFNames, ExtentCache: extentCache, ObsoleteFiles: obsoleteFiles}, nil
+	return &SectorMapping{Location: location, LocationFileNames: ownerFNames, ExtentCache: extentCache, ObsoleteFileNames: obsoleteFNames}, nil
 }
 
 // getAllExtents pulls the complete FIEMAP extent list for a file, paging

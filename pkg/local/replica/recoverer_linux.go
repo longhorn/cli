@@ -5,12 +5,13 @@ package replica
 import (
 	"os"
 
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
+
 	"github.com/longhorn/cli/pkg/consts"
 	"github.com/longhorn/cli/pkg/local/replica/recoverer/coalesce"
 	"github.com/longhorn/cli/pkg/local/replica/recoverer/prune"
 	"github.com/longhorn/cli/pkg/local/replica/recoverer/sectormap"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 )
 
 // Recoverer is a no-op stand-in on non-Linux platforms. Replica recovery
@@ -57,17 +58,10 @@ func (r *Recoverer) Init() error {
 }
 
 func (r *Recoverer) Run() (err error) {
-	//backingFileName := r.volMeta.BackingFileName
-
 	sMap, err := r.chain.BuildSectorLocationMap()
 	if err != nil {
 		return errors.Wrap(err, "failed to build sector location map")
 	}
-
-	//fallbackName := r.volMeta.Head
-	//if backingFileName != "" {
-	//	fallbackName = backingFileName
-	//}
 
 	logrus.Info("--- raw extents per file ---")
 	if err := r.chain.DumpExtents(sMap); err != nil {

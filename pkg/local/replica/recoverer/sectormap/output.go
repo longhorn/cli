@@ -27,7 +27,7 @@ func (c *Chain) DumpExtents(smap *SectorMapping) error {
 }
 
 func dumpExtentsForFile(smap *SectorMapping, name string, f *os.File, totalSectors int64) error {
-	if existsIn(smap.ObsoleteFiles, name) {
+	if existsIn(smap.ObsoleteFileNames, name) {
 		if fInfo, err := os.Stat(name); err == nil {
 			logrus.Infof("file %v is expired (size %v), skipping extent retrieval", name, fInfo.Size())
 		}
@@ -51,7 +51,7 @@ func PrintSectorLocationTable(smap *SectorMapping, totalSectors int64) {
 		return
 	}
 
-	location, names := smap.Location, smap.OwnerFiles
+	location, names := smap.Location, smap.LocationFileNames
 
 	runStart := int64(0)
 	runOwnerIdx := location[0]

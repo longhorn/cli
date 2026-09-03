@@ -6,11 +6,13 @@ import (
 	"sort"
 
 	"github.com/dustin/go-humanize"
-	"github.com/longhorn/cli/pkg/local/replica/recoverer/common"
-	"github.com/longhorn/cli/pkg/local/replica/recoverer/sectormap"
-	"github.com/longhorn/sparse-tools/sparse"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sys/unix"
+
+	"github.com/longhorn/sparse-tools/sparse"
+
+	"github.com/longhorn/cli/pkg/local/replica/recoverer/common"
+	"github.com/longhorn/cli/pkg/local/replica/recoverer/sectormap"
 )
 
 // PunchSnapshots for every sector range with a resolved owner, it punches a hole for that range in
@@ -25,15 +27,13 @@ func PunchSnapshots(smap *sectormap.SectorMapping, chain *sectormap.Chain, dryRu
 	var totalEstimated int64
 	var anyOps bool
 
-	// TODO: Add direct deletion for obsoleteFiles now.
-
 	punchRun := func(runStart, runEnd int64, ownerIdx byte, execute bool) error {
 		if ownerIdx == 0 {
-			// Implicitly owned by the base/oldest layer, nothing newer shadows it, nothing to punch.
+			// No layer in the chain has any data at these sectors; nothing to punch.
 			return nil
 		}
 
-		ownerName := smap.OwnerFiles[ownerIdx]
+		ownerName := smap.LocationFileNames[ownerIdx]
 		ancestors := chain.Ancestors[ownerName]
 		if ancestors == nil {
 			// e.g. owner is the oldest snapshot, or a base image with no *.meta. Nothing older exists, so nothing to punch.
@@ -101,7 +101,7 @@ func PunchSnapshots(smap *sectormap.SectorMapping, chain *sectormap.Chain, dryRu
 
 	// Calculate estimatedReclaimable size for obsoleteFiles too
 	var obsoleteEstimate int64
-	for _, fName := range smap.ObsoleteFiles {
+	for _, fName := range smap.ObsoleteFileNames {
 		if info, err := os.Stat(fName); err == nil {
 			obsoleteEstimate += info.Size()
 			fmt.Printf("[dry-run] would delete obsolete file %v (~%v)\n", fName, humanize.Bytes(uint64(info.Size())))
@@ -110,7 +110,7 @@ func PunchSnapshots(smap *sectormap.SectorMapping, chain *sectormap.Chain, dryRu
 	totalEstimated += obsoleteEstimate
 
 	// If no operations are to be performed (i.e. nothing is allocated), and no obsoleteFile exist, nothing to do.
-	if !anyOps && len(smap.ObsoleteFiles) == 0 {
+	if !anyOps && len(smap.ObsoleteFileNames) == 0 {
 		fmt.Println("Nothing to do.")
 		return false, nil
 	}
@@ -124,7 +124,7 @@ func PunchSnapshots(smap *sectormap.SectorMapping, chain *sectormap.Chain, dryRu
 	}
 
 	// Scan 2: execute for real, walking the same runs again.
-	if err := deleteObsoleteFiles(smap.ObsoleteFiles); err != nil {
+	if err := chain.RemoveObsoleteLayers(smap.ObsoleteFileNames); err != nil {
 		return false, err
 	}
 	if err := scan(true); err != nil {
@@ -151,15 +151,6 @@ func intersect(runStart, runEnd int64, ranges []sectormap.SectorRange) []sectorm
 		}
 	}
 	return out
-}
-
-func deleteObsoleteFiles(obsoleteFiles []string) error {
-	for _, file := range obsoleteFiles {
-		if err := os.Remove(file); err != nil {
-			return fmt.Errorf("failed to remove obsolete file %v: %w", file, err)
-		}
-	}
-	return nil
 }
 
 // blockSize returns the filesystem block size backing given file.

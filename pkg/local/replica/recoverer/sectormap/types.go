@@ -23,12 +23,13 @@ type Layer struct {
 }
 
 type Chain struct {
-	Layers       map[string]*Layer
-	Sequence     []string
-	Ancestors    map[string][]string
-	BackingFile  string
-	TotalSectors int64
-	SectorSize   int64
+	Layers          map[string]*Layer
+	Sequence        []string
+	Ancestors       map[string][]string
+	BackingFileName string
+	TotalSectors    int64
+	SectorSize      int64
+	dir             string
 }
 
 type VolumeMeta struct {
@@ -37,14 +38,14 @@ type VolumeMeta struct {
 	Dirty           bool   `json:"Dirty"`
 	Parent          string `json:"Parent"`
 	SectorSize      int64  `json:"SectorSize"`
-	BackingFileName string `json:"BackingFileName"`
+	BackingFilePath string `json:"BackingFilePath"`
 }
 
 type SectorMapping struct {
-	Location      []byte
-	OwnerFiles    []string // list of files that own ≥1 sector. Indexed by Location values
-	TotalSectors  int64
-	SectorSize    int64
-	ExtentCache   map[string][]SectorRange
-	ObsoleteFiles []string
+	Location          []byte
+	LocationFileNames []string // list of files that own ≥1 sector. Indexed by Location values
+	TotalSectors      int64
+	SectorSize        int64
+	ExtentCache       map[string][]SectorRange
+	ObsoleteFileNames []string
 }

@@ -5,17 +5,19 @@ import (
 	"io"
 	"os"
 
+	"github.com/pkg/errors"
+
+	"github.com/longhorn/sparse-tools/sparse"
+
 	"github.com/longhorn/cli/pkg/local/replica/recoverer/common"
 	"github.com/longhorn/cli/pkg/local/replica/recoverer/sectormap"
-	"github.com/longhorn/sparse-tools/sparse"
-	"github.com/pkg/errors"
 )
 
 // PromoteToHead copies every sector range whose current owner is NOT head into head,
 // then punches a hole in that source range so the copy is not duplicated on disk.
 func PromoteToHead(smap *sectormap.SectorMapping, chain *sectormap.Chain, headName string, dryRun bool) error {
 	location := smap.Location
-	names := smap.OwnerFiles
+	names := smap.LocationFileNames
 
 	totalSectors := int64(len(location))
 	if totalSectors == 0 {
@@ -36,7 +38,7 @@ func PromoteToHead(smap *sectormap.SectorMapping, chain *sectormap.Chain, headNa
 
 	promoteRun := func(runStart, runEnd int64, ownerIdx byte) error {
 		if ownerIdx == 0 || names[ownerIdx] == headName {
-			// Already head, or unresolved (implicitly head/backing), nothing to promote.
+			// Unclaimed by any layer (sparse everywhere) or already on head; nothing to promote.
 			return nil
 		}
 		ownerName := names[ownerIdx]

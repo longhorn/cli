@@ -22,7 +22,7 @@ func LoadVolumeMeta(dir string) (VolumeMeta, error) {
 }
 
 // LoadDiskMetas loops through *.meta files in dir (skipping volume.meta, as is
-// handled by loadVolumeMeta), unmarshals each into a types.DiskInfo, and
+// handled by LoadVolumeMeta), unmarshals each into a types.DiskInfo, and
 // returns a MetaFileMap keyed by the meta file's base name.
 func LoadDiskMetas(dir string) (MetaFileMap, error) {
 	metaFiles, err := filepath.Glob(filepath.Join(dir, "*.meta"))
