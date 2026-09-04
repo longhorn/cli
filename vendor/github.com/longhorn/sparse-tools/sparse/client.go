@@ -1,0 +1,701 @@
+package sparse
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"path/filepath"
+	"strconv"
+	"sync"
+	"time"
+
+	"github.com/cockroachdb/errors"
+
+	retry "github.com/avast/retry-go/v4"
+	log "github.com/sirupsen/logrus"
+
+	"github.com/longhorn/sparse-tools/types"
+	"github.com/longhorn/sparse-tools/util"
+)
+
+const (
+	fileSyncOpenTimeout = 120
+
+	defaultSyncWorkerCount = 4
+	defaultSyncBatchSize   = 512 * Blocks
+
+	defaultMaxRetries     = 5
+	defaultRetryBaseDelay = 2 * time.Second
+	defaultRetryMaxDelay  = 30 * time.Second
+)
+
+// defaultRetryOpts returns the production retry options
+func defaultRetryOpts() []retry.Option {
+	return []retry.Option{
+		retry.Attempts(uint(defaultMaxRetries) + 1), // Attempts = initial + retries
+		retry.Delay(defaultRetryBaseDelay),
+		retry.MaxDelay(defaultRetryMaxDelay),
+		retry.DelayType(retry.BackOffDelay),
+		retry.LastErrorOnly(true),
+	}
+}
+
+type DataSyncClient interface {
+	open() error
+	close()
+	syncHoleInterval(holeInterval Interval) error
+	syncDataInterval(dataInterval Interval) error
+	getServerChecksum(checksumInterval Interval) ([]byte, error)
+	getServerRecordedMetadata() ([]byte, error)
+}
+
+type syncClient struct {
+	remote     string
+	sourceName string
+	size       int64
+	rw         ReaderWriterAt
+	directIO   bool
+
+	recordedChangeTime     string
+	recordedChecksumMethod string
+	recordedChecksum       string
+
+	fileAlreadyExistsOnServer bool
+	syncBatchSize             int64
+	numSyncWorkers            int
+
+	httpClient        *http.Client
+	httpClientTimeout int
+
+	// retryOpts allows overriding retry options for testing
+	retryOpts []retry.Option
+
+	httpRetryEnabled bool
+
+	ctx context.Context
+}
+
+type ReaderWriterAt interface {
+	io.ReaderAt
+	io.WriterAt
+
+	GetDataLayout(ctx context.Context) (<-chan FileInterval, <-chan error, error)
+}
+
+func newHTTPClient(httpClientTimeout int) *http.Client {
+	t := http.DefaultTransport.(*http.Transport).Clone()
+	t.MaxIdleConns = 100
+	t.MaxConnsPerHost = 100
+	t.MaxIdleConnsPerHost = 100
+	t.ResponseHeaderTimeout = time.Duration(httpClientTimeout) * time.Second
+	t.DisableKeepAlives = false
+	t.IdleConnTimeout = 120 * time.Second
+
+	return &http.Client{
+		Timeout:   time.Duration(httpClientTimeout) * time.Second,
+		Transport: t,
+	}
+}
+
+func newSyncClient(remote string, sourceName string, size int64, rw ReaderWriterAt, directIO bool, httpClientTimeout int,
+	recordedChangeTime, recordedChecksumMethod, recordedChecksum string, syncBatchSize int64, numSyncWorkers int,
+) *syncClient {
+	return &syncClient{
+		remote:     remote,
+		sourceName: sourceName,
+		size:       size,
+		rw:         rw,
+		directIO:   directIO,
+
+		httpClient: newHTTPClient(httpClientTimeout),
+
+		recordedChangeTime:     recordedChangeTime,
+		recordedChecksumMethod: recordedChecksumMethod,
+		recordedChecksum:       recordedChecksum,
+
+		syncBatchSize:  syncBatchSize,
+		numSyncWorkers: numSyncWorkers,
+	}
+}
+
+// SyncFile synchronizes local file to remote host
+func SyncFile(localPath string, remote string, httpClientTimeout int, directIO, fastSync bool) error {
+	return syncFileWithContextAndRetry(context.Background(), localPath, remote, httpClientTimeout, directIO, fastSync, false)
+}
+
+// SyncFileWithRetry synchronizes local file to remote host with HTTP retries enabled.
+func SyncFileWithRetry(localPath string, remote string, httpClientTimeout int, directIO, fastSync bool) error {
+	return syncFileWithContextAndRetry(context.Background(), localPath, remote, httpClientTimeout, directIO, fastSync, true)
+}
+
+// SyncFileWithContext synchronizes local file to remote host until the context is canceled.
+func SyncFileWithContext(ctx context.Context, localPath string, remote string, httpClientTimeout int, directIO, fastSync bool) error {
+	return syncFileWithContextAndRetry(ctx, localPath, remote, httpClientTimeout, directIO, fastSync, false)
+}
+
+// SyncFileWithContextAndRetry synchronizes local file to remote host with HTTP retries enabled until the context is canceled.
+func SyncFileWithContextAndRetry(ctx context.Context, localPath string, remote string, httpClientTimeout int, directIO, fastSync bool) error {
+	return syncFileWithContextAndRetry(ctx, localPath, remote, httpClientTimeout, directIO, fastSync, true)
+}
+
+func syncFileWithContextAndRetry(ctx context.Context, localPath string, remote string, httpClientTimeout int, directIO, fastSync, httpRetry bool) error {
+	fileInfo, err := os.Stat(localPath)
+	if err != nil {
+		log.WithError(err).Errorf("Failed to get file info of source file %s", localPath)
+		return err
+	}
+
+	fileSize := fileInfo.Size()
+	if directIO && fileSize%Blocks != 0 {
+		return fmt.Errorf("invalid file size %v for directIO", fileSize)
+	}
+
+	log.Infof("Syncing file %v to %v: size %v, directIO %v, fastSync %v", localPath, remote, fileSize, directIO, fastSync)
+
+	fileIo, err := newFileIoProcessor(localPath, directIO)
+	if err != nil {
+		log.WithError(err).Errorf("Failed to open local source file %v", localPath)
+		return err
+	}
+	defer func() {
+		_ = fileIo.Close()
+	}()
+
+	return syncContentWithContextAndRetry(ctx, fileIo.Name(), fileIo, fileSize, remote, httpClientTimeout, directIO, fastSync, httpRetry)
+}
+
+func newFileIoProcessor(localPath string, directIO bool) (FileIoProcessor, error) {
+	if directIO {
+		return NewDirectFileIoProcessor(localPath, os.O_RDONLY, 0)
+	}
+	return NewBufferedFileIoProcessor(localPath, os.O_RDONLY, 0)
+}
+
+func SyncContent(sourceName string, rw ReaderWriterAt, fileSize int64, remote string, httpClientTimeout int, directIO, fastSync bool) (err error) {
+	return syncContentWithContextAndRetry(context.Background(), sourceName, rw, fileSize, remote, httpClientTimeout, directIO, fastSync, false)
+}
+
+// SyncContentWithRetry synchronizes content to remote host with HTTP retries enabled.
+func SyncContentWithRetry(sourceName string, rw ReaderWriterAt, fileSize int64, remote string, httpClientTimeout int, directIO, fastSync bool) (err error) {
+	return syncContentWithContextAndRetry(context.Background(), sourceName, rw, fileSize, remote, httpClientTimeout, directIO, fastSync, true)
+}
+
+func SyncContentWithContext(ctx context.Context, sourceName string, rw ReaderWriterAt, fileSize int64, remote string, httpClientTimeout int, directIO, fastSync bool) (err error) {
+	return syncContentWithContextAndRetry(ctx, sourceName, rw, fileSize, remote, httpClientTimeout, directIO, fastSync, false)
+}
+
+// SyncContentWithContextAndRetry synchronizes content to remote host with HTTP retries enabled until the context is canceled.
+func SyncContentWithContextAndRetry(ctx context.Context, sourceName string, rw ReaderWriterAt, fileSize int64, remote string, httpClientTimeout int, directIO, fastSync bool) (err error) {
+	return syncContentWithContextAndRetry(ctx, sourceName, rw, fileSize, remote, httpClientTimeout, directIO, fastSync, true)
+}
+
+func syncContentWithContextAndRetry(ctx context.Context, sourceName string, rw ReaderWriterAt, fileSize int64, remote string, httpClientTimeout int, directIO, fastSync, httpRetry bool) (err error) {
+	defer func() {
+		err = errors.Wrapf(err, "failed to sync content for source file %v", sourceName)
+	}()
+
+	if directIO && fileSize%Blocks != 0 {
+		return fmt.Errorf("source file %v has invalid file size %v for directIO", sourceName, fileSize)
+	}
+
+	// Sync between client (local) and server (remote)
+	syncBatchSize := defaultSyncBatchSize
+	numSyncWorkers := defaultSyncWorkerCount
+
+	// Get change time and checksum from checksum file
+	recordedChangeTime := ""
+	recordedChecksumMethod := ""
+	recordedChecksum := ""
+	if filepath.Ext(sourceName) == types.SnapshotDiskSuffix {
+		recordedChangeTime, recordedChecksumMethod, recordedChecksum, err = getLocalDiskFileChangeTimeAndChecksum(sourceName)
+		if err != nil {
+			log.WithError(err).Warnf("Failed to get change time and checksum of local file %v", sourceName)
+		}
+	}
+
+	client := newSyncClient(remote, sourceName, fileSize, rw, directIO, httpClientTimeout,
+		recordedChangeTime, recordedChecksumMethod, recordedChecksum, syncBatchSize, numSyncWorkers)
+	client.httpRetryEnabled = httpRetry
+
+	// Derive a cancellable context so best-effort cleanup can stop in-flight requests.
+	ctx, cancel := context.WithCancel(ctx)
+	client.ctx = ctx
+	defer cancel()
+	defer client.close() // kill the server no matter success or not, best effort
+
+	if fastSync && filepath.Ext(client.sourceName) == types.SnapshotDiskSuffix {
+		if client.isLocalAndRemoteDiskFilesIdentical() {
+			log.Infof("Skipped syncing file %v", client.sourceName)
+			return nil
+		}
+	}
+
+	syncStartTime := time.Now()
+
+	err = client.syncContent()
+	if err != nil {
+		return err
+	}
+
+	log.Infof("Finished sync for the source file %v, size %v, elapsed %.2fs",
+		sourceName, fileSize, time.Since(syncStartTime).Seconds())
+
+	return nil
+}
+
+func (client *syncClient) syncContent() error {
+	err := client.open()
+	if err != nil {
+		return errors.Wrap(err, "failed to open")
+	}
+
+	// Context is already set in SyncContent()
+	ctx := client.ctx
+
+	fileIntervalChannel, errChannel, err := client.rw.GetDataLayout(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "failed to get data layout for file %v", client.sourceName)
+	}
+
+	errorChannels := []<-chan error{errChannel}
+	for i := 0; i < client.numSyncWorkers; i++ {
+		errorChannels = append(errorChannels, processFileIntervals(ctx, fileIntervalChannel, client.processSegment))
+	}
+	// the below select will exit once all error channels are closed, or a single
+	// channel has run into an error, which will lead to the ctx being cancelled
+	mergedErrc := mergeErrorChannels(ctx, errorChannels...)
+	err = <-mergedErrc
+
+	return err
+}
+
+func (client *syncClient) sendHTTPRequestMaybeRetry(method string, action string, queries map[string]string, data []byte) (*http.Response, error) {
+	if !client.httpRetryEnabled {
+		resp, err := client.sendHTTPRequest(method, action, queries, data)
+		if err != nil {
+			closeResponse(resp)
+			return nil, err
+		}
+
+		if resp.StatusCode == http.StatusOK {
+			return resp, nil
+		}
+
+		statusCode := resp.StatusCode
+		closeResponse(resp)
+		return nil, fmt.Errorf("request %s %s returned status %d (%s)",
+			method, action, statusCode, http.StatusText(statusCode))
+	}
+
+	return client.sendHTTPRequestWithRetry(method, action, queries, data)
+}
+
+func (client *syncClient) isLocalAndRemoteDiskFilesIdentical() bool {
+	if client.recordedChangeTime == "" || client.recordedChecksumMethod == "" || client.recordedChecksum == "" {
+		return false
+	}
+
+	remain, err := client.isLocalDiskFileRemain()
+	if err != nil {
+		log.WithError(err).Warnf("Failed to check if local file %v is changed", client.sourceName)
+		return false
+	}
+	if !remain {
+		return false
+	}
+
+	remoteRecordedChecksum, err := client.getRemoteDiskFileRecordedChecksum()
+	if err != nil {
+		log.WithError(err).Warnf("Failed to get checksum for remote file %v", client.sourceName)
+		return false
+	}
+
+	return client.recordedChecksum == remoteRecordedChecksum
+}
+
+func (client *syncClient) isLocalDiskFileRemain() (bool, error) {
+	currentChangeTime, err := util.GetFileChangeTime(client.sourceName)
+	if err != nil {
+		return false, err
+	}
+	return currentChangeTime == client.recordedChangeTime, nil
+}
+
+func (client *syncClient) getRemoteDiskFileRecordedChecksum() (string, error) {
+	metadata, err := client.getServerRecordedMetadata()
+	if err != nil {
+		return "", err
+	}
+
+	var info types.SnapshotHashInfo
+	if err := json.Unmarshal(metadata, &info); err != nil {
+		return "", errors.Wrap(err, "failed to unmarshal hash info")
+	}
+
+	return info.Checksum, nil
+}
+
+func getLocalDiskFileChangeTimeAndChecksum(sourceName string) (recordedChangeTime, recordedChecksumMethod, recordedChecksum string, err error) {
+	f, err := os.Open(sourceName + types.DiskChecksumSuffix)
+	if err != nil {
+		return "", "", "", errors.Wrap(err, "failed to open checksum file")
+	}
+	defer func() {
+		_ = f.Close()
+	}()
+
+	data, err := io.ReadAll(f)
+	if err != nil {
+		return "", "", "", errors.Wrap(err, "failed to read checksum file")
+	}
+
+	var info types.SnapshotHashInfo
+	if err := json.Unmarshal(data, &info); err != nil {
+		return "", "", "", errors.Wrap(err, "failed to unmarshal hash info")
+	}
+
+	return info.ChangeTime, info.Method, info.Checksum, nil
+}
+
+func (client *syncClient) processSegment(segment FileInterval) error {
+	switch segment.Kind {
+	case SparseHole:
+		if err := client.syncHoleInterval(segment.Interval); err != nil {
+			return errors.Wrapf(err, "failed to sync hole interval %+v", segment.Interval)
+		}
+	case SparseData:
+		if err := client.syncDataInterval(segment.Interval); err != nil {
+			return errors.Wrapf(err, "failed to sync data interval %+v", segment.Interval)
+		}
+	}
+	return nil
+}
+
+func (client *syncClient) sendHTTPRequestWithRetry(method string, action string, queries map[string]string, data []byte) (*http.Response, error) {
+	var resp *http.Response
+
+	// Use custom retryOpts if set (for testing), otherwise use defaults
+	baseOpts := client.retryOpts
+	if baseOpts == nil {
+		baseOpts = defaultRetryOpts()
+	}
+	opts := append([]retry.Option{}, baseOpts...)
+	opts = append(opts,
+		retry.Context(client.ctx),
+		retry.OnRetry(func(attempt uint, err error) {
+			log.Warnf("Request %s %s failed (retry %d): %v, retrying...",
+				method, action, attempt+1, err)
+		}),
+	)
+
+	err := retry.Do(func() error {
+		var reqErr error
+		resp, reqErr = client.sendHTTPRequest(method, action, queries, data)
+		if reqErr != nil {
+			// Ensure any response body is closed on error to avoid leaking connections
+			closeResponse(resp)
+			resp = nil
+			return reqErr
+		}
+
+		if resp.StatusCode == http.StatusOK {
+			return nil
+		}
+
+		statusCode := resp.StatusCode
+		closeResponse(resp)
+		resp = nil
+
+		if isNonRetryableStatusCode(statusCode) {
+			return retry.Unrecoverable(fmt.Errorf("request %s %s failed with non-retryable status %d (%s)",
+				method, action, statusCode, http.StatusText(statusCode)))
+		}
+
+		return fmt.Errorf("request %s %s returned status %d (%s)",
+			method, action, statusCode, http.StatusText(statusCode))
+	}, opts...)
+	if err != nil {
+		// Ensure resp is cleaned up on final failure
+		closeResponse(resp)
+		resp = nil
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+func (client *syncClient) sendHTTPRequest(method string, action string, queries map[string]string, data []byte) (*http.Response, error) {
+	httpClient := client.httpClient
+	if httpClient == nil {
+		httpClient = newHTTPClient(client.httpClientTimeout)
+	}
+
+	url := fmt.Sprintf("http://%s/v1-ssync/%s", client.remote, action)
+
+	var req *http.Request
+	var err error
+	if data != nil {
+		req, err = http.NewRequestWithContext(client.ctx, method, url, bytes.NewBuffer(data))
+	} else {
+		req, err = http.NewRequestWithContext(client.ctx, method, url, nil)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Accept", "application/json")
+
+	q := req.URL.Query()
+	for k, v := range queries {
+		q.Add(k, v)
+	}
+	req.URL.RawQuery = q.Encode()
+
+	log.Tracef("method: %s, url with query string: %s, data len: %d", method, req.URL.String(), len(data))
+
+	return httpClient.Do(req)
+}
+
+// closeResponse drains and closes the response body
+func closeResponse(resp *http.Response) {
+	if resp == nil || resp.Body == nil {
+		return
+	}
+	// Drain up to a reasonable limit to allow connection reuse without unbounded memory usage.
+	const maxDrainBytes = 1 << 20 // 1 MiB
+	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, maxDrainBytes))
+	_ = resp.Body.Close()
+}
+
+// isNonRetryableStatusCode returns true if the HTTP status code indicates a client error
+// (3xx or 4xx) that should not be retried. 429 (Too Many Requests) is excluded since it
+// represents transient rate-limiting.
+func isNonRetryableStatusCode(statusCode int) bool {
+	return statusCode >= 300 && statusCode < 500 && statusCode != http.StatusTooManyRequests
+}
+
+func (client *syncClient) open() error {
+	var err error
+	var resp *http.Response
+
+	timeStart := time.Now()
+	timeStop := timeStart.Add(time.Duration(fileSyncOpenTimeout) * time.Second)
+	queries := make(map[string]string)
+	queries["begin"] = strconv.FormatInt(0, 10)
+	queries["end"] = strconv.FormatInt(client.size, 10)
+	queries["directIO"] = strconv.FormatBool(client.directIO)
+	for timeNow := timeStart; timeNow.Before(timeStop); timeNow = time.Now() {
+		resp, err = client.sendHTTPRequest("GET", "open", queries, nil)
+		if err == nil {
+			break
+		}
+		log.Warnf("Failed to open server: %s, Retrying...", client.remote)
+		if timeNow != timeStart {
+			// only sleep after the second attempt to speedup tests
+			time.Sleep(1 * time.Second)
+		}
+	}
+
+	if err != nil {
+		return errors.Wrap(err, "failed to open server")
+	}
+
+	// drain the buffer and close the body
+	body, err := io.ReadAll(resp.Body)
+	_ = resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to open server: status code=%v (%v)",
+			resp.StatusCode, http.StatusText(resp.StatusCode))
+	}
+
+	if err := json.Unmarshal(body, &client.fileAlreadyExistsOnServer); err != nil {
+		return errors.Wrap(err, "failed to unmarshal response of open() from server")
+	}
+
+	return err
+}
+
+func (client *syncClient) close() {
+	queries := make(map[string]string)
+	queries["checksumMethod"] = client.recordedChecksumMethod
+	queries["checksum"] = client.recordedChecksum
+	resp, err := client.sendHTTPRequest("POST", "close", queries, nil)
+	if err == nil {
+		// drain the buffer and close the body
+		_, _ = io.ReadAll(resp.Body)
+		_ = resp.Body.Close()
+	}
+}
+
+func (client *syncClient) syncHoleInterval(holeInterval Interval) error {
+	queries := make(map[string]string)
+	queries["begin"] = strconv.FormatInt(holeInterval.Begin, 10)
+	queries["end"] = strconv.FormatInt(holeInterval.End, 10)
+	resp, err := client.sendHTTPRequestMaybeRetry("POST", "sendHole", queries, nil)
+	if err != nil {
+		return errors.Wrapf(err, "failed to send hole interval %+v", holeInterval)
+	}
+
+	// drain the buffer and close the body
+	_, _ = io.ReadAll(resp.Body)
+	_ = resp.Body.Close()
+
+	return nil
+}
+
+func (client *syncClient) getServerChecksum(batchInterval Interval) ([]byte, error) {
+	queries := make(map[string]string)
+	queries["begin"] = strconv.FormatInt(batchInterval.Begin, 10)
+	queries["end"] = strconv.FormatInt(batchInterval.End, 10)
+	resp, err := client.sendHTTPRequestMaybeRetry("GET", "getChecksum", queries, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get checksum")
+	}
+
+	// drain the buffer and close the body
+	body, err := io.ReadAll(resp.Body)
+	_ = resp.Body.Close()
+
+	if err != nil {
+		return nil, err
+	}
+
+	var checksum []byte
+	if err := json.Unmarshal(body, &checksum); err != nil {
+		return nil, errors.Wrapf(err, "failed to unmarshal checksum for interval %+v from server", batchInterval)
+	}
+
+	return checksum, nil
+}
+
+func (client *syncClient) getServerRecordedMetadata() ([]byte, error) {
+	queries := make(map[string]string)
+	resp, err := client.sendHTTPRequestMaybeRetry("GET", "getRecordedMetadata", queries, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get recorded metadata")
+	}
+
+	// drain the buffer and close the body
+	metadata, err := io.ReadAll(resp.Body)
+	_ = resp.Body.Close()
+
+	return metadata, err
+}
+
+func (client *syncClient) writeData(dataInterval Interval, data []byte) error {
+	queries := make(map[string]string)
+	queries["begin"] = strconv.FormatInt(dataInterval.Begin, 10)
+	queries["end"] = strconv.FormatInt(dataInterval.End, 10)
+	resp, err := client.sendHTTPRequestMaybeRetry("POST", "writeData", queries, data)
+	if err != nil {
+		return errors.Wrap(err, "failed to write data")
+	}
+
+	// drain the buffer and close the body
+	_, _ = io.ReadAll(resp.Body)
+	_ = resp.Body.Close()
+
+	return nil
+}
+
+func getSize(offset, size, end int64) int64 {
+	if offset+size > end {
+		return end - offset
+	}
+	return size
+}
+
+func (client *syncClient) syncDataInterval(dataInterval Interval) error {
+	// Process data in chunks
+	for offset := dataInterval.Begin; offset < dataInterval.End; {
+		size := getSize(offset, client.syncBatchSize, dataInterval.End)
+		batchInterval := Interval{offset, offset + size}
+
+		var err error
+		var dataBuffer []byte
+		if client.fileAlreadyExistsOnServer {
+			dataBuffer, err = client.CompareLocalAndRemoteInterval(batchInterval)
+		} else {
+			dataBuffer, err = ReadDataInterval(client.rw, batchInterval)
+		}
+		if err != nil {
+			return err
+		}
+
+		if dataBuffer != nil {
+			log.Tracef("Sending dataBuffer size: %d", len(dataBuffer))
+			if err := client.writeData(batchInterval, dataBuffer); err != nil {
+				return errors.Wrapf(err, "failed to write data interval %+v", batchInterval)
+			}
+		}
+		offset += batchInterval.Len()
+	}
+	return nil
+}
+
+// CompareLocalAndRemoteInterval syncs the batch data interval:
+// 1. Launch 2 goroutines to ask server for checksum and calculate local checksum simultaneously.
+// 2. Wait for checksum calculation complete then compare the checksums.
+// 3. Send data if the checksums are different.
+func (client *syncClient) CompareLocalAndRemoteInterval(batchInterval Interval) ([]byte, error) {
+	var dataBuffer []byte
+	var serverChecksum, localChecksum []byte
+	var serverChecksumErr, localChecksumErr error
+
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		serverChecksum, serverChecksumErr = client.getServerChecksum(batchInterval)
+		if serverChecksumErr != nil {
+			log.WithError(serverChecksumErr).Errorf("Failed to get checksum of interval %+v from server", batchInterval)
+			return
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		dataBuffer, localChecksum, localChecksumErr = client.getLocalChecksum(batchInterval)
+		if localChecksumErr != nil {
+			log.WithError(localChecksumErr).Errorf("Failed to get checksum of interval %+v from local", batchInterval)
+			return
+		}
+	}()
+	wg.Wait()
+
+	if serverChecksumErr != nil || localChecksumErr != nil {
+		return nil, fmt.Errorf("failed to get checksums for client and server, server checksum error: %v, client checksum error: %v",
+			serverChecksumErr, localChecksumErr)
+	}
+
+	if len(serverChecksum) == 0 {
+		return dataBuffer, nil
+	}
+
+	// Compare server checksum with localChecksum
+	if bytes.Equal(serverChecksum, localChecksum) {
+		return nil, nil
+	}
+
+	return dataBuffer, nil
+}
+
+func (client *syncClient) getLocalChecksum(batchInterval Interval) (dataBuffer, checksum []byte, err error) {
+	// read data for checksum and sending
+	dataBuffer, err = ReadDataInterval(client.rw, batchInterval)
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "failed to read local data interval %+v", batchInterval)
+	}
+
+	// calculate local checksum for the data batch interval
+	checksum, err = HashData(dataBuffer)
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "failed to hash local data interval %+v", batchInterval)
+	}
+
+	return dataBuffer, checksum, nil
+}
