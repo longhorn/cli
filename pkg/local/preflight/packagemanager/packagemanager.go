@@ -7,6 +7,7 @@ import (
 	"time"
 
 	commonns "github.com/longhorn/go-common-libs/ns"
+	commontypes "github.com/longhorn/go-common-libs/types"
 )
 
 type PackageManagerType string
@@ -18,6 +19,7 @@ const (
 	PackageManagerZypper              = PackageManagerType("zypper")
 	PackageManagerTransactionalUpdate = PackageManagerType("transactional-update")
 	PackageManagerPacman              = PackageManagerType("pacman")
+	PackageManagerBinary              = PackageManagerType("binary")
 	// PackageManagerQlist            = PackageManagerType("qlist")
 )
 
@@ -48,11 +50,17 @@ func New(pkgMgrType PackageManagerType, executor *commonns.Executor) (PackageMan
 	case PackageManagerYum:
 		return NewYumPackageManager(executor), nil
 	case PackageManagerZypper:
+		// Elemental3: Check if zypper is actually executable in the host namespace. If not, fallback to binary.
+		if _, err := executor.Execute([]string{}, "zypper", []string{"--version"}, commontypes.ExecuteNoTimeout); err != nil {
+			return NewBinaryPackageManager(executor), nil
+		}
 		return NewZypperPackageManager(executor), nil
 	case PackageManagerTransactionalUpdate:
 		return NewTransactionalUpdatePackageManager(executor), nil
 	case PackageManagerPacman:
 		return NewPacmanPackageManager(executor), nil
+	case PackageManagerBinary:
+		return NewBinaryPackageManager(executor), nil
 	default:
 		return nil, fmt.Errorf("unknown package manager type: %s", pkgMgrType)
 	}
