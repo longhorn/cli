@@ -137,7 +137,7 @@ func (local *Installer) Init() error {
 		local.spdkDepModules = requiredPackages(true, "nvme_tcp", "uio_pci_generic", "vfio_pci")
 		return nil
 
-	case pkgmgr.PackageManagerZypper, pkgmgr.PackageManagerTransactionalUpdate:
+	case pkgmgr.PackageManagerZypper, pkgmgr.PackageManagerTransactionalUpdate, pkgmgr.PackageManagerBinary:
 		local.packageManager = pkgMgr
 		local.packages = requiredPackages(true, "nfs-client", "open-iscsi", "cryptsetup")
 		local.modules = requiredPackages(true, "nfs", "iscsi_tcp", "dm_crypt")
