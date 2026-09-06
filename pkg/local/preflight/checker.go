@@ -138,7 +138,7 @@ func (local *Checker) Init() error {
 			"vfio_pci",
 		}
 
-	case pkgmgr.PackageManagerZypper, pkgmgr.PackageManagerTransactionalUpdate:
+	case pkgmgr.PackageManagerZypper, pkgmgr.PackageManagerTransactionalUpdate, pkgmgr.PackageManagerBinary:
 		local.packageManager = packageManager
 		local.packages = []string{
 			"nfs-client", "open-iscsi", "cryptsetup", "device-mapper",
@@ -621,7 +621,11 @@ func (local *Checker) checkNFSv4Support() error {
 	hostBootDir := filepath.Join(consts.VolumeMountHostDirectory, commontypes.SysBootDirectory)
 	kernelConfigMap, err := commonsys.GetBootKernelConfigMap(hostBootDir, kernelVersion)
 	if err != nil {
-		return wrapInternalError(topic, fmt.Errorf("failed to read kernel config: %v", err))
+		// Fallback attempt: Read from procfs if the first attempt failed
+		kernelConfigMap, err = commonsys.GetProcKernelConfigMap("/proc")
+		if err != nil {
+			return wrapInternalError(topic, fmt.Errorf("failed to read kernel config: %v", err))
+		}
 	}
 	for configItem, module := range map[string]string{
 		"CONFIG_NFS_V4_2": "nfs",
