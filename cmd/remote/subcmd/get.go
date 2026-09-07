@@ -101,11 +101,55 @@ INFO[2024-07-16T17:23:51+08:00] Completed replica getter`,
 		},
 	}
 
+	cmd.AddCommand(newCmdGetReplicaStop(globalOpts))
+
 	utils.SetGlobalOptionsRemote(cmd, globalOpts)
 
 	cmd.Flags().StringVar(&replicaGetter.ReplicaName, consts.CmdOptName, "", "Specify the name of the replica to retrieve information.")
 	cmd.Flags().StringVar(&replicaGetter.VolumeName, consts.CmdOptLonghornVolumeName, "", "Specify the name of the volume to retrieve replica information.")
 	cmd.Flags().StringVar(&replicaGetter.LonghornDataDirectory, consts.CmdOptLonghornDataDirectory, "/var/lib/longhorn", "Specify the Longhorn data directory. If not provided, the default will be attempted, or it will fall back to the directory of longhorn-disk.cfg.")
+
+	return cmd
+}
+
+func newCmdGetReplicaStop(globalOpts *types.GlobalCmdOptions) *cobra.Command {
+	var replicaGetter = replica.Getter{}
+
+	cmd := &cobra.Command{
+		Use:   consts.SubCmdStop,
+		Short: "Stop the replica getter",
+		Long:  `This command terminates the ongoing replica information retrieval and stops the replica getter.`,
+		Example: `$ longhornctl get replica stop
+INFO[2024-07-16T17:29:14+08:00] Stopping replica getter
+INFO[2024-07-16T17:29:14+08:00] Successfully stopped replica getter`,
+
+		PreRun: func(cmd *cobra.Command, args []string) {
+			replicaGetter.KubeConfigPath = globalOpts.KubeConfigPath
+			replicaGetter.Namespace = globalOpts.Namespace
+
+			if err := replicaGetter.Init(); err != nil {
+				utils.CheckErr(errors.Wrap(err, "Failed to initialize replica getter"))
+			}
+		},
+
+		Run: func(cmd *cobra.Command, args []string) {
+			logrus.Info("Stopping replica getter")
+
+			err := replicaGetter.Cleanup()
+			if err != nil {
+				utils.CheckErr(errors.Wrap(err, "Failed to stop replica getter"))
+			}
+
+			logrus.Info("Successfully stopped replica getter")
+		},
+	}
+
+	utils.SetGlobalOptionsRemote(cmd, globalOpts)
+
+	// Hidden, not removed, so `stop` can be appended to the parent command as-is.
+	utils.SetFlagHidden(cmd, consts.CmdOptName)
+	utils.SetFlagHidden(cmd, consts.CmdOptLonghornVolumeName)
+	utils.SetFlagHidden(cmd, consts.CmdOptLonghornDataDirectory)
 
 	return cmd
 }
