@@ -174,6 +174,21 @@ func (local *Checker) Init() error {
 			"vfio_pci",
 		}
 
+
+	case pkgmgr.PackageManagerUnknown:
+		// Talos Linux does not support traditional package managers but uses system extensions
+		// Dependencies are satisfied via system extensions, but we can still check kernel modules
+		local.packages = []string{}
+		local.modules = []string{
+			"nfs", "dm_crypt",
+		}
+		local.services = []string{}
+		local.spdkDepPackages = []string{}
+		local.spdkDepModules = []string{
+			"nvme_tcp",
+			"uio_pci_generic",
+			"vfio_pci",
+		}
 	default:
 		return errors.Errorf("operating system (%v) package manager (%s) is not supported", osRelease, packageManagerType)
 	}

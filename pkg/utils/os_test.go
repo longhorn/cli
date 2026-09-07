@@ -167,6 +167,12 @@ func TestGetPackageManagerType(t *testing.T) {
 			wantType:   pkgmgr.PackageManagerYum,
 			shouldFail: false,
 		},
+		{
+			name:       "Talos Linux",
+			osRelease:  "talos",
+			wantType:   pkgmgr.PackageManagerUnknown,
+			shouldFail: false,
+		},
 	}
 
 	for _, tt := range tests {
