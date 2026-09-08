@@ -26,10 +26,6 @@ func GetPackageManagerType(osRelease string) (pkgmgr.PackageManagerType, error) 
 	case "rhel", "ol", "rocky", "centos", "fedora", "amzn", "opencloudos":
 		return pkgmgr.PackageManagerYum, nil
 	case "arch":
-		return pkgmgr.PackageManagerPacman, nil
-	case "talos":
-		// Talos Linux does not support traditional package managers but uses system extensions
-		// Return unknown package manager type, which will be handled specially in the checker
 		return pkgmgr.PackageManagerUnknown, nil
 	default:
 		return detectPackageManagerUnknown(osRelease)

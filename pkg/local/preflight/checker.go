@@ -80,6 +80,24 @@ func (local *Checker) Init() error {
 		return nil
 	}
 
+	if local.osRelease == "talos" {
+		// Talos Linux uses system extensions instead of traditional package managers
+		// Dependencies (iscsi-tools, util-linux-tools) come from system extensions
+		// but kernel modules are still relevant, so we initialize with module checks only
+		local.packages = []string{}
+		local.modules = []string{
+			"nfs", "dm_crypt",
+		}
+		local.services = []string{}
+		local.spdkDepPackages = []string{}
+		local.spdkDepModules = []string{
+			"nvme_tcp",
+			"uio_pci_generic",
+			"vfio_pci",
+		}
+		return nil
+	}
+
 	packageManagerType, err := utils.GetPackageManagerType(osRelease)
 	if err != nil {
 		return errors.Wrap(err, "failed to get package manager")
@@ -174,15 +192,6 @@ func (local *Checker) Init() error {
 			"vfio_pci",
 		}
 
-
-	case pkgmgr.PackageManagerUnknown:
-		// Talos Linux does not support traditional package managers but uses system extensions
-		// Dependencies are satisfied via system extensions, but we can still check kernel modules
-		local.packages = []string{}
-		local.modules = []string{
-			"nfs", "dm_crypt",
-		}
-		local.services = []string{}
 		local.spdkDepPackages = []string{}
 		local.spdkDepModules = []string{
 			"nvme_tcp",
