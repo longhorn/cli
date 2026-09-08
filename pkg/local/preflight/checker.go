@@ -191,13 +191,6 @@ func (local *Checker) Init() error {
 			"uio_pci_generic",
 			"vfio_pci",
 		}
-
-		local.spdkDepPackages = []string{}
-		local.spdkDepModules = []string{
-			"nvme_tcp",
-			"uio_pci_generic",
-			"vfio_pci",
-		}
 	default:
 		return errors.Errorf("operating system (%v) package manager (%s) is not supported", osRelease, packageManagerType)
 	}
