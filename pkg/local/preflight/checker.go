@@ -20,7 +20,6 @@ import (
 	commonkube "github.com/longhorn/go-common-libs/kubernetes"
 	commonnfs "github.com/longhorn/go-common-libs/nfs"
 	commonns "github.com/longhorn/go-common-libs/ns"
-	commonsys "github.com/longhorn/go-common-libs/sys"
 	commontypes "github.com/longhorn/go-common-libs/types"
 	lhmgrutil "github.com/longhorn/longhorn-manager/util"
 
@@ -53,7 +52,42 @@ type Checker struct {
 	spdkDepModules  []string
 
 	collection types.NodeCollection
+
+	// utils is for testing only
+	utils *mockUtils
 }
+
+// mockUtils is a mock implementation of the internal utility functions for testing.
+type mockUtils struct {
+	getKernelVersion          func() (string, error)
+	getBootKernelConfigMap    func(bootDir, kernelVersion string) (map[string]string, error)
+	getProcKernelConfigMap    func(procDir string) (map[string]string, error)
+}
+
+// GetKernelVersion returns the kernel version.
+func (m *mockUtils) GetKernelVersion() (string, error) {
+	if m.getKernelVersion != nil {
+		return m.getKernelVersion()
+	}
+	return "", nil
+}
+
+// GetBootKernelConfigMap reads the kernel config into a key-value map.
+func (m *mockUtils) GetBootKernelConfigMap(bootDir, kernelVersion string) (configMap map[string]string, err error) {
+	if m.getBootKernelConfigMap != nil {
+		return m.getBootKernelConfigMap(bootDir, kernelVersion)
+	}
+	return nil, nil
+}
+
+// GetProcKernelConfigMap reads the kernel config from /proc/config.gz.
+func (m *mockUtils) GetProcKernelConfigMap(procDir string) (configMap map[string]string, err error) {
+	if m.getProcKernelConfigMap != nil {
+		return m.getProcKernelConfigMap(procDir)
+	}
+	return nil, fmt.Errorf("no such file or directory")
+}
+
 
 // Init initializes the Checker.
 func (local *Checker) Init() error {
@@ -614,15 +648,27 @@ func (local *Checker) checkNFSv4Support() error {
 	// check kernel capability
 	var isKernelSupport = false
 
-	kernelVersion, err := utils.GetKernelVersion()
+	kernelVersion, err := local.utils.GetKernelVersion()
 	if err != nil {
 		return wrapInternalError(topic, fmt.Errorf("failed to detect kernel version: %v", err))
 	}
+
+	// Try to read kernel config from /host/boot/config-${kernelVersion}
+	// If that fails (e.g., on Fedora CoreOS), fall back to /proc/config.gz
 	hostBootDir := filepath.Join(consts.VolumeMountHostDirectory, commontypes.SysBootDirectory)
-	kernelConfigMap, err := commonsys.GetBootKernelConfigMap(hostBootDir, kernelVersion)
+	kernelConfigMap, err := local.utils.GetBootKernelConfigMap(hostBootDir, kernelVersion)
 	if err != nil {
-		return wrapInternalError(topic, fmt.Errorf("failed to read kernel config: %v", err))
+		logrus.Debugf("Failed to read kernel config from %s/config-%s: %v, trying /proc/config.gz", hostBootDir, kernelVersion, err)
+
+		// Try reading from /proc/config.gz as fallback
+		hostProcDir := filepath.Join(consts.VolumeMountHostDirectory, commontypes.SysProcDirectory)
+		kernelConfigMap, err = local.utils.GetProcKernelConfigMap(hostProcDir)
+		if err != nil {
+			return wrapInternalError(topic, fmt.Errorf("failed to read kernel config: %v", err))
+		}
+		logrus.Infof("Successfully read kernel config from /proc/config.gz")
 	}
+
 	for configItem, module := range map[string]string{
 		"CONFIG_NFS_V4_2": "nfs",
 		"CONFIG_NFS_V4_1": "nfs",
