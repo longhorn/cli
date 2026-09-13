@@ -97,11 +97,55 @@ INFO[2024-07-16T17:17:42+08:00] Completed preflight checker`,
 		},
 	}
 
+	cmd.AddCommand(newCmdCheckPreflightStop(globalOpts))
+
 	utils.SetGlobalOptionsRemote(cmd, globalOpts)
 
 	cmd.Flags().BoolVar(&preflightChecker.EnableSpdk, consts.CmdOptEnableSpdk, false, "Enable checking of SPDK required packages, modules, and setup.")
 	cmd.Flags().IntVar(&preflightChecker.HugePageSize, consts.CmdOptHugePageSize, 2048, "Specify the huge page size in MiB for SPDK.")
 	cmd.Flags().StringVar(&preflightChecker.UserspaceDriver, consts.CmdOptUserspaceDriver, "", "Userspace I/O driver for SPDK.")
+
+	return cmd
+}
+
+func newCmdCheckPreflightStop(globalOpts *types.GlobalCmdOptions) *cobra.Command {
+	var preflightChecker = preflight.Checker{}
+
+	cmd := &cobra.Command{
+		Use:   consts.SubCmdStop,
+		Short: "Stop Longhorn preflight checker",
+		Long:  `This command terminates the preflight checker.`,
+		Example: `$ longhornctl check preflight stop
+INFO[2024-07-16T17:21:32+08:00] Stopping preflight checker
+INFO[2024-07-16T17:21:32+08:00] Successfully stopped preflight checker`,
+
+		PreRun: func(cmd *cobra.Command, args []string) {
+			preflightChecker.KubeConfigPath = globalOpts.KubeConfigPath
+			preflightChecker.Namespace = globalOpts.Namespace
+
+			if err := preflightChecker.Init(); err != nil {
+				utils.CheckErr(errors.Wrap(err, "Failed to initialize preflight checker"))
+			}
+		},
+
+		Run: func(cmd *cobra.Command, args []string) {
+			logrus.Info("Stopping preflight checker")
+
+			err := preflightChecker.Cleanup()
+			if err != nil {
+				utils.CheckErr(errors.Wrap(err, "Failed to stop preflight checker"))
+			}
+
+			logrus.Info("Successfully stopped preflight checker")
+		},
+	}
+
+	utils.SetGlobalOptionsRemote(cmd, globalOpts)
+
+	// Hidden, not removed, so `stop` can be appended to the parent command as-is.
+	utils.SetFlagHidden(cmd, consts.CmdOptEnableSpdk)
+	utils.SetFlagHidden(cmd, consts.CmdOptHugePageSize)
+	utils.SetFlagHidden(cmd, consts.CmdOptUserspaceDriver)
 
 	return cmd
 }
