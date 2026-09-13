@@ -5,7 +5,7 @@ go 1.26.0
 require (
 	github.com/dustin/go-humanize v1.0.1
 	github.com/longhorn/go-common-libs v0.0.0-20260730002911-add09e6eb92c
-	github.com/longhorn/longhorn-engine v1.13.0-dev-20260503.0.20260811002413-f97d5257ac06
+	github.com/longhorn/longhorn-engine v1.13.0-rc1
 	github.com/longhorn/longhorn-manager v1.12.1
 	github.com/longhorn/sparse-tools v0.0.0-20260423074222-280e61de741a
 	github.com/otiai10/copy v1.14.1
@@ -131,7 +131,7 @@ require (
 	k8s.io/component-helpers v0.36.4 // indirect
 	k8s.io/klog/v2 v2.140.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20260317180543-43fb72c5454a // indirect
-	k8s.io/mount-utils v0.36.3 // indirect
+	k8s.io/mount-utils v0.36.4 // indirect
 	k8s.io/streaming v0.36.4 // indirect
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
 	sigs.k8s.io/kustomize/api v0.21.1 // indirect

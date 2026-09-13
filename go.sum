@@ -149,8 +149,8 @@ github.com/longhorn/go-common-libs v0.0.0-20260730002911-add09e6eb92c h1:WR2BAcT
 github.com/longhorn/go-common-libs v0.0.0-20260730002911-add09e6eb92c/go.mod h1:pjOR2fdQA0dNp3is1xfA+Ni2PjPDP+JuOoSEjdL2cfQ=
 github.com/longhorn/go-spdk-helper v0.9.0 h1:CHXOCwj4lRmSOg8zBAeY95AEsdo26GIEVfyPHfKxKyk=
 github.com/longhorn/go-spdk-helper v0.9.0/go.mod h1:RBejkKtfaxUeNr/I5lzUwawqeJspylUo9UnP/iHtjiI=
-github.com/longhorn/longhorn-engine v1.13.0-dev-20260503.0.20260811002413-f97d5257ac06 h1:55jzVbTPerM+UdxWLLs1iETq8ouXTadsohkdJajl0is=
-github.com/longhorn/longhorn-engine v1.13.0-dev-20260503.0.20260811002413-f97d5257ac06/go.mod h1:kpvqTln9a0PRrLLuROxo0vvNMBKfB7VZBAEPuuYndr4=
+github.com/longhorn/longhorn-engine v1.13.0-rc1 h1:dXxKUCpYDHDI4b3lFXnbk6Q10S0kCH/52mrOMSLoZ6g=
+github.com/longhorn/longhorn-engine v1.13.0-rc1/go.mod h1:MQ8ZFgO2qzpueyZNy/6slt7jf2lfqejCo5qCw+VNh1M=
 github.com/longhorn/longhorn-manager v1.12.1 h1:ncrTZUxXCpXvzWOhPbzdFCRk2Lp6pZfP3UMbyCY+z2E=
 github.com/longhorn/longhorn-manager v1.12.1/go.mod h1:msD+SdP1rvEqhPEFbuxAXw8HBePREwVKkMoF7kUhoJk=
 github.com/longhorn/sparse-tools v0.0.0-20260423074222-280e61de741a h1:xb71oeVPI7XZymAAG8ts5deC8s40dnX5IgxTYAB/qnk=
@@ -354,8 +354,8 @@ k8s.io/kube-openapi v0.0.0-20260317180543-43fb72c5454a h1:xCeOEAOoGYl2jnJoHkC3hk
 k8s.io/kube-openapi v0.0.0-20260317180543-43fb72c5454a/go.mod h1:uGBT7iTA6c6MvqUvSXIaYZo9ukscABYi2btjhvgKGZ0=
 k8s.io/kubectl v0.36.4 h1:xZd9g1bFBd7hpb1oKjK8lT9jRL18dtgr4DAPQG1Oksk=
 k8s.io/kubectl v0.36.4/go.mod h1:STWlr78cdEa1hHpr55wpcboaqchvfDueKRNDa1zOd1w=
-k8s.io/mount-utils v0.36.3 h1:X/18T+WI3UfJvcGa2MMdSBOL5zjT7fIcB7zGHAv6UDk=
-k8s.io/mount-utils v0.36.3/go.mod h1:+I47UOG6FiUGVSy7VanjU/mQXLShMo3M7xBpGLzCub8=
+k8s.io/mount-utils v0.36.4 h1:dmCrrFDdcj56q1GuHJw228Ri62iBzMvt8PbPFHS91pA=
+k8s.io/mount-utils v0.36.4/go.mod h1:f4k8GAu4zHwLuBqdyAHTNG2I7rAey5B+Zr3UI7HoNfE=
 k8s.io/streaming v0.36.4 h1:RS5YlhrdBN2pKGVjgygGntdu6SNdsduyjGWGe3cX0vo=
 k8s.io/streaming v0.36.4/go.mod h1:tJ6S2bZa2HxIBauguBbCWSCYyd93Grfz1+z3tcOvlDE=
 k8s.io/utils v0.0.0-20260707023825-cf1189d6abe3 h1:jVkFFVfXdXP74B/zbO3hM3hpSFD0xvhQ5U686DPurkE=
