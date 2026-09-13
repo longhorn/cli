@@ -252,7 +252,7 @@ github.com/longhorn/go-common-libs/utils
 ## explicit; go 1.25.10
 github.com/longhorn/go-spdk-helper/pkg/types
 github.com/longhorn/go-spdk-helper/pkg/util
-# github.com/longhorn/longhorn-engine v1.13.0-dev-20260503.0.20260811002413-f97d5257ac06
+# github.com/longhorn/longhorn-engine v1.13.0-rc1
 ## explicit; go 1.26.0
 github.com/longhorn/longhorn-engine/pkg/types
 # github.com/longhorn/longhorn-manager v1.12.1
@@ -1072,7 +1072,7 @@ k8s.io/kubectl/pkg/util/storage
 k8s.io/kubectl/pkg/util/templates
 k8s.io/kubectl/pkg/util/term
 k8s.io/kubectl/pkg/validation
-# k8s.io/mount-utils v0.36.3
+# k8s.io/mount-utils v0.36.4
 ## explicit; go 1.26.0
 k8s.io/mount-utils
 # k8s.io/streaming v0.36.4
