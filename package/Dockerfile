@@ -13,7 +13,7 @@ RUN chmod +x /app/scripts/build
 RUN /app/scripts/build
 
 
-FROM registry.suse.com/bci/golang:1.26@sha256:f6f04957fbc16399c76b1e8266cc7d0f3b4a5434b824fb251d7e3ae559d6a910 AS spdk_builder
+FROM registry.suse.com/bci/golang:1.26@sha256:a1bff75c7ab3d66c8423e3f2370838d5dbed077a4133e9f38a98d7525a630958 AS spdk_builder
 
 ARG ARCH=amd64
 
