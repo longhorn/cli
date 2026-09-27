@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/dustin/go-humanize v1.0.1
-	github.com/longhorn/go-common-libs v0.0.0-20260830093844-bff76489ddfd
+	github.com/longhorn/go-common-libs v0.0.0-20260909075701-1a37e0e5083e
 	github.com/longhorn/longhorn-engine v1.13.0-rc2
 	github.com/longhorn/longhorn-manager v1.12.1
 	github.com/longhorn/sparse-tools v0.0.0-20260423074222-280e61de741a
