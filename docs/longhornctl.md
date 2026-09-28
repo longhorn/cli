@@ -24,6 +24,7 @@ A CLI tool for troubleshooting and managing Longhorn operations.
 
 * [longhornctl check](longhornctl_check.md)	 - Longhorn checking operations
 * [longhornctl checksum](longhornctl_checksum.md)	 - Snapshot checksum operations
+* [longhornctl diagnose](longhornctl_diagnose.md)	 - Diagnose the health of the Longhorn system
 * [longhornctl doc](longhornctl_doc.md)	 - Generate markdown documentation for the CLI
 * [longhornctl export](longhornctl_export.md)	 - Export Longhorn resources
 * [longhornctl get](longhornctl_get.md)	 - Longhorn information gathering operations

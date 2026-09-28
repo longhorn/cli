@@ -8,11 +8,12 @@ const (
 
 const (
 	// The first layer of subcommands (verb)
-	SubCmdCheck   = "check"
-	SubCmdExport  = "export"
-	SubCmdGet     = "get"
-	SubCmdInstall = "install"
-	SubCmdTrim    = "trim"
+	SubCmdCheck    = "check"
+	SubCmdDiagnose = "diagnose"
+	SubCmdExport   = "export"
+	SubCmdGet      = "get"
+	SubCmdInstall  = "install"
+	SubCmdTrim     = "trim"
 
 	// The second layer of subcommands (noun)
 	SubCmdPreflight = "preflight"
