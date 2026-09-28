@@ -2,10 +2,16 @@ package preflight
 
 import (
 	"os/exec"
+	"strings"
 	"testing"
 
 	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/longhorn/cli/pkg/local/preflight/packagemanager/mocks"
+	"github.com/longhorn/cli/pkg/types"
 )
 
 type UtilTestSuite struct {
@@ -77,4 +83,81 @@ func (s *UtilTestSuite) TestIsExitCode() {
 
 func TestUtils(t *testing.T) {
 	suite.Run(t, new(UtilTestSuite))
+}
+
+func TestCheckIOMMUSupport(t *testing.T) {
+	tests := []struct {
+		name          string
+		execOutput    string
+		execErr       error
+		wantErr       bool
+		wantInfoCount int
+		wantErrCount  int
+		wantLogSubstr string
+	}{
+		{
+			name:          "IOMMU is enabled and groups found",
+			execOutput:    "/sys/kernel/iommu_groups/1\n/sys/kernel/iommu_groups/2\n",
+			execErr:       nil,
+			wantErr:       false,
+			wantInfoCount: 1,
+			wantErrCount:  0,
+			wantLogSubstr: "IOMMU is enabled (2 IOMMU groups found)",
+		},
+		{
+			name:          "IOMMU is disabled",
+			execOutput:    "",
+			execErr:       nil,
+			wantErr:       false,
+			wantInfoCount: 0,
+			wantErrCount:  1,
+			wantLogSubstr: "IOMMU is not enabled: no groups found under /sys/kernel/iommu_groups",
+		},
+		{
+			name:          "execute fails",
+			execOutput:    "",
+			execErr:       errors.New("exec failed"),
+			wantErr:       true,
+			wantInfoCount: 0,
+			wantErrCount:  1,
+			wantLogSubstr: "failed to check IOMMU groups",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			mockPM := new(mocks.MockPackageManager)
+			mockPM.On("Execute",
+				[]string{}, "sh", mock.Anything, mock.Anything,
+			).Return(tc.execOutput, tc.execErr).Once()
+
+			checker := &Checker{
+				packageManager: mockPM,
+				collection: types.NodeCollection{
+					Log: &types.LogCollection{},
+				},
+			}
+
+			err := checker.checkIOMMUSupport()
+
+			if tc.wantErr {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), tc.wantLogSubstr)
+			} else {
+				assert.NoError(t, err)
+				assert.Len(t, checker.collection.Log.Info, tc.wantInfoCount)
+				assert.Len(t, checker.collection.Log.Error, tc.wantErrCount)
+
+				if tc.wantInfoCount > 0 {
+					combinedInfoLogs := strings.Join(checker.collection.Log.Info, "\n")
+					assert.Contains(t, combinedInfoLogs, tc.wantLogSubstr)
+				}
+				if tc.wantErrCount > 0 {
+					combinedErrLogs := strings.Join(checker.collection.Log.Error, "\n")
+					assert.Contains(t, combinedErrLogs, tc.wantLogSubstr)
+				}
+			}
+			mockPM.AssertExpectations(t)
+		})
+	}
 }

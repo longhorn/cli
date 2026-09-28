@@ -138,9 +138,28 @@ func parseOSreleaseFile(lines []string) (string, error) {
 	idLike := extractOSReleaseField(lines, "ID_LIKE")
 	variantID := extractOSReleaseField(lines, "VARIANT_ID")
 
-	// For SUSE-based systems, determine if transactional or regular
+	// For SUSE-based systems, determine if transactional, image-based, or regular
 	if isSUSEBased(id, idLike) {
-		// Priority 1: Check if ID or ID_LIKE contains "sle-micro" or "sl-micro"
+		// Priority 1: Check if VARIANT_ID indicates transactional or image system
+		// Example (SLE 6.2):
+		//     ID="sles"
+		//     ID_LIKE="suse opensuse"
+		//     VARIANT="Micro"
+		//     VARIANT_ID="transactional"
+		// Example (Elemental3):
+		//     ID="sles"
+		//     ID_LIKE="suse opensuse sle-micro sl-micro microos opensuse-microos"
+		//     VARIANT="Image OS"
+		//     VARIANT_ID="image"
+		variantLower := strings.ToLower(variantID)
+		switch variantLower {
+		case "transactional":
+			return "sl-micro", nil
+		case "image":
+			return "suse", nil
+		}
+
+		// Priority 2: Check if ID or ID_LIKE contains "sle-micro" or "sl-micro"
 		// Example (SLE 6.1):
 		//     ID="sl-micro"
 		//     ID_LIKE="suse sle-micro opensuse-microos microos"
@@ -148,17 +167,6 @@ func parseOSreleaseFile(lines []string) (string, error) {
 		idLikeLower := strings.ToLower(idLike)
 		if strings.Contains(idLower, "sle-micro") || strings.Contains(idLower, "sl-micro") ||
 			strings.Contains(idLikeLower, "sle-micro") || strings.Contains(idLikeLower, "sl-micro") {
-			return "sl-micro", nil
-		}
-
-		// Priority 2: Check if VARIANT_ID indicates transactional system
-		// Example (SLE 6.2):
-		//     ID="sles"
-		//     ID_LIKE="suse opensuse"
-		//     VARIANT="Micro"
-		//     VARIANT_ID="transactional"
-		variantLower := strings.ToLower(variantID)
-		if variantLower == "transactional" {
 			return "sl-micro", nil
 		}
 

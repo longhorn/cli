@@ -68,6 +68,11 @@ func TestParseOSreleaseFile(t *testing.T) {
 			output: "suse",
 		},
 		{
+			name:   "SLES 16 Image OS (Elemental / Image variant)",
+			input:  []string{"ID=\"sles\"", "ID_LIKE=\"suse opensuse sle-micro sl-micro microos opensuse-microos\"", "VARIANT=\"Image OS\"", "VARIANT_ID=\"image\""},
+			output: "suse",
+		},
+		{
 			name:   "Empty input",
 			input:  []string{""},
 			output: "",

@@ -61,6 +61,10 @@ const (
 	CmdOptLonghornEngineImage   = "engine-image"
 	CmdOptLonghornNamespace     = "longhorn-namespace"
 	CmdOptLonghornVolumeName    = "volume-name"
+	CmdOptReplicaDir            = "replica-dir"
+	CmdOptReplicaDryRun         = "dry-run"
+	EnvReplicaDirectory         = "REPLICA_DIR"
+	SubCmdRecover               = "recover"
 )
 
 const (
