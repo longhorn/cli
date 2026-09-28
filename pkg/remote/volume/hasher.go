@@ -1,6 +1,7 @@
 package volume
 
 import (
+	"context"
 	"time"
 
 	"github.com/pkg/errors"
@@ -72,7 +73,7 @@ func (remote *ChecksumRequester) Run() error {
 	if remote.VolumeName != "" {
 		volumeNames = []string{remote.VolumeName}
 	} else {
-		volumes, err := remote.longhornClient.ListVolumes()
+		volumes, err := remote.longhornClient.ListVolumes(context.Background())
 		if err != nil {
 			return errors.Wrap(err, "failed to list volumes")
 		}

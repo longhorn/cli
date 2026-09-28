@@ -5,10 +5,11 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	kubeutils "github.com/longhorn/cli/pkg/utils/kubernetes"
 	longhorn "github.com/longhorn/longhorn-manager/k8s/pkg/apis/longhorn/v1beta2"
 	lhclientset "github.com/longhorn/longhorn-manager/k8s/pkg/client/clientset/versioned"
 	lhTypes "github.com/longhorn/longhorn-manager/types"
+
+	kubeutils "github.com/longhorn/cli/pkg/utils/kubernetes"
 )
 
 // LonghornClient is a lightweight client for interacting with Longhorn CRs via the Kubernetes API.
@@ -42,8 +43,8 @@ func NewLonghornClient(kubeconfigPath, namespace string) (*LonghornClient, error
 	}, nil
 }
 
-func (s *LonghornClient) ListVolumes() (*longhorn.VolumeList, error) {
-	return s.clientset.LonghornV1beta2().Volumes(s.namespace).List(context.Background(), metav1.ListOptions{})
+func (s *LonghornClient) ListVolumes(ctx context.Context) (*longhorn.VolumeList, error) {
+	return s.clientset.LonghornV1beta2().Volumes(s.namespace).List(ctx, metav1.ListOptions{})
 }
 
 func (s *LonghornClient) GetVolume(name string) (*longhorn.Volume, error) {
@@ -65,4 +66,16 @@ func (s *LonghornClient) ListVolumeSnapshots(volumeName string) (*longhorn.Snaps
 	return s.clientset.LonghornV1beta2().Snapshots(s.namespace).List(context.Background(), metav1.ListOptions{
 		LabelSelector: selector.String(),
 	})
+}
+
+func (s *LonghornClient) ListNodes(ctx context.Context) (*longhorn.NodeList, error) {
+	return s.clientset.LonghornV1beta2().Nodes(s.namespace).List(ctx, metav1.ListOptions{})
+}
+
+func (s *LonghornClient) ListEngineImages(ctx context.Context) (*longhorn.EngineImageList, error) {
+	return s.clientset.LonghornV1beta2().EngineImages(s.namespace).List(ctx, metav1.ListOptions{})
+}
+
+func (s *LonghornClient) ListInstanceManagers(ctx context.Context) (*longhorn.InstanceManagerList, error) {
+	return s.clientset.LonghornV1beta2().InstanceManagers(s.namespace).List(ctx, metav1.ListOptions{})
 }
