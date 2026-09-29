@@ -1,13 +1,13 @@
 package subcmd
 
 import (
+	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-
-	"sigs.k8s.io/kustomize/kyaml/yaml"
 
 	"github.com/longhorn/cli/pkg/consts"
 	"github.com/longhorn/cli/pkg/remote/diagnose"
@@ -18,6 +18,7 @@ import (
 func NewCmdDiagnose(globalOpts *types.GlobalCmdOptions) *cobra.Command {
 	var diagnoser = diagnose.Diagnoser{}
 	var results diagnose.Results
+	var outputFormat string
 
 	cmd := &cobra.Command{
 		Use:   consts.SubCmdDiagnose,
@@ -38,10 +39,17 @@ The following checks are performed, ordered so that a component is checked befor
 
 The command only reads the cluster state. It does not create or modify any resource.
 
+The results are printed to stdout in YAML or JSON, and the logs are printed to stderr.
+
 The command exits with a non-zero status if any check fails.`,
-		Example: `$ longhornctl diagnose`,
+		Example: `$ longhornctl diagnose
+$ longhornctl diagnose -o json 2>/dev/null | jq '.[] | select(.status == "fail")'`,
 
 		PreRun: func(cmd *cobra.Command, args []string) {
+			if !slices.Contains(diagnose.OutputFormats, outputFormat) {
+				utils.CheckErr(errors.Errorf("Invalid --%s %q, must be one of %v", consts.CmdOptOutput, outputFormat, diagnose.OutputFormats))
+			}
+
 			diagnoser.KubeConfigPath = globalOpts.KubeConfigPath
 			diagnoser.Namespace = globalOpts.Namespace
 
@@ -55,12 +63,14 @@ The command exits with a non-zero status if any check fails.`,
 			logrus.Info("Running Longhorn diagnoser")
 			results = diagnoser.Run()
 
-			output, err := yaml.Marshal(results)
+			output, err := results.Marshal(outputFormat)
 			if err != nil {
 				utils.CheckErr(errors.Wrap(err, "Failed to marshal Longhorn diagnoser result"))
 			}
 
-			logrus.Infof("Retrieved Longhorn diagnoser result:\n%v", string(output))
+			if _, err := cmd.OutOrStdout().Write(output); err != nil {
+				utils.CheckErr(errors.Wrap(err, "Failed to write Longhorn diagnoser result"))
+			}
 		},
 
 		PostRun: func(cmd *cobra.Command, args []string) {
@@ -75,6 +85,7 @@ The command exits with a non-zero status if any check fails.`,
 	cmd.PersistentFlags().StringVarP(&globalOpts.LogLevel, consts.CmdOptLogLevel, "l", globalOpts.LogLevel, "Log level")
 	cmd.PersistentFlags().StringVar(&globalOpts.KubeConfigPath, consts.CmdOptKubeConfigPath, globalOpts.KubeConfigPath, "Kubernetes config (kubeconfig) path")
 	cmd.PersistentFlags().StringVar(&globalOpts.Namespace, consts.CmdOptNamespace, globalOpts.Namespace, "The namespace where Longhorn is installed.")
+	cmd.Flags().StringVarP(&outputFormat, consts.CmdOptOutput, "o", diagnose.OutputFormatYAML, fmt.Sprintf("Output format of the results. One of: %v.", strings.Join(diagnose.OutputFormats, ", ")))
 
 	// Shadow the inherited options for deploying pods, which are not used by this command.
 	for _, option := range []string{consts.CmdOptImage, consts.CmdOptImageRegistry, consts.CmdOptImagePullSecret, consts.CmdOptNodeSelector, consts.CmdOptTolerations} {

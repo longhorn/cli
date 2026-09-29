@@ -20,6 +20,8 @@ The following checks are performed, ordered so that a component is checked befor
 
 The command only reads the cluster state. It does not create or modify any resource.
 
+The results are printed to stdout in YAML or JSON, and the logs are printed to stderr.
+
 The command exits with a non-zero status if any check fails.
 
 ```
@@ -30,6 +32,7 @@ longhornctl diagnose [flags]
 
 ```
 $ longhornctl diagnose
+$ longhornctl diagnose -o json 2>/dev/null | jq '.[] | select(.status == "fail")'
 ```
 
 ### Options
@@ -39,6 +42,7 @@ $ longhornctl diagnose
       --kubeconfig string   Kubernetes config (kubeconfig) path
   -l, --log-level string    Log level (default "info")
       --namespace string    The namespace where Longhorn is installed. (default "longhorn-system")
+  -o, --output string       Output format of the results. One of: yaml, json. (default "yaml")
 ```
 
 ### SEE ALSO

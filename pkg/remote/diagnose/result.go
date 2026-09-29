@@ -1,10 +1,23 @@
 package diagnose
 
 import (
+	"encoding/json"
 	"fmt"
+
+	"github.com/pkg/errors"
+
+	"sigs.k8s.io/kustomize/kyaml/yaml"
 
 	"github.com/longhorn/cli/pkg/types"
 )
+
+const (
+	OutputFormatYAML = "yaml"
+	OutputFormatJSON = "json"
+)
+
+// OutputFormats are the supported formats of the results.
+var OutputFormats = []string{OutputFormatYAML, OutputFormatJSON}
 
 // Status is the outcome of a check.
 type Status string
@@ -61,4 +74,20 @@ func (results Results) Failed() []string {
 		}
 	}
 	return failed
+}
+
+// Marshal encodes the results in the given format.
+func (results Results) Marshal(format string) ([]byte, error) {
+	switch format {
+	case OutputFormatYAML:
+		return yaml.Marshal(results)
+	case OutputFormatJSON:
+		output, err := json.MarshalIndent(results, "", "  ")
+		if err != nil {
+			return nil, err
+		}
+		return append(output, '\n'), nil
+	default:
+		return nil, errors.Errorf("unsupported output format %q, must be one of %v", format, OutputFormats)
+	}
 }

@@ -40,6 +40,7 @@ const (
 	CmdOptNamespace       = "namespace"
 	CmdOptNodeId          = "node-id"
 	CmdOptOperatingSystem = "operating-system"
+	CmdOptOutput          = "output"
 	CmdOptOutputFile      = "output-file"
 	CmdOptTargetDirectory = "target-dir"
 	CmdOptUpdatePackages  = "update-packages"
