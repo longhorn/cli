@@ -250,7 +250,7 @@ github.com/longhorn/go-common-libs/sync
 github.com/longhorn/go-common-libs/sys
 github.com/longhorn/go-common-libs/types
 github.com/longhorn/go-common-libs/utils
-# github.com/longhorn/longhorn-manager v1.11.2
+# github.com/longhorn/longhorn-manager v1.11.3
 ## explicit; go 1.25.3
 github.com/longhorn/longhorn-manager/k8s/pkg/apis/longhorn
 github.com/longhorn/longhorn-manager/k8s/pkg/apis/longhorn/v1beta2
@@ -400,7 +400,7 @@ golang.org/x/crypto/internal/alias
 golang.org/x/crypto/internal/poly1305
 golang.org/x/crypto/ssh
 golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
-# golang.org/x/exp v0.0.0-20260312153236-7ab1446f8b90
+# golang.org/x/exp v0.0.0-20260410095643-746e56fc9e2f
 ## explicit; go 1.25.0
 golang.org/x/exp/constraints
 golang.org/x/exp/slices
