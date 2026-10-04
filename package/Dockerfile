@@ -27,7 +27,7 @@ RUN cd /usr/src && \
     git checkout ${SPDK_COMMIT_ID} && \
     rm -rf .git
 
-FROM registry.suse.com/bci/bci-base:15.7@sha256:4a0d40a2c4b0b9c1e58fd270e4030d4defb385ffbfcf70f25493283193042d4d AS release
+FROM registry.suse.com/bci/bci-base:15.7@sha256:b39dcf02d6ef54bd2cba185060d41435c75d87fff0f94ce0a2b73f2a24e5e66d AS release
 
 ARG TARGETPLATFORM
 RUN if [ "$TARGETPLATFORM" != "linux/amd64" ] && [ "$TARGETPLATFORM" != "linux/arm64" ]; then \
