@@ -13,6 +13,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	longhorn "github.com/longhorn/longhorn-manager/k8s/pkg/apis/longhorn/v1beta2"
+	lhtypes "github.com/longhorn/longhorn-manager/types"
 
 	"github.com/longhorn/cli/pkg/types"
 )
@@ -386,9 +387,73 @@ func newEngineImage(name string, status longhorn.EngineImageStatus) longhorn.Eng
 
 func newInstanceManager(name, nodeID string, state longhorn.InstanceManagerState) longhorn.InstanceManager {
 	return longhorn.InstanceManager{
-		ObjectMeta: metav1.ObjectMeta{Name: name},
-		Spec:       longhorn.InstanceManagerSpec{NodeID: nodeID},
-		Status:     longhorn.InstanceManagerStatus{CurrentState: state},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   name,
+			Labels: lhtypes.GetInstanceManagerLabels(nodeID, "", "", ""),
+		},
+		Spec:   longhorn.InstanceManagerSpec{NodeID: nodeID},
+		Status: longhorn.InstanceManagerStatus{CurrentState: state},
+	}
+}
+
+func TestCheckInstanceManagerLabels(t *testing.T) {
+	newLabeledInstanceManager := func(mutate func(*longhorn.InstanceManager)) longhorn.InstanceManager {
+		im := longhorn.InstanceManager{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "im-1",
+				Labels: map[string]string{
+					"longhorn.io/managed-by":            "longhorn-manager",
+					"longhorn.io/component":             "instance-manager",
+					"longhorn.io/instance-manager-type": "replica",
+					"longhorn.io/node":                  "node-1",
+				},
+			},
+			Spec: longhorn.InstanceManagerSpec{
+				NodeID: "node-1",
+				Type:   longhorn.InstanceManagerTypeReplica,
+			},
+		}
+		if mutate != nil {
+			mutate(&im)
+		}
+		return im
+	}
+
+	for _, test := range []struct {
+		name     string
+		mutate   func(*longhorn.InstanceManager)
+		expected types.LogCollection
+	}{
+		{
+			name:     "all critical labels present",
+			mutate:   nil,
+			expected: types.LogCollection{},
+		},
+		{
+			name: "missing critical label",
+			mutate: func(im *longhorn.InstanceManager) {
+				delete(im.Labels, "longhorn.io/node")
+			},
+			expected: types.LogCollection{Error: []string{
+				`InstanceManager im-1 is missing critical label "longhorn.io/node"`,
+			}},
+		},
+		{
+			name: "unexpected label value",
+			mutate: func(im *longhorn.InstanceManager) {
+				im.Labels["longhorn.io/instance-manager-type"] = "engine"
+			},
+			expected: types.LogCollection{Error: []string{
+				`InstanceManager im-1 has unexpected label value longhorn.io/instance-manager-type="engine" (expected "replica")`,
+			}},
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			im := newLabeledInstanceManager(test.mutate)
+			result := &Result{}
+			checkInstanceManagerLabels(&im, result)
+			assert.Equal(t, test.expected, result.LogCollection)
+		})
 	}
 }
 
