@@ -262,7 +262,11 @@ func evaluateInstanceManagers(instanceManagers []longhorn.InstanceManager, resul
 	}
 
 	running := 0
-	for _, instanceManager := range instanceManagers {
+	for i := range instanceManagers {
+		instanceManager := &instanceManagers[i]
+
+		checkInstanceManagerLabels(instanceManager, result)
+
 		if instanceManager.Status.CurrentState != longhorn.InstanceManagerStateRunning {
 			result.errorf("InstanceManager %v on node %v is %v",
 				instanceManager.Name, instanceManager.Spec.NodeID, valueOrUnknown(string(instanceManager.Status.CurrentState)))
@@ -272,6 +276,39 @@ func evaluateInstanceManagers(instanceManagers []longhorn.InstanceManager, resul
 	}
 
 	result.infof("%d/%d instance managers are running", running, len(instanceManagers))
+}
+
+// checkInstanceManagerLabels verifies that the instance manager carries the
+// labels the Longhorn controllers use to discover it (see
+// types.GetInstanceManagerLabels in longhorn-manager). If any of these labels
+// are missing or have unexpected values, the controllers are unable to find a
+// valid instance manager, which prevents volume attachment and detachment.
+func checkInstanceManagerLabels(instanceManager *longhorn.InstanceManager, result *Result) {
+	expectedLabels := lhtypes.GetInstanceManagerLabels(
+		instanceManager.Spec.NodeID, instanceManager.Spec.Image,
+		instanceManager.Spec.Type, instanceManager.Spec.DataEngine,
+	)
+
+	missing := []string{}
+	mismatched := []string{}
+	for key, expectedValue := range expectedLabels {
+		actualValue, ok := instanceManager.Labels[key]
+		switch {
+		case !ok:
+			missing = append(missing, key)
+		case actualValue != expectedValue:
+			mismatched = append(mismatched, fmt.Sprintf("%s=%q (expected %q)", key, actualValue, expectedValue))
+		}
+	}
+	slices.Sort(missing)
+	slices.Sort(mismatched)
+
+	for _, key := range missing {
+		result.errorf("InstanceManager %v is missing critical label %q", instanceManager.Name, key)
+	}
+	for _, mismatch := range mismatched {
+		result.errorf("InstanceManager %v has unexpected label value %v", instanceManager.Name, mismatch)
+	}
 }
 
 func evaluateVolumes(volumes []longhorn.Volume, result *Result) {
