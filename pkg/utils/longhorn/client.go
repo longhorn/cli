@@ -72,6 +72,14 @@ func (s *LonghornClient) ListNodes(ctx context.Context) (*longhorn.NodeList, err
 	return s.clientset.LonghornV1beta2().Nodes(s.namespace).List(ctx, metav1.ListOptions{})
 }
 
+func (s *LonghornClient) GetNode(ctx context.Context, name string) (*longhorn.Node, error) {
+	return s.clientset.LonghornV1beta2().Nodes(s.namespace).Get(ctx, name, metav1.GetOptions{})
+}
+
+func (s *LonghornClient) UpdateNode(ctx context.Context, node *longhorn.Node) (*longhorn.Node, error) {
+	return s.clientset.LonghornV1beta2().Nodes(s.namespace).Update(ctx, node, metav1.UpdateOptions{})
+}
+
 func (s *LonghornClient) ListEngineImages(ctx context.Context) (*longhorn.EngineImageList, error) {
 	return s.clientset.LonghornV1beta2().EngineImages(s.namespace).List(ctx, metav1.ListOptions{})
 }
