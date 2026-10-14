@@ -22,7 +22,7 @@ require (
 	k8s.io/client-go v0.37.1
 	k8s.io/kubectl v0.37.1
 	k8s.io/utils v0.0.0-20260707023825-cf1189d6abe3
-	sigs.k8s.io/kustomize/kyaml v0.21.1
+	sigs.k8s.io/kustomize/kyaml v0.21.2
 )
 
 require (
@@ -50,7 +50,7 @@ require (
 	github.com/fxamacker/cbor/v2 v2.9.1 // indirect
 	github.com/getsentry/sentry-go v0.46.0 // indirect
 	github.com/gliderlabs/ssh v0.3.8 // indirect
-	github.com/go-errors/errors v1.4.2 // indirect
+	github.com/go-errors/errors v1.5.1 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/go-openapi/jsonpointer v1.0.0 // indirect
