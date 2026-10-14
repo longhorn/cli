@@ -79,3 +79,11 @@ func (s *LonghornClient) ListEngineImages(ctx context.Context) (*longhorn.Engine
 func (s *LonghornClient) ListInstanceManagers(ctx context.Context) (*longhorn.InstanceManagerList, error) {
 	return s.clientset.LonghornV1beta2().InstanceManagers(s.namespace).List(ctx, metav1.ListOptions{})
 }
+
+func (s *LonghornClient) ListShareManagers(ctx context.Context) (*longhorn.ShareManagerList, error) {
+	return s.clientset.LonghornV1beta2().ShareManagers(s.namespace).List(ctx, metav1.ListOptions{})
+}
+
+func (s *LonghornClient) ListBackingImageManagers(ctx context.Context) (*longhorn.BackingImageManagerList, error) {
+	return s.clientset.LonghornV1beta2().BackingImageManagers(s.namespace).List(ctx, metav1.ListOptions{})
+}

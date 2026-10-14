@@ -457,6 +457,219 @@ func TestCheckInstanceManagerLabels(t *testing.T) {
 	}
 }
 
+func newShareManager(name, image string, mutate func(*longhorn.ShareManager)) longhorn.ShareManager {
+	sm := longhorn.ShareManager{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   name,
+			Labels: lhtypes.GetShareManagerLabels(name, image),
+		},
+		Spec: longhorn.ShareManagerSpec{Image: image},
+	}
+	if mutate != nil {
+		mutate(&sm)
+	}
+	return sm
+}
+
+func TestCheckShareManagerLabels(t *testing.T) {
+	for _, test := range []struct {
+		name     string
+		mutate   func(*longhorn.ShareManager)
+		expected types.LogCollection
+	}{
+		{
+			name:     "all critical labels present",
+			mutate:   nil,
+			expected: types.LogCollection{},
+		},
+		{
+			name: "missing critical label",
+			mutate: func(sm *longhorn.ShareManager) {
+				delete(sm.Labels, "longhorn.io/share-manager")
+			},
+			expected: types.LogCollection{Error: []string{
+				`ShareManager sm-1 is missing critical label "longhorn.io/share-manager"`,
+			}},
+		},
+		{
+			name: "unexpected label value",
+			mutate: func(sm *longhorn.ShareManager) {
+				sm.Labels["longhorn.io/share-manager"] = "sm-other"
+			},
+			expected: types.LogCollection{Error: []string{
+				`ShareManager sm-1 has unexpected label value longhorn.io/share-manager="sm-other" (expected "sm-1")`,
+			}},
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			sm := newShareManager("sm-1", "longhornio/longhorn-share-manager:v1.9.0", test.mutate)
+			result := &Result{}
+			checkShareManagerLabels(&sm, result)
+			assert.Equal(t, test.expected, result.LogCollection)
+		})
+	}
+}
+
+func TestEvaluateShareManagers(t *testing.T) {
+	for _, test := range []struct {
+		name          string
+		shareManagers []longhorn.ShareManager
+		expected      types.LogCollection
+	}{
+		{
+			name:          "no share managers",
+			shareManagers: nil,
+			expected:      types.LogCollection{Info: []string{"No ShareManagers are found"}},
+		},
+		{
+			name: "share managers with valid labels",
+			shareManagers: []longhorn.ShareManager{
+				newShareManager("sm-1", "longhornio/longhorn-share-manager:v1.9.0", nil),
+				newShareManager("sm-2", "longhornio/longhorn-share-manager:v1.9.0", nil),
+			},
+			expected: types.LogCollection{Info: []string{"2 share managers are found"}},
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			result := &Result{}
+			evaluateShareManagers(test.shareManagers, result)
+			assert.Equal(t, test.expected, result.LogCollection)
+		})
+	}
+}
+
+func newBackingImageManager(name, nodeID, diskUUID string, mutate func(*longhorn.BackingImageManager)) longhorn.BackingImageManager {
+	bim := longhorn.BackingImageManager{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   name,
+			Labels: lhtypes.GetBackingImageManagerLabels(nodeID, diskUUID),
+		},
+		Spec: longhorn.BackingImageManagerSpec{NodeID: nodeID, DiskUUID: diskUUID},
+	}
+	if mutate != nil {
+		mutate(&bim)
+	}
+	return bim
+}
+
+func TestCheckBackingImageManagerLabels(t *testing.T) {
+	for _, test := range []struct {
+		name     string
+		mutate   func(*longhorn.BackingImageManager)
+		expected types.LogCollection
+	}{
+		{
+			name:     "all critical labels present",
+			mutate:   nil,
+			expected: types.LogCollection{},
+		},
+		{
+			name: "missing critical label",
+			mutate: func(bim *longhorn.BackingImageManager) {
+				delete(bim.Labels, "longhorn.io/disk-uuid")
+			},
+			expected: types.LogCollection{Error: []string{
+				`BackingImageManager bim-1 is missing critical label "longhorn.io/disk-uuid"`,
+			}},
+		},
+		{
+			name: "unexpected label value",
+			mutate: func(bim *longhorn.BackingImageManager) {
+				bim.Labels["longhorn.io/node"] = "node-other"
+			},
+			expected: types.LogCollection{Error: []string{
+				`BackingImageManager bim-1 has unexpected label value longhorn.io/node="node-other" (expected "node-1")`,
+			}},
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			bim := newBackingImageManager("bim-1", "node-1", "disk-1", test.mutate)
+			result := &Result{}
+			checkBackingImageManagerLabels(&bim, result)
+			assert.Equal(t, test.expected, result.LogCollection)
+		})
+	}
+}
+
+func TestEvaluateBackingImageManagers(t *testing.T) {
+	for _, test := range []struct {
+		name                 string
+		backingImageManagers []longhorn.BackingImageManager
+		expected             types.LogCollection
+	}{
+		{
+			name:                 "no backing image managers",
+			backingImageManagers: nil,
+			expected:             types.LogCollection{Info: []string{"No BackingImageManagers are found"}},
+		},
+		{
+			name: "backing image managers with valid labels",
+			backingImageManagers: []longhorn.BackingImageManager{
+				newBackingImageManager("bim-1", "node-1", "disk-1", nil),
+			},
+			expected: types.LogCollection{Info: []string{"1 backing image managers are found"}},
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			result := &Result{}
+			evaluateBackingImageManagers(test.backingImageManagers, result)
+			assert.Equal(t, test.expected, result.LogCollection)
+		})
+	}
+}
+
+func TestCheckLonghornManagerPodLabels(t *testing.T) {
+	newManagerPod := func(mutate func(*corev1.Pod)) corev1.Pod {
+		pod := corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:   "longhorn-manager-abc",
+				Labels: lhtypes.GetManagerLabels(),
+			},
+		}
+		if mutate != nil {
+			mutate(&pod)
+		}
+		return pod
+	}
+
+	for _, test := range []struct {
+		name     string
+		mutate   func(*corev1.Pod)
+		expected types.LogCollection
+	}{
+		{
+			name:     "all critical labels present",
+			mutate:   nil,
+			expected: types.LogCollection{},
+		},
+		{
+			name: "missing critical label",
+			mutate: func(pod *corev1.Pod) {
+				delete(pod.Labels, "app")
+			},
+			expected: types.LogCollection{Error: []string{
+				`Pod longhorn-manager-abc is missing critical label "app"`,
+			}},
+		},
+		{
+			name: "unexpected label value",
+			mutate: func(pod *corev1.Pod) {
+				pod.Labels["app"] = "other"
+			},
+			expected: types.LogCollection{Error: []string{
+				`Pod longhorn-manager-abc has unexpected label value app="other" (expected "longhorn-manager")`,
+			}},
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			pod := newManagerPod(test.mutate)
+			result := &Result{}
+			checkLonghornManagerPodLabels(&pod, result)
+			assert.Equal(t, test.expected, result.LogCollection)
+		})
+	}
+}
+
 func TestEvaluateVolumes(t *testing.T) {
 	for _, test := range []struct {
 		name     string
