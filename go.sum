@@ -139,10 +139,10 @@ github.com/longhorn/beszel v0.16.2-0.20260114090315-332709c32c7d h1:Fu1U1CyaxN42
 github.com/longhorn/beszel v0.16.2-0.20260114090315-332709c32c7d/go.mod h1:369q8Fv+iqznDYF3++boASEe1+fKS8Q4vdSb8isEI1c=
 github.com/longhorn/go-common-libs v0.0.0-20260909075701-1a37e0e5083e h1:DmX6r4mdfEwzl45r3JzrHN7aVyhxpN3hdLX4lYm+f6A=
 github.com/longhorn/go-common-libs v0.0.0-20260909075701-1a37e0e5083e/go.mod h1:pjOR2fdQA0dNp3is1xfA+Ni2PjPDP+JuOoSEjdL2cfQ=
-github.com/longhorn/go-spdk-helper v0.9.0 h1:CHXOCwj4lRmSOg8zBAeY95AEsdo26GIEVfyPHfKxKyk=
-github.com/longhorn/go-spdk-helper v0.9.0/go.mod h1:RBejkKtfaxUeNr/I5lzUwawqeJspylUo9UnP/iHtjiI=
-github.com/longhorn/longhorn-manager v1.12.1 h1:ncrTZUxXCpXvzWOhPbzdFCRk2Lp6pZfP3UMbyCY+z2E=
-github.com/longhorn/longhorn-manager v1.12.1/go.mod h1:msD+SdP1rvEqhPEFbuxAXw8HBePREwVKkMoF7kUhoJk=
+github.com/longhorn/go-spdk-helper v0.10.1-0.20260921021616-6102449746a0 h1:G5xruV32BYYo0ijxpjzLUH53IQGVnYmuVmO6tAWN0G0=
+github.com/longhorn/go-spdk-helper v0.10.1-0.20260921021616-6102449746a0/go.mod h1:+Rv4u2k9uiDJGBT4IqtOSQ2XSOHsKIgQUz4dFqXmiCQ=
+github.com/longhorn/longhorn-manager v1.13.0 h1:OEEWme4sKC5GnzztnQRJIcAlO4hViAfEtyQt7KEAh0o=
+github.com/longhorn/longhorn-manager v1.13.0/go.mod h1:i0xAairhPF0r8kYxPyCbeYaCBwwEVESqUvaih6GgCCU=
 github.com/lufia/plan9stats v0.0.0-20251013123823-9fd1530e3ec3 h1:PwQumkgq4/acIiZhtifTV5OUqqiP82UAl0h87xj/l9k=
 github.com/lufia/plan9stats v0.0.0-20251013123823-9fd1530e3ec3/go.mod h1:autxFIvghDt3jPTLoqZ9OZ7s9qTGNAWmYCjVFWPX/zg=
 github.com/lxzan/gws v1.8.9 h1:VU3SGUeWlQrEwfUSfokcZep8mdg/BrUF+y73YYshdBM=
@@ -200,8 +200,8 @@ github.com/shirou/gopsutil/v3 v3.24.5 h1:i0t8kL+kQTvpAYToeuiVk3TgDeKOFioZO3Ztz/i
 github.com/shirou/gopsutil/v3 v3.24.5/go.mod h1:bsoOS1aStSs9ErQ1WWfxllSeS1K5D+U30r2NfcubMVk=
 github.com/shirou/gopsutil/v4 v4.25.12 h1:e7PvW/0RmJ8p8vPGJH4jvNkOyLmbkXgXW4m6ZPic6CY=
 github.com/shirou/gopsutil/v4 v4.25.12/go.mod h1:EivAfP5x2EhLp2ovdpKSozecVXn1TmuG7SMzs/Wh4PU=
-github.com/sirupsen/logrus v1.9.4 h1:TsZE7l11zFCLZnZ+teH4Umoq5BhEIfIzfRDZ1Uzql2w=
-github.com/sirupsen/logrus v1.9.4/go.mod h1:ftWc9WdOfJ0a92nsE2jF5u5ZwH8Bv2zdeOC42RjbV2g=
+github.com/sirupsen/logrus v1.10.2 h1:G2SED73/qrAu6YwbdxOD6peLkCBI3z7L+ykJFTXJBBo=
+github.com/sirupsen/logrus v1.10.2/go.mod h1:SLEg8TqYulVKKfIGHldVp2K2aYz2DKSVBq4g/H5bR7Q=
 github.com/spf13/cobra v1.10.2 h1:DMTTonx5m65Ic0GOoRY2c16WCbHxOOw6xxezuLaBpcU=
 github.com/spf13/cobra v1.10.2/go.mod h1:7C1pvHqHw5A4vrJfjNwvOdzYu0Gml16OCs2GRiTUUS4=
 github.com/spf13/pflag v1.0.9/go.mod h1:McXfInJRrz4CZXVZOBLb0bTZqETkiAhM9Iw0y3An2Bg=
@@ -243,8 +243,8 @@ golang.org/x/exp v0.0.0-20260508232706-74f9aab9d74a h1:+3jdDGGB8NGb1Zktc737jlt3/
 golang.org/x/exp v0.0.0-20260508232706-74f9aab9d74a/go.mod h1:d2fgXJLVs4dYDHUk5lwMIfzRzSrWCfGZb0ZqeLa/Vcw=
 golang.org/x/mod v0.2.0/go.mod h1:s0Qsj1ACt9ePp/hMypM3fl4fZqREWJwdYDEqhRiZZUA=
 golang.org/x/mod v0.3.0/go.mod h1:s0Qsj1ACt9ePp/hMypM3fl4fZqREWJwdYDEqhRiZZUA=
-golang.org/x/mod v0.38.0 h1:MECBjubtXD7yj4HrhIUcywNaGeNVUdfVnxmPajOk4yk=
-golang.org/x/mod v0.38.0/go.mod h1:V6Xz0pq8TQ3dGqVQ1FVHuelZpAL0uNhSkk9ogYP3c40=
+golang.org/x/mod v0.40.0 h1:hUv+3cXcdRHz08UmSiOob7sadHig73uo5bkXxQ/tvUs=
+golang.org/x/mod v0.40.0/go.mod h1:0/weTWkPWGBikyTWAX3dkjVztMmBA5hM0DH6BElSupE=
 golang.org/x/net v0.0.0-20190404232315-eb5bcb51f2a3/go.mod h1:t9HGtf8HONx5eT2rtn7q6eTqICYqUVnKs3thJo3Qplg=
 golang.org/x/net v0.0.0-20190620200207-3b0461eec859/go.mod h1:z5CRVTTTmAJ677TzLLGU+0bjPO0LkuOLi4/5GtJWs/s=
 golang.org/x/net v0.0.0-20200226121028-0de0cce0169b/go.mod h1:z5CRVTTTmAJ677TzLLGU+0bjPO0LkuOLi4/5GtJWs/s=
@@ -320,8 +320,8 @@ k8s.io/kube-openapi v0.0.0-20260721132016-d427ff9ee9ad h1:oXImqH8mQNk7PmvzKhmN3d
 k8s.io/kube-openapi v0.0.0-20260721132016-d427ff9ee9ad/go.mod h1:0/mqHCVhlumdJ3BhCfnjSZQE037nAhNodh1/hK0T8/I=
 k8s.io/kubectl v0.36.4 h1:xZd9g1bFBd7hpb1oKjK8lT9jRL18dtgr4DAPQG1Oksk=
 k8s.io/kubectl v0.36.4/go.mod h1:STWlr78cdEa1hHpr55wpcboaqchvfDueKRNDa1zOd1w=
-k8s.io/mount-utils v0.36.3 h1:X/18T+WI3UfJvcGa2MMdSBOL5zjT7fIcB7zGHAv6UDk=
-k8s.io/mount-utils v0.36.3/go.mod h1:+I47UOG6FiUGVSy7VanjU/mQXLShMo3M7xBpGLzCub8=
+k8s.io/mount-utils v0.37.1 h1:GCEU40EaurFsZLfHToIXdgf8jBCLXnhi+/VkasxVgsQ=
+k8s.io/mount-utils v0.37.1/go.mod h1:uGJRC7u42QGYbHlHxt/5J2rXrfgv3XNYU3I0ZXVnAck=
 k8s.io/streaming v0.36.4 h1:RS5YlhrdBN2pKGVjgygGntdu6SNdsduyjGWGe3cX0vo=
 k8s.io/streaming v0.36.4/go.mod h1:tJ6S2bZa2HxIBauguBbCWSCYyd93Grfz1+z3tcOvlDE=
 k8s.io/utils v0.0.0-20260707023825-cf1189d6abe3 h1:jVkFFVfXdXP74B/zbO3hM3hpSFD0xvhQ5U686DPurkE=

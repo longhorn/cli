@@ -246,11 +246,11 @@ github.com/longhorn/go-common-libs/sync
 github.com/longhorn/go-common-libs/sys
 github.com/longhorn/go-common-libs/types
 github.com/longhorn/go-common-libs/utils
-# github.com/longhorn/go-spdk-helper v0.9.0
+# github.com/longhorn/go-spdk-helper v0.10.1-0.20260921021616-6102449746a0
 ## explicit; go 1.25.10
 github.com/longhorn/go-spdk-helper/pkg/types
 github.com/longhorn/go-spdk-helper/pkg/util
-# github.com/longhorn/longhorn-manager v1.12.1
+# github.com/longhorn/longhorn-manager v1.13.0
 ## explicit; go 1.26.0
 github.com/longhorn/longhorn-manager/k8s/pkg/apis/longhorn
 github.com/longhorn/longhorn-manager/k8s/pkg/apis/longhorn/v1beta2
@@ -347,8 +347,8 @@ github.com/shirou/gopsutil/v4/mem
 github.com/shirou/gopsutil/v4/net
 github.com/shirou/gopsutil/v4/process
 github.com/shirou/gopsutil/v4/sensors
-# github.com/sirupsen/logrus v1.9.4
-## explicit; go 1.17
+# github.com/sirupsen/logrus v1.10.2
+## explicit; go 1.23
 github.com/sirupsen/logrus
 # github.com/spf13/cobra v1.10.2
 ## explicit; go 1.15
@@ -984,7 +984,7 @@ k8s.io/kubectl/pkg/util/storage
 k8s.io/kubectl/pkg/util/templates
 k8s.io/kubectl/pkg/util/term
 k8s.io/kubectl/pkg/validation
-# k8s.io/mount-utils v0.36.3
+# k8s.io/mount-utils v0.37.1
 ## explicit; go 1.26.0
 k8s.io/mount-utils
 # k8s.io/streaming v0.36.4
