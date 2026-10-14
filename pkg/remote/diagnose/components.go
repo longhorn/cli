@@ -9,7 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -46,16 +46,33 @@ func (remote *Diagnoser) checkLonghornManager(ctx context.Context, result *Resul
 
 	evaluateDaemonSet(daemonSet, result)
 
-	selector := labels.Set(lhtypes.GetManagerLabels()).AsSelector().String()
-	pods, err := remote.kubeClient.CoreV1().Pods(remote.Namespace).List(ctx, metav1.ListOptions{LabelSelector: selector})
+	// Discover the DaemonSet's pods through their owner references rather than
+	// the discovery labels: a pod missing those labels is exactly the fault
+	// this check must report, and selecting pods by the labels would hide it.
+	pods, err := remote.kubeClient.CoreV1().Pods(remote.Namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to list longhorn-manager pods")
 	}
 
 	for i := range pods.Items {
-		checkLonghornManagerPodLabels(&pods.Items[i], result)
+		pod := &pods.Items[i]
+		if !isControlledBy(pod, daemonSet.UID) {
+			continue
+		}
+		checkLonghornManagerPodLabels(pod, result)
 	}
 	return nil
+}
+
+// isControlledBy reports whether the pod is controlled by the resource with
+// the given UID (e.g. the longhorn-manager DaemonSet).
+func isControlledBy(pod *corev1.Pod, uid types.UID) bool {
+	for _, owner := range pod.OwnerReferences {
+		if owner.UID == uid && owner.Controller != nil && *owner.Controller {
+			return true
+		}
+	}
+	return false
 }
 
 // checkLonghornManagerPodLabels verifies that a longhorn-manager pod carries

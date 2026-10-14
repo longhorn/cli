@@ -618,6 +618,67 @@ func TestEvaluateBackingImageManagers(t *testing.T) {
 	}
 }
 
+func TestIsControlledBy(t *testing.T) {
+	const daemonSetUID = "daemonset-uid"
+	controller := true
+	nonController := false
+
+	newPod := func(owners []metav1.OwnerReference) *corev1.Pod {
+		return &corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:            "longhorn-manager-abc",
+				OwnerReferences: owners,
+			},
+		}
+	}
+
+	for _, test := range []struct {
+		name     string
+		pod      *corev1.Pod
+		expected bool
+	}{
+		{
+			name: "controlled by the daemonset",
+			pod: newPod([]metav1.OwnerReference{{
+				Kind:       "DaemonSet",
+				Name:       "longhorn-manager",
+				UID:        daemonSetUID,
+				Controller: &controller,
+			}}),
+			expected: true,
+		},
+		{
+			name: "owned by another resource",
+			pod: newPod([]metav1.OwnerReference{{
+				Kind:       "DaemonSet",
+				Name:       "other",
+				UID:        "other-uid",
+				Controller: &controller,
+			}}),
+			expected: false,
+		},
+		{
+			name:     "no owner references",
+			pod:      newPod(nil),
+			expected: false,
+		},
+		{
+			name: "matching uid but not the controller",
+			pod: newPod([]metav1.OwnerReference{{
+				Kind:       "DaemonSet",
+				Name:       "longhorn-manager",
+				UID:        daemonSetUID,
+				Controller: &nonController,
+			}}),
+			expected: false,
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			assert.Equal(t, test.expected, isControlledBy(test.pod, daemonSetUID))
+		})
+	}
+}
+
 func TestCheckLonghornManagerPodLabels(t *testing.T) {
 	newManagerPod := func(mutate func(*corev1.Pod)) corev1.Pod {
 		pod := corev1.Pod{
