@@ -105,17 +105,17 @@ func ConvertStringToTypeOrDefault[T any](str string, defaultValue T) T {
 		intValue, err := strconv.Atoi(str)
 		if err != nil {
 			logrus.WithError(err).Warn("Failed to convert string to integer")
-		} else {
-			value = reflect.ValueOf(intValue).Interface().(T)
+			return defaultValue
 		}
+		value = reflect.ValueOf(intValue).Interface().(T)
 
 	case reflect.Bool:
 		boolValue, err := strconv.ParseBool(str)
 		if err != nil {
 			logrus.WithError(err).Warn("Failed to convert string to boolean")
-		} else {
-			value = reflect.ValueOf(boolValue).Interface().(T)
+			return defaultValue
 		}
+		value = reflect.ValueOf(boolValue).Interface().(T)
 
 	default:
 		logrus.WithField("type", reflect.TypeOf(defaultValue)).Warn("Unsupported default value type")
