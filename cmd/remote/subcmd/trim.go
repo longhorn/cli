@@ -86,9 +86,51 @@ INFO[2024-07-16T17:32:01+08:00] Completed volume trimmer                      vo
 		},
 	}
 
+	cmd.AddCommand(newCmdTrimVolumeStop(globalOpts))
+
 	utils.SetGlobalOptionsRemote(cmd, globalOpts)
 
 	cmd.Flags().StringVar(&volumeTrimmer.VolumeName, consts.CmdOptName, "", "Name of the Longhorn volum to be trimmed.")
+
+	return cmd
+}
+
+func newCmdTrimVolumeStop(globalOpts *types.GlobalCmdOptions) *cobra.Command {
+	var volumeTrimmer = volume.Trimmer{}
+
+	cmd := &cobra.Command{
+		Use:   consts.SubCmdStop,
+		Short: "Stop the volume trimmer",
+		Long:  `This command terminates the ongoing volume trim process and stops the volume trimmer.`,
+		Example: `$ longhornctl trim volume --name="pvc-48a6457d-585e-423b-b530-bbc68a5f948a" stop
+INFO[2024-07-16T17:29:14+08:00] Stopping volume trimmer
+INFO[2024-07-16T17:29:14+08:00] Successfully stopped volume trimmer`,
+
+		PreRun: func(cmd *cobra.Command, args []string) {
+			volumeTrimmer.KubeConfigPath = globalOpts.KubeConfigPath
+			volumeTrimmer.Namespace = globalOpts.Namespace
+
+			if err := volumeTrimmer.Init(); err != nil {
+				utils.CheckErr(errors.Wrap(err, "Failed to initialize volume trimmer"))
+			}
+		},
+
+		Run: func(cmd *cobra.Command, args []string) {
+			logrus.Info("Stopping volume trimmer")
+
+			err := volumeTrimmer.Cleanup()
+			if err != nil {
+				utils.CheckErr(errors.Wrap(err, "Failed to stop volume trimmer"))
+			}
+
+			logrus.Info("Successfully stopped volume trimmer")
+		},
+	}
+
+	utils.SetGlobalOptionsRemote(cmd, globalOpts)
+
+	// Hidden, not removed, so `stop` can be appended to the parent command as-is.
+	utils.SetFlagHidden(cmd, consts.CmdOptName)
 
 	return cmd
 }
