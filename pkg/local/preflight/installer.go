@@ -213,6 +213,12 @@ func (local *Installer) Run() error {
 		}
 	}
 
+	if local.EnableRdma {
+		if err := local.installRdmaModules(); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

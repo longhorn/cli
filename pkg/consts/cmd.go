@@ -52,6 +52,8 @@ const (
 	CmdOptAllowPci             = "allow-pci"
 	CmdOptDriverOverride       = "driver-override"
 	CmdOptEnableSpdk           = "enable-spdk"
+	CmdOptEnableRdma           = "enable-rdma"
+	CmdOptRdmaInterface        = "rdma-interface"
 	CmdOptHugePageSize         = "huge-page-size"
 	CmdOptSpdkOptions          = "spdk-options"
 	CmdOptUserspaceDriver      = "userspace-driver"

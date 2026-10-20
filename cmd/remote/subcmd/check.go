@@ -102,6 +102,9 @@ INFO[2024-07-16T17:17:42+08:00] Completed preflight checker`,
 	cmd.Flags().BoolVar(&preflightChecker.EnableSpdk, consts.CmdOptEnableSpdk, false, "Enable checking of SPDK required packages, modules, and setup.")
 	cmd.Flags().IntVar(&preflightChecker.HugePageSize, consts.CmdOptHugePageSize, 2048, "Specify the huge page size in MiB for SPDK.")
 	cmd.Flags().StringVar(&preflightChecker.UserspaceDriver, consts.CmdOptUserspaceDriver, "", "Userspace I/O driver for SPDK.")
+	cmd.Flags().BoolVar(&preflightChecker.EnableRdma, consts.CmdOptEnableRdma, false, "Enable checking of RDMA (RoCE) prerequisites for the V2 data engine RDMA transport.")
+	cmd.Flags().StringVar(&preflightChecker.RdmaInterface, consts.CmdOptRdmaInterface, "", "Network interface used for the V2 data engine RDMA transport. Checks that it is RDMA-capable and NUMA-local to the data engine CPU mask.")
+	cmd.Flags().StringVar(&preflightChecker.LonghornNamespace, consts.CmdOptLonghornNamespace, consts.NamespaceLonghorn, "Namespace of an existing Longhorn installation, used to read data engine settings for the RDMA check.")
 
 	return cmd
 }

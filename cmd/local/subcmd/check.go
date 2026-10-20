@@ -65,6 +65,17 @@ func newCmdCheckPreflight(globalOpts *types.GlobalCmdOptions) *cobra.Command {
 	cmd.Flags().BoolVar(&localChecker.EnableSpdk, consts.CmdOptEnableSpdk, utils.ConvertStringToTypeOrDefault(os.Getenv(consts.EnvEnableSpdk), false), "Enable checking of SPDK required packages, modules, and setup.")
 	cmd.Flags().IntVar(&localChecker.HugePageSize, consts.CmdOptHugePageSize, utils.ConvertStringToTypeOrDefault(os.Getenv(consts.EnvHugePageSize), 2048), "Specify the huge page size in MiB for SPDK.")
 	cmd.Flags().StringVar(&localChecker.UserspaceDriver, consts.CmdOptUserspaceDriver, os.Getenv(consts.EnvUserspaceDriver), "Userspace I/O driver for SPDK.")
+	cmd.Flags().BoolVar(&localChecker.EnableRdma, consts.CmdOptEnableRdma, utils.ConvertStringToTypeOrDefault(os.Getenv(consts.EnvEnableRdma), false), "Enable checking of RDMA (RoCE) prerequisites for the V2 data engine RDMA transport.")
+	cmd.Flags().StringVar(&localChecker.RdmaInterface, consts.CmdOptRdmaInterface, os.Getenv(consts.EnvRdmaInterface), "Network interface used for the V2 data engine RDMA transport.")
+	cmd.Flags().StringVar(&localChecker.LonghornNamespace, consts.CmdOptLonghornNamespace, envOrDefault(consts.EnvLonghornNamespace, consts.NamespaceLonghorn), "Namespace of an existing Longhorn installation, used to read data engine settings for the RDMA check.")
 
 	return cmd
+}
+
+// envOrDefault returns the value of the environment variable, or defaultValue when it is unset or empty.
+func envOrDefault(name, defaultValue string) string {
+	if value := os.Getenv(name); value != "" {
+		return value
+	}
+	return defaultValue
 }

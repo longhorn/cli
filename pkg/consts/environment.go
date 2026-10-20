@@ -22,6 +22,8 @@ const (
 const (
 	EnvDriverOverride       = "DRIVER_OVERRIDE"
 	EnvEnableSpdk           = "ENABLE_SPDK"
+	EnvEnableRdma           = "ENABLE_RDMA"
+	EnvRdmaInterface        = "RDMA_INTERFACE"
 	EnvHugePageSize         = "HUGEMEM"
 	EnvPciAllowed           = "PCI_ALLOWED"
 	EnvUserspaceDriver      = "USERSPACE_DRIVER"
