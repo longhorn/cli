@@ -18,6 +18,7 @@ const (
 	PreflightCheckTopicKubeDNS              = "KubeDNS"
 	PreflightCheckTopicNFS                  = "NFSv4"
 	PreflightCheckTopicSPDK                 = "SPDK"
+	PreflightCheckTopicRDMA                 = "RDMA"
 	PreflightCheckTopicInternalError        = "InternalError"
 )
 
@@ -31,4 +32,5 @@ type DependencyModuleType int
 const (
 	DependencyModuleDefault DependencyModuleType = iota
 	DependencyModuleSpdk
+	DependencyModuleRdma
 )
