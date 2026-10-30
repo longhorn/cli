@@ -8,6 +8,7 @@ const (
 
 const (
 	// The first layer of subcommands (verb)
+	SubCmdPlan     = "plan"
 	SubCmdCheck    = "check"
 	SubCmdDiagnose = "diagnose"
 	SubCmdExport   = "export"
@@ -47,6 +48,7 @@ const (
 	CmdOptNodeSelector    = "node-selector"
 	CmdOptTolerations     = "tolerations"
 	CmdOptAll             = "all"
+	CmdOptDataEngine      = "data-engine"
 
 	// SPDK options
 	CmdOptAllowPci             = "allow-pci"
