@@ -11,7 +11,7 @@ import (
 )
 
 func TestV2InstallerTransportReportsFailureWithoutAutomaticReplay(t *testing.T) {
-	directory := filepath.Join(t.TempDir(), "persistent-attempts")
+	directory := filepath.Join(t.TempDir(), "private-tool", "persistent-attempts")
 	calls := 0
 	installer := Installer{collection: types.NodeCollection{Log: &types.LogCollection{}}}
 	run := func() error { calls++; return errors.New("installation pending a host reboot") }
@@ -49,5 +49,24 @@ func TestV2InstallerCannotMutateWithoutItsAttemptRecord(t *testing.T) {
 	}
 	if runs != 0 || failures != 1 {
 		t.Fatal("host mutation ran without a persistent attempt record")
+	}
+}
+
+func TestV2AttemptStoreRejectsSymlinksBeforeHostWrites(t *testing.T) {
+	root := t.TempDir()
+	outside := t.TempDir()
+	if err := os.Symlink(outside, filepath.Join(root, "tool")); err != nil {
+		t.Fatal(err)
+	}
+	runs, failures := 0, 0
+	if err := runV2InstallAttempt(filepath.Join(root, "tool", "attempts"), "invocation", func() error { runs++; return nil }, func(error) { failures++ }); err != nil {
+		t.Fatal(err)
+	}
+	entries, err := os.ReadDir(outside)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if runs != 0 || failures != 1 || len(entries) != 0 {
+		t.Fatal("unidentified attempt directory allowed host writes or changed its symlink target")
 	}
 }

@@ -73,3 +73,5 @@ V2 remote runs use separate resource names and collect complete reports from the
 
 Remote V2 installation records its invocation under `/var/lib/longhorn-cli/preflight-attempts` before changing host prerequisites. A Kubernetes retry or replacement Pod reports an error instead of repeating that invocation's host writes. The small attempt marker remains for audit and replay protection; assess any partial installation or required reboot before explicitly starting a new command. Failed and reboot-pending attempts are transported as error reports and the remote command exits nonzero.
 
+Replay protection requires a private installer-owned directory on a verified ext, XFS, Btrfs or F2FS filesystem. Volatile and unverified stores are refused. Directory entries and the marker are synced before host changes start.
+

@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"syscall"
 
 	"github.com/longhorn/cli/pkg/consts"
 	"github.com/longhorn/cli/pkg/types"
@@ -34,6 +35,10 @@ func (local *Installer) RunForCollection() error {
 		return nil
 	}
 	directory := filepath.Join(consts.VolumeMountHostDirectory, "var/lib/longhorn-cli/preflight-attempts")
+	if err := qualifyV2AttemptFilesystem(directory); err != nil {
+		local.recordV2InstallFailure(err)
+		return nil
+	}
 	return runV2InstallAttempt(directory, local.AttemptID, local.Run, local.recordV2InstallFailure)
 }
 
@@ -54,15 +59,8 @@ func runV2InstallAttempt(directory, attemptID string, run func() error, recordFa
 }
 
 func claimV2InstallAttempt(directory, attemptID string) error {
-	if err := os.MkdirAll(directory, 0700); err != nil {
+	if err := prepareV2AttemptDirectory(directory); err != nil {
 		return err
-	}
-	info, err := os.Lstat(directory)
-	if err != nil {
-		return err
-	}
-	if !info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
-		return fmt.Errorf("V2 attempt directory is not an identified directory")
 	}
 	file, err := os.OpenFile(filepath.Join(directory, attemptID), os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
 	if errors.Is(err, os.ErrExist) {
@@ -74,9 +72,44 @@ func claimV2InstallAttempt(directory, attemptID string) error {
 	if err := errors.Join(file.Sync(), file.Close()); err != nil {
 		return err
 	}
+	return syncV2AttemptDirectory(directory)
+}
+
+func syncV2AttemptDirectory(directory string) error {
 	dir, err := os.Open(directory)
 	if err != nil {
 		return err
 	}
 	return errors.Join(dir.Sync(), dir.Close())
+}
+
+func prepareV2AttemptDirectory(directory string) error {
+	// The runtime path has two private levels below the existing /var/lib.
+	// Persist each child's entry in its parent, including when a concurrent
+	// invocation created it, before the host-changing callback can run.
+	root := filepath.Dir(filepath.Dir(directory))
+	info, err := os.Lstat(root)
+	if err != nil {
+		return err
+	}
+	if !info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
+		return fmt.Errorf("V2 attempt root is not an identified directory")
+	}
+	for _, path := range []string{filepath.Dir(directory), directory} {
+		if err := os.Mkdir(path, 0700); err != nil && !errors.Is(err, os.ErrExist) {
+			return err
+		}
+		info, err := os.Lstat(path)
+		if err != nil {
+			return err
+		}
+		stat, ok := info.Sys().(*syscall.Stat_t)
+		if !info.IsDir() || info.Mode()&os.ModeSymlink != 0 || info.Mode().Perm()&0077 != 0 || !ok || int(stat.Uid) != os.Geteuid() {
+			return fmt.Errorf("V2 attempt directory is not private and owned by this installer")
+		}
+		if err := errors.Join(syncV2AttemptDirectory(path), syncV2AttemptDirectory(filepath.Dir(path))); err != nil {
+			return err
+		}
+	}
+	return nil
 }
