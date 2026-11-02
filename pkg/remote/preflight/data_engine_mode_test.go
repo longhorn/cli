@@ -1,11 +1,12 @@
 package preflight
 
 import (
-	"github.com/longhorn/cli/pkg/consts"
 	"reflect"
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/longhorn/cli/pkg/consts"
 )
 
 func TestCheckerModeRequiresResolvedV2Prerequisites(t *testing.T) {

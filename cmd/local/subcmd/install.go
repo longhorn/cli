@@ -4,15 +4,15 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"github.com/pkg/errors"
-
 	"github.com/longhorn/cli/pkg/consts"
-	local "github.com/longhorn/cli/pkg/local/preflight"
 	"github.com/longhorn/cli/pkg/types"
 	"github.com/longhorn/cli/pkg/utils"
+
+	local "github.com/longhorn/cli/pkg/local/preflight"
 )
 
 func NewCmdInstall(globalOpts *types.GlobalCmdOptions) *cobra.Command {

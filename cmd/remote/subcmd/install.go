@@ -1,8 +1,9 @@
 package subcmd
 
 import (
-	stderrors "errors"
 	"fmt"
+
+	stderrors "errors"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"

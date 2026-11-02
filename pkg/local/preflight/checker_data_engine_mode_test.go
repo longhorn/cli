@@ -14,19 +14,19 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeclient "k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 
 	"github.com/longhorn/cli/pkg/consts"
+	"github.com/longhorn/cli/pkg/local/preflight/packagemanager/mocks"
 	"github.com/longhorn/cli/pkg/types"
 
 	pkgmgr "github.com/longhorn/cli/pkg/local/preflight/packagemanager"
-	"github.com/longhorn/cli/pkg/local/preflight/packagemanager/mocks"
 	remote "github.com/longhorn/cli/pkg/remote/preflight"
 )
 

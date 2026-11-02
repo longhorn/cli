@@ -8,9 +8,10 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/longhorn/cli/pkg/consts"
-	local "github.com/longhorn/cli/pkg/local/preflight"
 	"github.com/longhorn/cli/pkg/types"
 	"github.com/longhorn/cli/pkg/utils"
+
+	local "github.com/longhorn/cli/pkg/local/preflight"
 )
 
 func NewCmdCheck(globalOpts *types.GlobalCmdOptions) *cobra.Command {

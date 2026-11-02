@@ -8,8 +8,9 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/longhorn/cli/pkg/local/preflight/packagemanager/mocks"
-	remote "github.com/longhorn/cli/pkg/remote/preflight"
 	"github.com/longhorn/cli/pkg/types"
+
+	remote "github.com/longhorn/cli/pkg/remote/preflight"
 )
 
 func TestV2SPDKSetupClearsInheritedOptionsAndVerifiesActualAllocation(t *testing.T) {
