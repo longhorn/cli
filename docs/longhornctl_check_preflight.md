@@ -47,7 +47,7 @@ INFO[2024-07-16T17:17:42+08:00] Completed preflight checker
       --enable-spdk                Enable checking of SPDK required packages, modules, and setup.
   -h, --help                       help for preflight
       --huge-page-size int         Specify the huge page size in MiB for SPDK. (default 2048)
-      --image string               Image containing longhornctl-local (default "longhornio/longhorn-cli:")
+      --image string               Image containing longhornctl-local (default "longhornio/longhorn-cli:v1.14.0-dev")
       --image-pull-secret string   Secret with registry credentials for pulling images
       --image-registry string      Registry to apply to all images (CLI, engine, pause, BCI, etc.), replacing any registry already specified in those images.
       --kubeconfig string          Kubernetes config (kubeconfig) path

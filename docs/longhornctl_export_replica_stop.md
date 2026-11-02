@@ -22,7 +22,7 @@ INFO[2024-07-16T17:29:14+08:00] Successfully stopped exporting replica
 
 ```
   -h, --help                       help for stop
-      --image string               Image containing longhornctl-local (default "longhornio/longhorn-cli:")
+      --image string               Image containing longhornctl-local (default "longhornio/longhorn-cli:v1.14.0-dev")
       --image-pull-secret string   Secret with registry credentials for pulling images
       --image-registry string      Registry to apply to all images (CLI, engine, pause, BCI, etc.), replacing any registry already specified in those images.
       --kubeconfig string          Kubernetes config (kubeconfig) path

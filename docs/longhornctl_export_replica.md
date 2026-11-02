@@ -48,9 +48,9 @@ lost+found
 
 ```
       --data-dir string            Specify the Longhorn data directory. If not provided, the default will be attempted, or it will fall back to the directory of longhorn-disk.cfg. (default "/var/lib/longhorn")
-      --engine-image string        Engine image to use to create volume from the replica. (default "longhornio/longhorn-engine:")
+      --engine-image string        Engine image to use to create volume from the replica. (default "longhornio/longhorn-engine:v1.14.0-dev")
   -h, --help                       help for replica
-      --image string               Image containing longhornctl-local (default "longhornio/longhorn-cli:")
+      --image string               Image containing longhornctl-local (default "longhornio/longhorn-cli:v1.14.0-dev")
       --image-pull-secret string   Secret with registry credentials for pulling images
       --image-registry string      Registry to apply to all images (CLI, engine, pause, BCI, etc.), replacing any registry already specified in those images.
       --kubeconfig string          Kubernetes config (kubeconfig) path
