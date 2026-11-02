@@ -59,8 +59,8 @@ The default `--data-engine-mode=v1-capable` retains iSCSI requirements. An expli
 Use matching CLI binaries and a CLI image containing this capability. The remote command passes an explicit flag to the local executable so an older image fails instead of silently running V1 checks.
 
 ```bash
-longhornctl install preflight --data-engine-mode=v2-only --hugepage-size=2048 --allow-pci=none
-longhornctl check preflight --data-engine-mode=v2-only --hugepage-size=2048
+longhornctl install preflight --data-engine-mode=v2-only --huge-page-size=2048 --allow-pci=none
+longhornctl check preflight --data-engine-mode=v2-only --huge-page-size=2048
 ```
 
 Installation success is prerequisite setup, followed by a separate host qualification check. A required reboot remains unfinished installation; reboot and rerun installation before checking. Restart kubelet when necessary for its Node capacity to reflect the hugepage allocation. V2 check failures return a nonzero exit status after printing the complete report.
