@@ -42,6 +42,7 @@ These dependencies ensure your Kubernetes cluster meets the requirements for suc
 				utils.CheckErr(err)
 			}
 			localInstaller.LogLevel = globalOpts.LogLevel
+			localInstaller.AttemptID = os.Getenv(consts.EnvPreflightAttemptID)
 
 			if err := localInstaller.Init(); err != nil {
 				utils.CheckErr(errors.Wrap(err, "Failed to initialize preflight installer"))
@@ -50,6 +51,11 @@ These dependencies ensure your Kubernetes cluster meets the requirements for suc
 
 		Run: func(cmd *cobra.Command, args []string) {
 			if localInstaller.DataEngineMode == string(types.DataEngineModeV2Only) {
+				if os.Getenv(consts.EnvPreflightCollectionOnly) == "true" {
+					utils.CheckErr(localInstaller.RunForCollection())
+					utils.CheckErr(localInstaller.Output())
+					return
+				}
 				utils.CheckErr(runAndOutputV2Preflight(&localInstaller))
 				return
 			}

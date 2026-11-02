@@ -322,12 +322,18 @@ func validV2CheckerTemplate(template corev1.PodSpec, operation string) bool {
 	mode, collection, node := environment[consts.EnvDataEngineMode], environment[consts.EnvPreflightCollectionOnly], environment[consts.EnvCurrentNodeID]
 	collectionValue := "true"
 	if operation == consts.SubCmdInstall {
-		collectionValue = ""
+		attempt := environment[consts.EnvPreflightAttemptID]
+		if attempt.Value == "" || attempt.ValueFrom != nil {
+			return false
+		}
 	}
 	return mode.Value == string(types.DataEngineModeV2Only) && mode.ValueFrom == nil && collection.Value == collectionValue && collection.ValueFrom == nil && node.Value == "" && node.ValueFrom != nil && node.ValueFrom.FieldRef != nil && node.ValueFrom.FieldRef.FieldPath == "spec.nodeName"
 }
 
 func sameV2ContainerExecution(expected, actual corev1.Container, serviceAccountVolume string) bool {
+	if !reflect.DeepEqual(expected.RestartPolicy, actual.RestartPolicy) || !reflect.DeepEqual(expected.StartupProbe, actual.StartupProbe) || !reflect.DeepEqual(expected.LivenessProbe, actual.LivenessProbe) || !reflect.DeepEqual(expected.ReadinessProbe, actual.ReadinessProbe) {
+		return false
+	}
 	if expected.Name != actual.Name || expected.Image != actual.Image || expected.WorkingDir != actual.WorkingDir || expected.Stdin != actual.Stdin || expected.TTY != actual.TTY || len(actual.VolumeDevices) != 0 || !reflect.DeepEqual(expected.Command, actual.Command) || !reflect.DeepEqual(expected.Args, actual.Args) || !reflect.DeepEqual(expected.EnvFrom, actual.EnvFrom) || !reflect.DeepEqual(expected.SecurityContext, actual.SecurityContext) || !reflect.DeepEqual(expected.Lifecycle, actual.Lifecycle) || len(expected.Env) != len(actual.Env) {
 		return false
 	}
@@ -433,8 +439,15 @@ func readV2PodReport(client kubeclient.Interface) v2ReportLogReader {
 		if err != nil {
 			return nil, err
 		}
-		defer stream.Close()
-		return io.ReadAll(io.LimitReader(stream, limit))
+		data, readErr := io.ReadAll(io.LimitReader(stream, limit))
+		closeErr := stream.Close()
+		if readErr != nil {
+			return nil, readErr
+		}
+		if closeErr != nil {
+			return nil, closeErr
+		}
+		return data, nil
 	}
 }
 

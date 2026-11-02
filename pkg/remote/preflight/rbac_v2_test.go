@@ -9,7 +9,9 @@ import (
 	"sync"
 	"testing"
 
+	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8stypes "k8s.io/apimachinery/pkg/types"
 	kubeclient "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
@@ -85,8 +87,61 @@ func TestV2RBACNeverAdoptsOrDeletesUnownedObjects(t *testing.T) {
 				t.Fatalf("cleanup hid replacement conflict: %v", err)
 			}
 			if deletes != test.created {
-				t.Fatal(fmt.Sprintf("deleted objects without successful creation receipts: got=%d want=%d", deletes, test.created))
+				t.Fatalf("deleted objects without successful creation receipts: got=%d want=%d", deletes, test.created)
 			}
 		})
+	}
+}
+
+func TestV2CleanupStillRemovesOwnedRBACAfterDaemonSetFailure(t *testing.T) {
+	for _, installer := range []bool{false, true} {
+		for _, missingUID := range []bool{false, true} {
+			t.Run(fmt.Sprintf("installer=%v/missingUID=%v", installer, missingUID), func(t *testing.T) {
+				var mu sync.Mutex
+				deletes := map[string]int{}
+				server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					mu.Lock()
+					defer mu.Unlock()
+					w.Header().Set("Content-Type", "application/json")
+					parts := strings.Split(r.URL.Path, "/")
+					resource := parts[len(parts)-2]
+					deletes[resource]++
+					var options metav1.DeleteOptions
+					if r.Method != http.MethodDelete || json.NewDecoder(r.Body).Decode(&options) != nil || options.Preconditions == nil || options.Preconditions.UID == nil || *options.Preconditions.UID == "" {
+						t.Error("cleanup attempted an unidentified deletion")
+					}
+					if resource == "daemonsets" {
+						w.WriteHeader(http.StatusConflict)
+						_ = json.NewEncoder(w).Encode(&metav1.Status{Status: "Failure", Reason: metav1.StatusReasonConflict, Code: 409})
+						return
+					}
+					_ = json.NewEncoder(w).Encode(&metav1.Status{Status: "Success"})
+				}))
+				t.Cleanup(server.Close)
+				client, err := kubeclient.NewForConfig(&rest.Config{Host: server.URL, ContentConfig: rest.ContentConfig{ContentType: "application/json", AcceptContentTypes: "application/json"}})
+				if err != nil {
+					t.Fatal(err)
+				}
+				uid := k8stypes.UID("owned-ds")
+				if missingUID {
+					uid = ""
+				}
+				ds := &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: "owned", Namespace: "test", UID: uid}}
+				receipt := &v2RBACReceipt{Name: "owned", Namespace: "test", ServiceAccount: "sa-uid", ClusterRole: "role-uid", ClusterRoleBinding: "binding-uid"}
+				if installer {
+					checker := Installer{InstallerCmdOptions: InstallerCmdOptions{DataEngineMode: "v2-only"}, kubeClient: client, createdDaemonSet: ds, createdRBAC: receipt}
+					err = checker.Cleanup()
+				} else {
+					checker := Checker{CheckerCmdOptions: CheckerCmdOptions{DataEngineMode: "v2-only"}, kubeClient: client, createdDaemonSet: ds, createdRBAC: receipt}
+					err = checker.Cleanup()
+				}
+				if err == nil || deletes["serviceaccounts"] != 1 || deletes["clusterroles"] != 1 || deletes["clusterrolebindings"] != 1 {
+					t.Fatalf("DaemonSet failure leaked owned RBAC: deleted=%v err=%v", deletes, err)
+				}
+				if missingUID && deletes["daemonsets"] != 0 {
+					t.Fatal("deleted DaemonSet without UID")
+				}
+			})
+		}
 	}
 }

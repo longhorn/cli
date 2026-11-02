@@ -1,6 +1,7 @@
 package preflight
 
 import (
+	"github.com/longhorn/cli/pkg/consts"
 	"reflect"
 	"strconv"
 	"strings"
@@ -96,6 +97,17 @@ func TestRemoteInstallerBindsV2ExecutableBeforeAnyMutation(t *testing.T) {
 	}
 	if err := installer.InstallByContainerOptimizedOS(); err == nil {
 		t.Fatal("V2 installer reached unsupported COS mutations")
+	}
+}
+
+func TestRemoteV2InstallerBindsItsReportAndAttemptProfile(t *testing.T) {
+	installer := Installer{InstallerCmdOptions: InstallerCmdOptions{DataEngineMode: "v2-only", HugePageSize: 2048}, appName: consts.AppNamePreflightInstaller + "-fixture"}
+	if err := installer.ValidateDataEngineMode(); err != nil {
+		t.Fatal(err)
+	}
+	template := installer.newDaemonSetForPackageManager().Spec.Template.Spec
+	if !validV2CheckerTemplate(template, consts.SubCmdInstall) || validV2CheckerTemplate(template, consts.SubCmdCheck) {
+		t.Fatal("V2 installer transport lost its fixed executable, report, or attempt identity")
 	}
 }
 

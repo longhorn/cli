@@ -148,6 +148,12 @@ func TestV2CollectorBindsCompleteCurrentExecution(t *testing.T) {
 			f.ds.Status.UpdatedNumberScheduled = 2
 		}},
 		{name: "unbound-executable", before: func(f *v2CollectionFixture) { f.pods[0].Spec.InitContainers[0].Command = []string{"old-checker"} }},
+		{name: "restartable-installer", before: func(f *v2CollectionFixture) {
+			f.pods[0].Spec.InitContainers[0].RestartPolicy = ptr.To(corev1.ContainerRestartPolicyAlways)
+		}},
+		{name: "injected-liveness-probe", before: func(f *v2CollectionFixture) {
+			f.pods[0].Spec.InitContainers[0].LivenessProbe = &corev1.Probe{ProbeHandler: corev1.ProbeHandler{Exec: &corev1.ExecAction{Command: []string{"false"}}}}
+		}},
 		{name: "reporter-shadowed-output", before: func(f *v2CollectionFixture) {
 			f.pods[0].Spec.Volumes = append(f.pods[0].Spec.Volumes, corev1.Volume{Name: "stale", VolumeSource: corev1.VolumeSource{ConfigMap: &corev1.ConfigMapVolumeSource{LocalObjectReference: corev1.LocalObjectReference{Name: "stale"}}}})
 			f.pods[0].Spec.InitContainers[1].VolumeMounts = append(f.pods[0].Spec.InitContainers[1].VolumeMounts, corev1.VolumeMount{Name: "stale", MountPath: "/shared/output.json", SubPath: "report.json"})
@@ -249,6 +255,12 @@ func TestV2AdmissionCannotLowerRequestedChecksOrReplaceOutput(t *testing.T) {
 		t.Fatalf("native defaults were mistaken for an execution rewrite: %v", err)
 	}
 	for _, mutate := range []func(*appsv1.DaemonSet){
+		func(ds *appsv1.DaemonSet) {
+			ds.Spec.Template.Spec.InitContainers[0].RestartPolicy = ptr.To(corev1.ContainerRestartPolicyAlways)
+		},
+		func(ds *appsv1.DaemonSet) {
+			ds.Spec.Template.Spec.InitContainers[0].StartupProbe = &corev1.Probe{ProbeHandler: corev1.ProbeHandler{Exec: &corev1.ExecAction{Command: []string{"false"}}}}
+		},
 		func(ds *appsv1.DaemonSet) {
 			for index, variable := range ds.Spec.Template.Spec.InitContainers[0].Env {
 				if variable.Name == consts.EnvHugePageSize {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/json"
+	stderrors "errors"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -152,16 +153,18 @@ func (remote *Installer) Cleanup() error {
 	if remote.DataEngineMode == string(types.DataEngineModeV2Only) {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		defer cancel()
+		var daemonSetErr error
 		if remote.createdDaemonSet != nil {
 			uid := remote.createdDaemonSet.UID
 			if uid == "" {
-				return errors.New("refusing V2 installer cleanup without its created UID")
-			}
-			if err := remote.kubeClient.AppsV1().DaemonSets(remote.createdDaemonSet.Namespace).Delete(ctx, remote.createdDaemonSet.Name, metav1.DeleteOptions{Preconditions: &metav1.Preconditions{UID: &uid}}); err != nil && !apierrors.IsNotFound(err) {
-				return err
+				daemonSetErr = errors.New("refusing V2 installer cleanup without its created UID")
+			} else if err := remote.kubeClient.AppsV1().DaemonSets(remote.createdDaemonSet.Namespace).Delete(ctx, remote.createdDaemonSet.Name, metav1.DeleteOptions{Preconditions: &metav1.Preconditions{UID: &uid}}); err != nil && !apierrors.IsNotFound(err) {
+				daemonSetErr = err
 			}
 		}
-		return cleanupV2RBAC(ctx, remote.kubeClient, remote.createdRBAC)
+		rbacContext, rbacCancel := context.WithTimeout(context.Background(), time.Minute)
+		defer rbacCancel()
+		return stderrors.Join(daemonSetErr, cleanupV2RBAC(rbacContext, remote.kubeClient, remote.createdRBAC))
 	}
 
 	if err := commonkube.DeleteDaemonSet(remote.kubeClient, remote.Namespace, remote.appName); err != nil {
@@ -552,6 +555,8 @@ func (remote *Installer) newDaemonSetForPackageManager() *appsv1.DaemonSet {
 							Command: command,
 							Env: []corev1.EnvVar{
 								{Name: consts.EnvDataEngineMode, Value: remote.DataEngineMode},
+								{Name: consts.EnvPreflightCollectionOnly, Value: commonutils.ConvertTypeToString(remote.DataEngineMode == string(types.DataEngineModeV2Only))},
+								{Name: consts.EnvPreflightAttemptID, Value: remote.appName},
 								{
 									Name:  consts.EnvLogLevel,
 									Value: remote.LogLevel,

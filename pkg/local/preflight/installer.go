@@ -39,6 +39,7 @@ type Installer struct {
 	logger *logrus.Entry
 
 	OutputFilePath string
+	AttemptID      string
 
 	kubeClient *kubeclient.Clientset
 
