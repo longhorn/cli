@@ -1,6 +1,7 @@
 package subcmd
 
 import (
+	stderrors "errors"
 	"fmt"
 
 	"github.com/pkg/errors"
@@ -64,6 +65,9 @@ If a reboot is required, the following message will be displayed:
   - Need to reboot the system and execute longhornctl install preflight again`,
 
 		PreRun: func(cmd *cobra.Command, args []string) {
+			if err := preflightInstaller.ValidateDataEngineMode(); err != nil {
+				utils.CheckErr(err)
+			}
 			preflightInstaller.Image = globalOpts.Image
 			preflightInstaller.ImageRegistry = globalOpts.ImageRegistry
 			preflightInstaller.ImagePullSecret = globalOpts.ImagePullSecret
@@ -79,14 +83,24 @@ If a reboot is required, the following message will be displayed:
 			}
 
 			logrus.Info("Cleaning up preflight installer")
-			if err := preflightInstaller.Cleanup(); err != nil {
-				utils.CheckErr(errors.Wrapf(err, "Failed to cleanup preflight installer"))
+			if preflightInstaller.DataEngineMode != string(types.DataEngineModeV2Only) {
+				if err := preflightInstaller.Cleanup(); err != nil {
+					utils.CheckErr(errors.Wrapf(err, "Failed to cleanup preflight installer"))
+				}
 			}
 		},
 
 		Run: func(cmd *cobra.Command, args []string) {
 			logrus.Info("Running preflight installer")
 			output, err := preflightInstaller.Run()
+			if preflightInstaller.DataEngineMode == string(types.DataEngineModeV2Only) {
+				if output != "" {
+					logrus.Infof("Retrieved preflight installer result:\n%v", output)
+				}
+				utils.CheckErr(stderrors.Join(err, preflightInstaller.Cleanup()))
+				logrus.Info("Completed V2 prerequisite setup; run check preflight --data-engine-mode=v2-only to qualify every host")
+				return
+			}
 			if err != nil {
 				utils.CheckErr(errors.Wrap(err, "Failed to run preflight installer"))
 			}
@@ -95,6 +109,9 @@ If a reboot is required, the following message will be displayed:
 		},
 
 		PostRun: func(cmd *cobra.Command, args []string) {
+			if preflightInstaller.DataEngineMode == string(types.DataEngineModeV2Only) {
+				return
+			}
 			logrus.Info("Cleaning up preflight installer")
 			if preflightInstaller.OperatingSystem != string(consts.OperatingSystemContainerOptimizedOS) {
 				if err := preflightInstaller.Cleanup(); err != nil {
@@ -110,6 +127,7 @@ If a reboot is required, the following message will be displayed:
 
 	utils.SetGlobalOptionsRemote(cmd, globalOpts)
 
+	cmd.Flags().StringVar(&preflightInstaller.DataEngineMode, consts.CmdOptDataEngineMode, string(types.DataEngineModeV1Capable), "Installation capability: v1-capable or v2-only. V2-only omits iSCSI and requires SPDK setup.")
 	cmd.Flags().StringVar(&preflightInstaller.OperatingSystem, consts.CmdOptOperatingSystem, "", "Specify the operating system (\"\", cos). Leave this empty to use the package manager for installation.")
 	cmd.Flags().BoolVar(&preflightInstaller.UpdatePackages, consts.CmdOptUpdatePackages, true, "Update packages before installing required dependencies.")
 	cmd.Flags().BoolVar(&preflightInstaller.EnableSpdk, consts.CmdOptEnableSpdk, false, "Enable installation of SPDK required packages, modules, and setup.")

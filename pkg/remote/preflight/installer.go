@@ -1,9 +1,12 @@
 package preflight
 
 import (
+	"context"
+	"crypto/rand"
 	"encoding/json"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -15,6 +18,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeclient "k8s.io/client-go/kubernetes"
 
@@ -34,13 +38,16 @@ type Installer struct {
 
 	kubeClient *kubeclient.Clientset
 
-	appName string // App name of the DaemonSet.
+	appName          string // App name of the DaemonSet.
+	createdDaemonSet *appsv1.DaemonSet
+	createdRBAC      *v2RBACReceipt
 }
 
 // InstallerCmdOptions holds the options for the command.
 type InstallerCmdOptions struct {
 	types.GlobalCmdOptions
 
+	DataEngineMode  string
 	OperatingSystem string
 
 	UpdatePackages       bool
@@ -55,6 +62,13 @@ type InstallerCmdOptions struct {
 
 // Init initializes the Installer.
 func (remote *Installer) Init() error {
+	// Cleanup-only commands do not require host setup options. Validate the
+	// capability here and validate the complete installation profile in Run.
+	mode, err := types.ParseDataEngineMode(remote.DataEngineMode)
+	if err != nil {
+		return err
+	}
+	remote.DataEngineMode = string(mode)
 	kubeClient, err := kubeutils.NewKubeClient("", remote.KubeConfigPath)
 	if err != nil {
 		return err
@@ -68,6 +82,9 @@ func (remote *Installer) Init() error {
 	default:
 		remote.appName = consts.AppNamePreflightInstaller
 	}
+	if mode == types.DataEngineModeV2Only {
+		remote.appName += "-" + strings.ToLower(rand.Text())
+	}
 
 	return nil
 }
@@ -76,6 +93,9 @@ func (remote *Installer) Init() error {
 // It checks if the operating system is specified, and installs the dependencies accordingly.
 // If the operating system is not specified, it installs the dependencies with package manager.
 func (remote *Installer) Run() (string, error) {
+	if err := remote.ValidateDataEngineMode(); err != nil {
+		return "", err
+	}
 	operatingSystem := consts.OperatingSystem(remote.OperatingSystem)
 	switch operatingSystem {
 	case consts.OperatingSystemContainerOptimizedOS:
@@ -99,7 +119,14 @@ func (remote *Installer) Run() (string, error) {
 				Verbs:     []string{"get"},
 			},
 		}
-		err := kubeutils.CreateRbac(remote.kubeClient, remote.Namespace, remote.appName, rbacRules)
+		var err error
+		if remote.DataEngineMode == string(types.DataEngineModeV2Only) {
+			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+			defer cancel()
+			remote.createdRBAC, err = createV2RBAC(ctx, remote.kubeClient, remote.Namespace, remote.appName, rbacRules)
+		} else {
+			err = kubeutils.CreateRbac(remote.kubeClient, remote.Namespace, remote.appName, rbacRules)
+		}
 		if err != nil {
 			return "", err
 		}
@@ -111,7 +138,7 @@ func (remote *Installer) Run() (string, error) {
 		}
 		output, err := remote.InstallByPackageManager()
 		if err != nil {
-			return "", errors.Wrapf(err, "failed to install dependencies with package manager")
+			return output, errors.Wrapf(err, "failed to install dependencies with package manager")
 		}
 
 		logrus.Info("Installed dependencies with package manager")
@@ -122,6 +149,20 @@ func (remote *Installer) Run() (string, error) {
 // Cleanup deletes the DaemonSet created for the preflight install when it's installed with package manager.
 func (remote *Installer) Cleanup() error {
 	var resultErr error
+	if remote.DataEngineMode == string(types.DataEngineModeV2Only) {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		defer cancel()
+		if remote.createdDaemonSet != nil {
+			uid := remote.createdDaemonSet.UID
+			if uid == "" {
+				return errors.New("refusing V2 installer cleanup without its created UID")
+			}
+			if err := remote.kubeClient.AppsV1().DaemonSets(remote.createdDaemonSet.Namespace).Delete(ctx, remote.createdDaemonSet.Name, metav1.DeleteOptions{Preconditions: &metav1.Preconditions{UID: &uid}}); err != nil && !apierrors.IsNotFound(err) {
+				return err
+			}
+		}
+		return cleanupV2RBAC(ctx, remote.kubeClient, remote.createdRBAC)
+	}
 
 	if err := commonkube.DeleteDaemonSet(remote.kubeClient, remote.Namespace, remote.appName); err != nil {
 		resultErr = errors.Wrap(err, "failed to delete DaemonSet")
@@ -141,6 +182,12 @@ func (remote *Installer) Cleanup() error {
 // InstallByContainerOptimizedOS installs the dependencies on Container Optimized OS.
 // It creates a ConfigMap and a DaemonSet. Then it waits for the DaemonSet to be ready.
 func (remote *Installer) InstallByContainerOptimizedOS() error {
+	if err := remote.ValidateDataEngineMode(); err != nil {
+		return err
+	}
+	if remote.DataEngineMode == string(types.DataEngineModeV2Only) {
+		return errors.New("V2-only installation is not qualified for Container-Optimized OS")
+	}
 	newConfigMap := remote.newConfigMapForContainerOptimizedOS()
 	_, err := commonkube.CreateConfigMap(remote.kubeClient, newConfigMap)
 	if err != nil {
@@ -172,13 +219,29 @@ func (remote *Installer) InstallByContainerOptimizedOS() error {
 //	- Successfully probed module dm_crypt
 //	- Successfully started service iscsid
 func (remote *Installer) InstallByPackageManager() (string, error) {
+	if err := remote.ValidateDataEngineMode(); err != nil {
+		return "", err
+	}
 	newDaemonSet, err := kubeutils.PrepareDaemonSet(remote.newDaemonSetForPackageManager(), remote.kubeClient, remote.NodeSelector, remote.ImagePullSecret, remote.Tolerations)
 	if err != nil {
 		return "", err
 	}
-	daemonSet, err := commonkube.CreateDaemonSet(remote.kubeClient, newDaemonSet)
+	var daemonSet *appsv1.DaemonSet
+	if remote.DataEngineMode == string(types.DataEngineModeV2Only) {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		defer cancel()
+		daemonSet, err = remote.kubeClient.AppsV1().DaemonSets(remote.Namespace).Create(ctx, newDaemonSet, metav1.CreateOptions{})
+	} else {
+		daemonSet, err = commonkube.CreateDaemonSet(remote.kubeClient, newDaemonSet)
+	}
 	if err != nil {
 		return "", err
+	}
+	remote.createdDaemonSet = daemonSet.DeepCopy()
+	if remote.DataEngineMode == string(types.DataEngineModeV2Only) {
+		if err := validateV2CreatedDaemonSet(newDaemonSet, daemonSet, consts.SubCmdInstall); err != nil {
+			return "", err
+		}
 	}
 
 	err = kubeutils.MonitorDaemonSetContainer(remote.kubeClient, daemonSet, consts.ContainerNameInit, kubeutils.WaitForDaemonSetContainersExit, ptr.To(consts.ContainerConditionMaxTolerationLong))
@@ -191,6 +254,9 @@ func (remote *Installer) InstallByPackageManager() (string, error) {
 		return "", err
 	}
 
+	if remote.DataEngineMode == string(types.DataEngineModeV2Only) {
+		return collectV2OperationReports(context.Background(), remote.kubeClient, daemonSet, readV2PodReport(remote.kubeClient), consts.SubCmdInstall)
+	}
 	podCollections, err := kubeutils.GetDaemonSetPodCollections(remote.kubeClient, daemonSet, consts.ContainerNameOutput, false, false, nil)
 	if err != nil {
 		return "", err
@@ -448,6 +514,10 @@ func (remote *Installer) newDaemonSetForContainerOptimizedOS() *appsv1.DaemonSet
 
 // newDaemonSetForPackageManager prepares a DaemonSet for installing dependencies with the package manager.
 func (remote *Installer) newDaemonSetForPackageManager() *appsv1.DaemonSet {
+	command := []string{consts.CmdLonghornctlLocal, consts.SubCmdInstall, consts.SubCmdPreflight}
+	if remote.DataEngineMode == string(types.DataEngineModeV2Only) {
+		command = append(command, "--"+consts.CmdOptDataEngineMode, remote.DataEngineMode)
+	}
 	outputFilePath := filepath.Join(consts.VolumeMountSharedDirectory, consts.FileNameOutputJSON)
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -479,8 +549,9 @@ func (remote *Installer) newDaemonSetForPackageManager() *appsv1.DaemonSet {
 						{
 							Name:    consts.ContainerNameInit,
 							Image:   utils.BuildImageName(remote.Image, remote.ImageRegistry),
-							Command: []string{consts.CmdLonghornctlLocal, consts.SubCmdInstall, consts.SubCmdPreflight},
+							Command: command,
 							Env: []corev1.EnvVar{
+								{Name: consts.EnvDataEngineMode, Value: remote.DataEngineMode},
 								{
 									Name:  consts.EnvLogLevel,
 									Value: remote.LogLevel,

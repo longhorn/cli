@@ -38,6 +38,9 @@ func newCmdInstallPreflight(globalOpts *types.GlobalCmdOptions) *cobra.Command {
 These dependencies ensure your Kubernetes cluster meets the requirements for successful Longhorn operation.`,
 
 		PreRun: func(cmd *cobra.Command, args []string) {
+			if err := validateLocalDataEngineEnvironment(cmd, localInstaller.DataEngineMode); err != nil {
+				utils.CheckErr(err)
+			}
 			localInstaller.LogLevel = globalOpts.LogLevel
 
 			if err := localInstaller.Init(); err != nil {
@@ -46,6 +49,10 @@ These dependencies ensure your Kubernetes cluster meets the requirements for suc
 		},
 
 		Run: func(cmd *cobra.Command, args []string) {
+			if localInstaller.DataEngineMode == string(types.DataEngineModeV2Only) {
+				utils.CheckErr(runAndOutputV2Preflight(&localInstaller))
+				return
+			}
 			if err := localInstaller.Run(); err != nil {
 				utils.CheckErr(errors.Wrap(err, "Failed to run preflight installer"))
 			}
@@ -54,6 +61,9 @@ These dependencies ensure your Kubernetes cluster meets the requirements for suc
 		},
 
 		PostRun: func(cmd *cobra.Command, args []string) {
+			if localInstaller.DataEngineMode == string(types.DataEngineModeV2Only) {
+				return
+			}
 			if err := localInstaller.Output(); err != nil {
 				utils.CheckErr(errors.Wrap(err, "Failed to output preflight checker collection"))
 			}
@@ -64,6 +74,7 @@ These dependencies ensure your Kubernetes cluster meets the requirements for suc
 
 	utils.SetGlobalOptionsLocal(cmd, globalOpts)
 
+	bindLocalDataEngineMode(cmd, &localInstaller.DataEngineMode)
 	cmd.Flags().StringVarP(&localInstaller.OutputFilePath, consts.CmdOptOutputFile, "o", os.Getenv(consts.EnvOutputFilePath), "Output the result to a file, default to stdout.")
 	cmd.Flags().BoolVar(&localInstaller.UpdatePackages, consts.CmdOptUpdatePackages, utils.ConvertStringToTypeOrDefault(os.Getenv(consts.EnvUpdatePackageList), true), "Update packages before installing required dependencies.")
 	cmd.Flags().BoolVar(&localInstaller.EnableSpdk, consts.CmdOptEnableSpdk, utils.ConvertStringToTypeOrDefault(os.Getenv(consts.EnvEnableSpdk), false), "Enable installation of SPDK required packages, modules, and setup.")

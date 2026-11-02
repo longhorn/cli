@@ -70,6 +70,9 @@ func requiredPackages(required bool, names ...string) []Package {
 
 // Init initializes the Installer.
 func (local *Installer) Init() error {
+	if err := local.ValidateDataEngineMode(); err != nil {
+		return err
+	}
 	local.collection.Log = &types.LogCollection{}
 
 	config, err := commonkube.GetInClusterConfig()
@@ -87,6 +90,11 @@ func (local *Installer) Init() error {
 		return errors.Wrap(err, "failed to get OS release")
 	}
 	local.osRelease = osRelease
+	if local.DataEngineMode == string(types.DataEngineModeV2Only) {
+		if err := validateV2HostOS(osRelease); err != nil {
+			return err
+		}
+	}
 	local.logger = logrus.WithField("os", local.osRelease)
 
 	packageManagerType, err := utils.GetPackageManagerType(osRelease)
@@ -115,10 +123,13 @@ func (local *Installer) Init() error {
 	if err != nil {
 		return err
 	}
+	local.packageManager = pkgMgr
+	return local.configureDependencies(packageManagerType, kernelRelease)
+}
 
+func (local *Installer) configureDependencies(packageManagerType pkgmgr.PackageManagerType, kernelRelease string) error {
 	switch packageManagerType {
 	case pkgmgr.PackageManagerApt:
-		local.packageManager = pkgMgr
 		local.packages = requiredPackages(true, "nfs-common", "open-iscsi", "cryptsetup")
 		local.modules = requiredPackages(true, "nfs", "dm_crypt")
 		local.services = requiredPackages(true, "iscsid")
@@ -126,43 +137,60 @@ func (local *Installer) Init() error {
 		// The installation is kept for older ubuntu versions to ensure the module is present, and it won't cause issue on newer versions as the package manager will skip installation if the package is not found.
 		local.spdkDepPackages = requiredPackages(false, "linux-modules-extra-"+kernelRelease)
 		local.spdkDepModules = requiredPackages(true, "nvme_tcp", "uio_pci_generic", "vfio_pci")
-		return nil
 
 	case pkgmgr.PackageManagerYum:
-		local.packageManager = pkgMgr
 		local.packages = requiredPackages(true, "nfs-utils", "iscsi-initiator-utils", "cryptsetup")
 		local.modules = requiredPackages(true, "nfs", "iscsi_tcp", "dm_crypt")
 		local.services = requiredPackages(true, "iscsid")
 		local.spdkDepPackages = requiredPackages(true)
 		local.spdkDepModules = requiredPackages(true, "nvme_tcp", "uio_pci_generic", "vfio_pci")
-		return nil
 
 	case pkgmgr.PackageManagerZypper, pkgmgr.PackageManagerTransactionalUpdate, pkgmgr.PackageManagerBinary:
-		local.packageManager = pkgMgr
 		local.packages = requiredPackages(true, "nfs-client", "open-iscsi", "cryptsetup")
 		local.modules = requiredPackages(true, "nfs", "iscsi_tcp", "dm_crypt")
 		local.services = requiredPackages(true, "iscsid")
 		local.spdkDepPackages = requiredPackages(true)
 		local.spdkDepModules = requiredPackages(true, "nvme_tcp", "uio_pci_generic", "vfio_pci")
-		return nil
 
 	case pkgmgr.PackageManagerPacman:
-		local.packageManager = pkgMgr
 		local.packages = requiredPackages(true, "nfs-utils", "open-iscsi", "cryptsetup")
 		local.modules = requiredPackages(true, "nfs", "iscsi_tcp", "dm_crypt")
 		local.services = requiredPackages(true, "iscsid")
 		local.spdkDepPackages = requiredPackages(true)
 		local.spdkDepModules = requiredPackages(true, "nvme_tcp", "uio_pci_generic", "vfio_pci")
-		return nil
 
 	default:
-		return errors.Errorf("Operating system (%v) package manager (%s) is not supported", osRelease, packageManagerType)
+		return errors.Errorf("Operating system (%v) package manager (%s) is not supported", local.osRelease, packageManagerType)
 	}
+	if local.DataEngineMode == string(types.DataEngineModeV2Only) {
+		local.packages = withoutISCSIPackages(local.packages)
+		local.modules = withoutISCSIPackages(local.modules)
+		local.services = withoutISCSIPackages(local.services)
+	}
+	return nil
 }
 
 func (local *Installer) Run() error {
+	if err := local.ValidateDataEngineMode(); err != nil {
+		return err
+	}
+	mode, err := types.ParseDataEngineMode(local.DataEngineMode)
+	if err != nil {
+		return err
+	}
+	if mode == types.DataEngineModeV2Only {
+		if err := validateV2HostOS(local.osRelease); err != nil {
+			return err
+		}
+		if local.packageManager == nil || local.collection.Log == nil || local.kubeClient == nil {
+			return errors.New("V2-only installation requires an initialized qualified package-manager host")
+		}
+		if err := local.qualifyV2SPDKHost(); err != nil {
+			return err
+		}
+		local.collection.DataEngineMode = string(mode)
+	}
 	var rebootRequired bool
-	var err error
 
 	if local.UpdatePackages {
 		if err := local.updatePackageList(); err != nil {
@@ -170,7 +198,7 @@ func (local *Installer) Run() error {
 		}
 	}
 
-	rebootRequired, err = local.checkAndinstallPackages(local.EnableSpdk)
+	rebootRequired, err = local.checkAndinstallPackages(mode.NeedsSPDK(local.EnableSpdk))
 	if err != nil {
 		return err
 	}
@@ -178,6 +206,9 @@ func (local *Installer) Run() error {
 	if rebootRequired {
 		logrus.Warn("Need to reboot the system and execute longhornctl install preflight again")
 		local.collection.Log.Warn = append(local.collection.Log.Warn, "Need to reboot the system and execute longhornctl install preflight again")
+		if mode == types.DataEngineModeV2Only {
+			return errors.New("V2-only installation is pending a host reboot; rerun installation and qualification afterward")
+		}
 		return nil
 	}
 
@@ -189,7 +220,7 @@ func (local *Installer) Run() error {
 		return err
 	}
 
-	if local.EnableSpdk {
+	if mode.NeedsSPDK(local.EnableSpdk) {
 		// Load ublk_drv module if supported by the kernel
 		if _, err := local.packageManager.Modprobe("ublk_drv", "--dry-run"); err != nil {
 			local.collection.Log.Warn = append(local.collection.Log.Warn,
@@ -328,6 +359,9 @@ func (local *Installer) updatePackageList() error {
 
 // configureSPDKEnv configures SPDK environment.
 func (local *Installer) configureSPDKEnv() error {
+	if local.DataEngineMode == string(types.DataEngineModeV2Only) {
+		return local.configureV2SPDKEnv()
+	}
 	// Blindly remove the SPDK source code directory if it exists.
 	spdkPath := filepath.Join(consts.VolumeMountHostDirectory, consts.SpdkPath)
 	if err := os.RemoveAll(spdkPath); err != nil {
@@ -352,6 +386,16 @@ func (local *Installer) configureSPDKEnv() error {
 	}
 
 	return nil
+}
+
+func withoutISCSIPackages(dependencies []Package) []Package {
+	filtered := make([]Package, 0, len(dependencies))
+	for _, dependency := range dependencies {
+		if dependency.Name != "open-iscsi" && dependency.Name != "iscsi-initiator-utils" && dependency.Name != "iscsi_tcp" && dependency.Name != "iscsid" {
+			filtered = append(filtered, dependency)
+		}
+	}
+	return filtered
 }
 
 // getEnvsForConfiguringSPDKEnv parses the comma-separated --spdk-options string

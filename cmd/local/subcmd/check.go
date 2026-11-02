@@ -35,7 +35,11 @@ func newCmdCheckPreflight(globalOpts *types.GlobalCmdOptions) *cobra.Command {
 		Long:  `This command verifies your Kubernetes cluster environment to ensure it meets Longhorn's requirements. It performs a series of checks that can help identify potential issues that may prevent Longhorn from functioning correctly.`,
 
 		PreRun: func(cmd *cobra.Command, args []string) {
+			if err := validateLocalDataEngineEnvironment(cmd, localChecker.DataEngineMode); err != nil {
+				utils.CheckErr(err)
+			}
 			localChecker.LogLevel = globalOpts.LogLevel
+			localChecker.CollectionOnly = os.Getenv(consts.EnvPreflightCollectionOnly) == "true"
 
 			if err := localChecker.Init(); err != nil {
 				utils.CheckErr(errors.Wrap(err, "Failed to initialize preflight checker"))
@@ -43,6 +47,10 @@ func newCmdCheckPreflight(globalOpts *types.GlobalCmdOptions) *cobra.Command {
 		},
 
 		Run: func(cmd *cobra.Command, args []string) {
+			if localChecker.DataEngineMode == string(types.DataEngineModeV2Only) {
+				utils.CheckErr(runAndOutputV2Preflight(&localChecker))
+				return
+			}
 			if err := localChecker.Run(); err != nil {
 				utils.CheckErr(errors.Wrap(err, "Failed to run preflight checker"))
 			}
@@ -51,6 +59,9 @@ func newCmdCheckPreflight(globalOpts *types.GlobalCmdOptions) *cobra.Command {
 		},
 
 		PostRun: func(cmd *cobra.Command, args []string) {
+			if localChecker.DataEngineMode == string(types.DataEngineModeV2Only) {
+				return
+			}
 			if err := localChecker.Output(); err != nil {
 				utils.CheckErr(errors.Wrap(err, "Failed to output preflight checker collection"))
 			}
@@ -61,6 +72,7 @@ func newCmdCheckPreflight(globalOpts *types.GlobalCmdOptions) *cobra.Command {
 
 	utils.SetGlobalOptionsLocal(cmd, globalOpts)
 
+	bindLocalDataEngineMode(cmd, &localChecker.DataEngineMode)
 	cmd.Flags().StringVarP(&localChecker.OutputFilePath, consts.CmdOptOutputFile, "o", os.Getenv(consts.EnvOutputFilePath), "Output the result to a file, default to stdout.")
 	cmd.Flags().BoolVar(&localChecker.EnableSpdk, consts.CmdOptEnableSpdk, utils.ConvertStringToTypeOrDefault(os.Getenv(consts.EnvEnableSpdk), false), "Enable checking of SPDK required packages, modules, and setup.")
 	cmd.Flags().IntVar(&localChecker.HugePageSize, consts.CmdOptHugePageSize, utils.ConvertStringToTypeOrDefault(os.Getenv(consts.EnvHugePageSize), 2048), "Specify the huge page size in MiB for SPDK.")

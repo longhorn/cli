@@ -1,9 +1,13 @@
 package preflight
 
 import (
+	"context"
+	"crypto/rand"
 	"encoding/json"
 	"path/filepath"
 	"reflect"
+	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 
@@ -13,6 +17,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeclient "k8s.io/client-go/kubernetes"
 
@@ -32,13 +37,16 @@ type Checker struct {
 
 	kubeClient *kubeclient.Clientset
 
-	appName string // App name of the DaemonSet.
+	appName          string // App name of the DaemonSet.
+	createdDaemonSet *appsv1.DaemonSet
+	createdRBAC      *v2RBACReceipt
 }
 
 // CheckerCmdOptions holds the options for the command.
 type CheckerCmdOptions struct {
 	types.GlobalCmdOptions
 
+	DataEngineMode  string
 	EnableSpdk      bool
 	HugePageSize    int
 	UserspaceDriver string
@@ -46,6 +54,9 @@ type CheckerCmdOptions struct {
 
 // Init initializes the Checker.
 func (remote *Checker) Init() error {
+	if err := remote.ValidateDataEngineMode(); err != nil {
+		return err
+	}
 	kubeClient, err := kubeutils.NewKubeClient("", remote.KubeConfigPath)
 	if err != nil {
 		return err
@@ -54,11 +65,18 @@ func (remote *Checker) Init() error {
 	remote.kubeClient = kubeClient
 
 	remote.appName = consts.AppNamePreflightChecker
+	if remote.DataEngineMode == string(types.DataEngineModeV2Only) {
+		// A V2 run never reuses or pre-cleans another run's checker or reports.
+		remote.appName += "-" + strings.ToLower(rand.Text())
+	}
 	return nil
 }
 
 // Run creates the DaemonSet for the preflight check, and waits for it to complete.
 func (remote *Checker) Run() (string, error) {
+	if err := remote.ValidateDataEngineMode(); err != nil {
+		return "", err
+	}
 	// Create RBAC to check:
 	// - the node agent existence when the cluster is running on Container-Optimized OS (COS)
 	// - replica count of the DNS deployment
@@ -75,7 +93,14 @@ func (remote *Checker) Run() (string, error) {
 			Verbs:     []string{"get"},
 		},
 	}
-	err := kubeutils.CreateRbac(remote.kubeClient, remote.Namespace, remote.appName, rbacRules)
+	var err error
+	if remote.DataEngineMode == string(types.DataEngineModeV2Only) {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		defer cancel()
+		remote.createdRBAC, err = createV2RBAC(ctx, remote.kubeClient, remote.Namespace, remote.appName, rbacRules)
+	} else {
+		err = kubeutils.CreateRbac(remote.kubeClient, remote.Namespace, remote.appName, rbacRules)
+	}
 	if err != nil {
 		return "", err
 	}
@@ -84,9 +109,22 @@ func (remote *Checker) Run() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	daemonSet, err := commonkube.CreateDaemonSet(remote.kubeClient, newDaemonSet)
+	var daemonSet *appsv1.DaemonSet
+	if remote.DataEngineMode == string(types.DataEngineModeV2Only) {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		defer cancel()
+		daemonSet, err = remote.kubeClient.AppsV1().DaemonSets(remote.Namespace).Create(ctx, newDaemonSet, metav1.CreateOptions{})
+	} else {
+		daemonSet, err = commonkube.CreateDaemonSet(remote.kubeClient, newDaemonSet)
+	}
 	if err != nil {
 		return "", err
+	}
+	remote.createdDaemonSet = daemonSet.DeepCopy()
+	if remote.DataEngineMode == string(types.DataEngineModeV2Only) {
+		if err := validateV2CreatedDaemonSet(newDaemonSet, daemonSet, consts.SubCmdCheck); err != nil {
+			return "", err
+		}
 	}
 
 	err = kubeutils.MonitorDaemonSetContainer(remote.kubeClient, daemonSet, consts.ContainerNameInit, kubeutils.WaitForDaemonSetContainersExit, ptr.To(consts.ContainerConditionMaxTolerationMedium))
@@ -97,6 +135,9 @@ func (remote *Checker) Run() (string, error) {
 	err = kubeutils.MonitorDaemonSetContainer(remote.kubeClient, daemonSet, consts.ContainerNameOutput, kubeutils.WaitForDaemonSetContainersExit, ptr.To(consts.ContainerConditionMaxTolerationShort))
 	if err != nil {
 		return "", err
+	}
+	if remote.DataEngineMode == string(types.DataEngineModeV2Only) {
+		return collectV2Reports(context.Background(), remote.kubeClient, daemonSet, readV2PodReport(remote.kubeClient))
 	}
 
 	podCollections, err := kubeutils.GetDaemonSetPodCollections(remote.kubeClient, daemonSet, consts.ContainerNameOutput, false, false, nil)
@@ -133,6 +174,20 @@ func (remote *Checker) Run() (string, error) {
 // Cleanup deletes the DaemonSet created for the preflight check.
 func (remote *Checker) Cleanup() error {
 	var resultErr error
+	if remote.DataEngineMode == string(types.DataEngineModeV2Only) {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		defer cancel()
+		if remote.createdDaemonSet != nil {
+			uid := remote.createdDaemonSet.UID
+			if uid == "" {
+				return errors.New("refusing V2 checker cleanup without its created UID")
+			}
+			if err := remote.kubeClient.AppsV1().DaemonSets(remote.createdDaemonSet.Namespace).Delete(ctx, remote.createdDaemonSet.Name, metav1.DeleteOptions{Preconditions: &metav1.Preconditions{UID: &uid}}); err != nil && !apierrors.IsNotFound(err) {
+				return err
+			}
+		}
+		return cleanupV2RBAC(ctx, remote.kubeClient, remote.createdRBAC)
+	}
 
 	if err := commonkube.DeleteDaemonSet(remote.kubeClient, remote.Namespace, remote.appName); err != nil {
 		resultErr = errors.Wrap(err, "failed to delete DaemonSet")
@@ -152,6 +207,12 @@ func (remote *Checker) Cleanup() error {
 // newDaemonSet prepares a DaemonSet for the preflight check.
 func (remote *Checker) newDaemonSet() *appsv1.DaemonSet {
 	outputFilePath := filepath.Join(consts.VolumeMountSharedDirectory, consts.FileNameOutputJSON)
+	command := []string{consts.CmdLonghornctlLocal, consts.SubCmdCheck, consts.SubCmdPreflight}
+	if remote.DataEngineMode == string(types.DataEngineModeV2Only) {
+		// Older local images must reject the explicit flag, rather than
+		// silently ignore an environment variable and report V1 checks.
+		command = append(command, "--"+consts.CmdOptDataEngineMode, remote.DataEngineMode)
+	}
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      remote.appName,
@@ -179,7 +240,7 @@ func (remote *Checker) newDaemonSet() *appsv1.DaemonSet {
 						{
 							Name:    consts.ContainerNameInit,
 							Image:   utils.BuildImageName(remote.Image, remote.ImageRegistry),
-							Command: []string{consts.CmdLonghornctlLocal, consts.SubCmdCheck, consts.SubCmdPreflight},
+							Command: command,
 							Env: []corev1.EnvVar{
 								{
 									Name:  consts.EnvLogLevel,
@@ -188,6 +249,14 @@ func (remote *Checker) newDaemonSet() *appsv1.DaemonSet {
 								{
 									Name:  consts.EnvOutputFilePath,
 									Value: outputFilePath,
+								},
+								{
+									Name:  consts.EnvDataEngineMode,
+									Value: remote.DataEngineMode,
+								},
+								{
+									Name:  consts.EnvPreflightCollectionOnly,
+									Value: commonutils.ConvertTypeToString(remote.DataEngineMode == string(types.DataEngineModeV2Only)),
 								},
 								{
 									Name:  consts.EnvEnableSpdk,
