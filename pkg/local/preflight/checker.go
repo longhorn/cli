@@ -216,6 +216,10 @@ func (local *Checker) Run() error {
 				func() error { return local.checkModulesLoaded(true) },
 			)
 		}
+
+		if local.EnableRdma {
+			checkTasks = append(checkTasks, local.checkRdma)
+		}
 	}
 
 	for _, checkTaskFn := range checkTasks {
