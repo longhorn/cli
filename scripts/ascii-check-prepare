@@ -1,0 +1,106 @@
+#!/bin/bash
+#
+# Collect the inputs for the ASCII check on the host, before the containerized
+# validation runs. The build container copies the source tree but cannot run
+# git in it (for example, in a git worktree, .git is a file that points outside
+# the tree), so the changed files and commit messages are computed here and
+# written to .ascii-check/ for scripts/ascii-check.
+#
+# The branch base is the merge base of HEAD and, in order of preference:
+#   1. UPSTREAM_BASE, a commit or ref (required to resolve when set)
+#   2. <remote>/HEAD or <remote>/master of the remote that points at
+#      github.com/longhorn/cli, whatever its name (origin is often a fork)
+# When no base can be found, for example in a shallow CI clone, the check is
+# marked as skipped instead of failing.
+
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+OUT_DIR=.ascii-check
+rm -rf "${OUT_DIR}"
+mkdir -p "${OUT_DIR}"
+
+skip() {
+	echo "ASCII check will be skipped: $*" | tee "${OUT_DIR}/skipped" >&2
+	exit 0
+}
+
+# Host-side code stays portable to macOS: bash 3.2 and BSD tools, so no awk,
+# sed, or GNU-only options; git itself provides the remote names and URLs.
+find_upstream_ref() {
+	local remote url ref
+	local upstream_url_re='github\.com[:/]longhorn/cli(\.git)?/?$'
+	while read -r remote; do
+		url=$(git remote get-url "${remote}" 2>/dev/null) || continue
+		[[ ${url} =~ ${upstream_url_re} ]] || continue
+		for ref in "${remote}/HEAD" "${remote}/master"; do
+			if git rev-parse -q --verify "${ref}^{commit}" >/dev/null; then
+				echo "${ref}"
+				return 0
+			fi
+		done
+	done < <(git remote)
+	return 1
+}
+
+if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+	skip "not a git work tree"
+fi
+
+if [[ -n ${UPSTREAM_BASE:-} ]]; then
+	base_ref=${UPSTREAM_BASE}
+	if ! git rev-parse -q --verify "${base_ref}^{commit}" >/dev/null; then
+		echo "UPSTREAM_BASE '${base_ref}' is not a known commit or ref; fetch it first (e.g. git fetch upstream)" >&2
+		exit 1
+	fi
+elif ! base_ref=$(find_upstream_ref); then
+	skip "no remote branch of github.com/longhorn/cli found; fetch it or run: make validate UPSTREAM_BASE=<remote>/master"
+fi
+
+if ! merge_base=$(git merge-base HEAD "${base_ref}" 2>/dev/null); then
+	skip "no merge base between HEAD and ${base_ref} (shallow clone?); fetch more history or run: make validate UPSTREAM_BASE=<commit-or-ref>"
+fi
+
+# Vendored third-party code is excluded; it is reviewed through module updates.
+pathspec=(-- . ':(exclude)vendor')
+
+# Changed files: committed and uncommitted changes since the merge base, plus
+# untracked files. Deleted files are not listed. NUL-delimited output keeps the
+# names literal (git C-quotes names with quotes, backslashes, or control
+# characters otherwise); the manifest holds one name per line, so a name with a
+# newline cannot be listed and fails here.
+{
+	git diff -z --name-only --diff-filter=ACMRT "${merge_base}" "${pathspec[@]}"
+	git ls-files -z --others --exclude-standard "${pathspec[@]}"
+} >"${OUT_DIR}/changed-files.z"
+bad_names=0
+while IFS= read -r -d '' path; do
+	if [[ ${path} == *$'\n'* ]]; then
+		printf 'file name contains a newline: %q\n' "${path}" >&2
+		bad_names=$((bad_names + 1))
+		continue
+	fi
+	printf '%s\n' "${path}"
+done <"${OUT_DIR}/changed-files.z" >"${OUT_DIR}/changed-files.unsorted"
+sort -u "${OUT_DIR}/changed-files.unsorted" >"${OUT_DIR}/changed-files"
+rm -f "${OUT_DIR}/changed-files.z" "${OUT_DIR}/changed-files.unsorted"
+if [[ ${bad_names} -gt 0 ]]; then
+	echo "Rename the file(s) above; file names must not contain newlines." >&2
+	exit 1
+fi
+
+# One file per commit message (<index>-<sha>), so that each message is checked
+# on its own and its first paragraph is treated as its subject.
+mkdir -p "${OUT_DIR}/commits"
+commits=0
+while read -r sha; do
+	commits=$((commits + 1))
+	git log -1 --format=%B "${sha}" >"${OUT_DIR}/commits/$(printf '%04d' "${commits}")-${sha}"
+done < <(git rev-list --no-merges --reverse "${merge_base}..HEAD")
+
+# BSD wc pads the count with spaces.
+count=$(wc -l <"${OUT_DIR}/changed-files")
+count=${count//[!0-9]/}
+echo "${base_ref} (merge base ${merge_base:0:12})" >"${OUT_DIR}/base"
+echo "ASCII check inputs: ${count} changed file(s) and ${commits} commit(s) since $(cat "${OUT_DIR}/base")"

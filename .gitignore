@@ -4,3 +4,4 @@ spdk
 /.dapper
 /coverage.out
 validate.done
+/.ascii-check/
