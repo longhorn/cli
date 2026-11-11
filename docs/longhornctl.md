@@ -30,6 +30,7 @@ A CLI tool for troubleshooting and managing Longhorn operations.
 * [longhornctl get](longhornctl_get.md)	 - Longhorn information gathering operations
 * [longhornctl global-options](longhornctl_global-options.md)	 - Display global options inherited by all subcommands
 * [longhornctl install](longhornctl_install.md)	 - Longhorn installation operations
+* [longhornctl plan](longhornctl_plan.md)	 - Plan Longhorn data engine settings for a cluster
 * [longhornctl trim](longhornctl_trim.md)	 - Longhorn trimming operations
 * [longhornctl version](longhornctl_version.md)	 - Print longhornctl version
 
