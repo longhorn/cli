@@ -1,0 +1,37 @@
+#!/bin/bash
+#
+# Check the files and commit messages collected by scripts/ascii-check-prepare
+# for non-ASCII and invisible/control characters. The checker is maintained in
+# longhorn/longhorn and fetched from ASCII_CHECKER_URL so that every Longhorn
+# repository applies the same rules. It needs curl and Python 3.7+.
+
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+ASCII_CHECKER_URL=${ASCII_CHECKER_URL:-https://raw.githubusercontent.com/longhorn/longhorn/master/scripts/development/ascii-checker.sh}
+IN_DIR=.ascii-check
+
+if [[ -f ${IN_DIR}/skipped ]]; then
+	echo "Skipping ASCII check: $(cat "${IN_DIR}/skipped")"
+	exit 0
+fi
+if [[ ! -f ${IN_DIR}/changed-files ]]; then
+	echo "Skipping ASCII check: no inputs; run 'make validate' or scripts/ascii-check-prepare first"
+	exit 0
+fi
+
+echo "Checking changes since $(cat "${IN_DIR}/base")"
+
+checker=$(mktemp)
+trap 'rm -f "${checker}"' EXIT
+curl -fsSL --retry 3 "${ASCII_CHECKER_URL}" -o "${checker}"
+
+status=0
+bash "${checker}" -f "${IN_DIR}/changed-files" || status=1
+for message in "${IN_DIR}"/commits/*; do
+	[[ -e ${message} ]] || continue
+	sha=${message##*-}
+	bash "${checker}" --commit-message --label "commit ${sha:0:12}" - <"${message}" || status=1
+done
+exit "${status}"
