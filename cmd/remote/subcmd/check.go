@@ -1,6 +1,8 @@
 package subcmd
 
 import (
+	stderrors "errors"
+
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -58,6 +60,9 @@ INFO[2024-07-16T17:17:42+08:00] Cleaning up preflight checker
 INFO[2024-07-16T17:17:42+08:00] Completed preflight checker`,
 
 		PreRun: func(cmd *cobra.Command, args []string) {
+			if err := preflightChecker.ValidateDataEngineMode(); err != nil {
+				utils.CheckErr(err)
+			}
 			preflightChecker.Image = globalOpts.Image
 			preflightChecker.ImageRegistry = globalOpts.ImageRegistry
 			preflightChecker.ImagePullSecret = globalOpts.ImagePullSecret
@@ -72,14 +77,23 @@ INFO[2024-07-16T17:17:42+08:00] Completed preflight checker`,
 			}
 
 			logrus.Info("Cleaning up preflight checker")
-			if err := preflightChecker.Cleanup(); err != nil {
-				utils.CheckErr(errors.Wrapf(err, "Failed to cleanup preflight checker"))
+			if preflightChecker.DataEngineMode != string(types.DataEngineModeV2Only) {
+				if err := preflightChecker.Cleanup(); err != nil {
+					utils.CheckErr(errors.Wrapf(err, "Failed to cleanup preflight checker"))
+				}
 			}
 		},
 
 		Run: func(cmd *cobra.Command, args []string) {
 			logrus.Info("Running preflight checker")
 			output, err := preflightChecker.Run()
+			if preflightChecker.DataEngineMode == string(types.DataEngineModeV2Only) {
+				if output != "" {
+					logrus.Infof("Retrieved preflight checker result:\n%v", output)
+				}
+				utils.CheckErr(stderrors.Join(err, preflightChecker.Cleanup()))
+				return
+			}
 			if err != nil {
 				utils.CheckErr(errors.Wrap(err, "Failed to run preflight checker"))
 			}
@@ -88,6 +102,9 @@ INFO[2024-07-16T17:17:42+08:00] Completed preflight checker`,
 		},
 
 		PostRun: func(cmd *cobra.Command, args []string) {
+			if preflightChecker.DataEngineMode == string(types.DataEngineModeV2Only) {
+				return
+			}
 			logrus.Info("Cleaning up preflight checker")
 			if err := preflightChecker.Cleanup(); err != nil {
 				utils.CheckErr(errors.Wrapf(err, "Failed to cleanup preflight checker"))
@@ -99,6 +116,7 @@ INFO[2024-07-16T17:17:42+08:00] Completed preflight checker`,
 
 	utils.SetGlobalOptionsRemote(cmd, globalOpts)
 
+	cmd.Flags().StringVar(&preflightChecker.DataEngineMode, consts.CmdOptDataEngineMode, string(types.DataEngineModeV1Capable), "Installation capability: v1-capable or v2-only. V2-only omits iSCSI and requires SPDK qualification.")
 	cmd.Flags().BoolVar(&preflightChecker.EnableSpdk, consts.CmdOptEnableSpdk, false, "Enable checking of SPDK required packages, modules, and setup.")
 	cmd.Flags().IntVar(&preflightChecker.HugePageSize, consts.CmdOptHugePageSize, 2048, "Specify the huge page size in MiB for SPDK.")
 	cmd.Flags().StringVar(&preflightChecker.UserspaceDriver, consts.CmdOptUserspaceDriver, "", "Userspace I/O driver for SPDK.")

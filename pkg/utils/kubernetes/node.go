@@ -13,7 +13,7 @@ import (
 )
 
 // GetHugePagesCapacity returns hugepages-2Mi capacity of current node
-func GetHugePagesCapacity(kubeClient *kubeclient.Clientset) (*resource.Quantity, error) {
+func GetHugePagesCapacity(kubeClient kubeclient.Interface) (*resource.Quantity, error) {
 	currentNodeID := os.Getenv(consts.EnvCurrentNodeID)
 	node, err := kubeClient.CoreV1().Nodes().Get(context.TODO(), currentNodeID, metav1.GetOptions{})
 	if err != nil {

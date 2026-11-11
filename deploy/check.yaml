@@ -25,6 +25,8 @@ spec:
         securityContext:
           privileged: true
         env:
+        - name: DATA_ENGINE_MODE
+          value: "v1-capable"
         - name: ENABLE_SPDK
           value: "true"
         - name: HUGEMEM

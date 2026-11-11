@@ -25,6 +25,8 @@ spec:
         securityContext:
           privileged: true
         env:
+        - name: DATA_ENGINE_MODE
+          value: "v1-capable"
         - name: UPDATE_PACKAGE_LIST
           value: "true"
         - name: ENABLE_SPDK
