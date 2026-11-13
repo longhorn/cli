@@ -13,6 +13,8 @@ func TestDiagnoserChecks(t *testing.T) {
 		"LonghornNodes",
 		"EngineImages",
 		"InstanceManagers",
+		"ShareManagers",
+		"BackingImageManagers",
 		"CSIDriver",
 		"CSIPlugin",
 		"CSIAttacher",

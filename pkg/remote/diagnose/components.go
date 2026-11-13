@@ -9,9 +9,11 @@ import (
 
 	"github.com/pkg/errors"
 
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	discoveryv1 "k8s.io/api/discovery/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -31,6 +33,53 @@ func (remote *Diagnoser) checkDaemonSet(name string) checkFunc {
 		evaluateDaemonSet(daemonSet, result)
 		return nil
 	}
+}
+
+// checkLonghornManager verifies that the longhorn-manager DaemonSet is healthy
+// and that its pods carry the labels the Longhorn components use to discover
+// them (see types.GetManagerLabels in longhorn-manager).
+func (remote *Diagnoser) checkLonghornManager(ctx context.Context, result *Result) error {
+	daemonSet, err := remote.kubeClient.AppsV1().DaemonSets(remote.Namespace).Get(ctx, lhtypes.LonghornManagerDaemonSetName, metav1.GetOptions{})
+	if err != nil {
+		return errors.Wrapf(err, "failed to get DaemonSet %v", lhtypes.LonghornManagerDaemonSetName)
+	}
+
+	evaluateDaemonSet(daemonSet, result)
+
+	// Discover the DaemonSet's pods through their owner references rather than
+	// the discovery labels: a pod missing those labels is exactly the fault
+	// this check must report, and selecting pods by the labels would hide it.
+	pods, err := remote.kubeClient.CoreV1().Pods(remote.Namespace).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to list longhorn-manager pods")
+	}
+
+	for i := range pods.Items {
+		pod := &pods.Items[i]
+		if !isControlledBy(pod, daemonSet.UID) {
+			continue
+		}
+		checkLonghornManagerPodLabels(pod, result)
+	}
+	return nil
+}
+
+// isControlledBy reports whether the pod is controlled by the resource with
+// the given UID (e.g. the longhorn-manager DaemonSet).
+func isControlledBy(pod *corev1.Pod, uid types.UID) bool {
+	for _, owner := range pod.OwnerReferences {
+		if owner.UID == uid && owner.Controller != nil && *owner.Controller {
+			return true
+		}
+	}
+	return false
+}
+
+// checkLonghornManagerPodLabels verifies that a longhorn-manager pod carries
+// the labels the Longhorn components use to discover it (see
+// types.GetManagerLabels in longhorn-manager).
+func checkLonghornManagerPodLabels(pod *corev1.Pod, result *Result) {
+	checkCriticalLabels("Pod", pod.Name, pod.Labels, lhtypes.GetManagerLabels(), result)
 }
 
 // checkDeployment returns a check verifying that the Deployment has ready pods.
@@ -262,7 +311,11 @@ func evaluateInstanceManagers(instanceManagers []longhorn.InstanceManager, resul
 	}
 
 	running := 0
-	for _, instanceManager := range instanceManagers {
+	for i := range instanceManagers {
+		instanceManager := &instanceManagers[i]
+
+		checkInstanceManagerLabels(instanceManager, result)
+
 		if instanceManager.Status.CurrentState != longhorn.InstanceManagerStateRunning {
 			result.errorf("InstanceManager %v on node %v is %v",
 				instanceManager.Name, instanceManager.Spec.NodeID, valueOrUnknown(string(instanceManager.Status.CurrentState)))
@@ -272,6 +325,116 @@ func evaluateInstanceManagers(instanceManagers []longhorn.InstanceManager, resul
 	}
 
 	result.infof("%d/%d instance managers are running", running, len(instanceManagers))
+}
+
+// checkCriticalLabels verifies that a resource carries the labels the Longhorn
+// controllers use to discover it. If any of these labels are missing or have
+// unexpected values, the controllers are unable to find a valid resource,
+// which breaks the component that depends on it.
+func checkCriticalLabels(kind, name string, actualLabels, expectedLabels map[string]string, result *Result) {
+	missing := []string{}
+	mismatched := []string{}
+	for key, expectedValue := range expectedLabels {
+		actualValue, ok := actualLabels[key]
+		switch {
+		case !ok:
+			missing = append(missing, key)
+		case actualValue != expectedValue:
+			mismatched = append(mismatched, fmt.Sprintf("%s=%q (expected %q)", key, actualValue, expectedValue))
+		}
+	}
+	slices.Sort(missing)
+	slices.Sort(mismatched)
+
+	for _, key := range missing {
+		result.errorf("%s %v is missing critical label %q", kind, name, key)
+	}
+	for _, mismatch := range mismatched {
+		result.errorf("%s %v has unexpected label value %v", kind, name, mismatch)
+	}
+}
+
+// checkInstanceManagerLabels verifies that the instance manager carries the
+// labels the Longhorn controllers use to discover it (see
+// types.GetInstanceManagerLabels in longhorn-manager). If any of these labels
+// are missing or have unexpected values, the controllers are unable to find a
+// valid instance manager, which prevents volume attachment and detachment.
+func checkInstanceManagerLabels(instanceManager *longhorn.InstanceManager, result *Result) {
+	expectedLabels := lhtypes.GetInstanceManagerLabels(
+		instanceManager.Spec.NodeID, instanceManager.Spec.Image,
+		instanceManager.Spec.Type, instanceManager.Spec.DataEngine,
+	)
+	checkCriticalLabels("InstanceManager", instanceManager.Name, instanceManager.Labels, expectedLabels, result)
+}
+
+// checkShareManagers verifies that the share managers carry the labels the
+// Longhorn controllers use to discover them.
+func (remote *Diagnoser) checkShareManagers(ctx context.Context, result *Result) error {
+	shareManagers, err := remote.longhornClient.ListShareManagers(ctx)
+	if err != nil {
+		return errors.Wrap(err, "failed to list ShareManagers")
+	}
+
+	evaluateShareManagers(shareManagers.Items, result)
+	return nil
+}
+
+func evaluateShareManagers(shareManagers []longhorn.ShareManager, result *Result) {
+	if len(shareManagers) == 0 {
+		result.infof("No ShareManagers are found")
+		return
+	}
+
+	for i := range shareManagers {
+		shareManager := &shareManagers[i]
+		checkShareManagerLabels(shareManager, result)
+	}
+
+	result.infof("%d share managers are found", len(shareManagers))
+}
+
+// checkShareManagerLabels verifies that the share manager carries the labels
+// the Longhorn controllers use to discover it (see types.GetShareManagerLabels
+// in longhorn-manager).
+func checkShareManagerLabels(shareManager *longhorn.ShareManager, result *Result) {
+	expectedLabels := lhtypes.GetShareManagerLabels(shareManager.Name, shareManager.Spec.Image)
+	checkCriticalLabels("ShareManager", shareManager.Name, shareManager.Labels, expectedLabels, result)
+}
+
+// checkBackingImageManagers verifies that the backing image managers carry the
+// labels the Longhorn controllers use to discover them.
+func (remote *Diagnoser) checkBackingImageManagers(ctx context.Context, result *Result) error {
+	backingImageManagers, err := remote.longhornClient.ListBackingImageManagers(ctx)
+	if err != nil {
+		return errors.Wrap(err, "failed to list BackingImageManagers")
+	}
+
+	evaluateBackingImageManagers(backingImageManagers.Items, result)
+	return nil
+}
+
+func evaluateBackingImageManagers(backingImageManagers []longhorn.BackingImageManager, result *Result) {
+	if len(backingImageManagers) == 0 {
+		result.infof("No BackingImageManagers are found")
+		return
+	}
+
+	for i := range backingImageManagers {
+		backingImageManager := &backingImageManagers[i]
+		checkBackingImageManagerLabels(backingImageManager, result)
+	}
+
+	result.infof("%d backing image managers are found", len(backingImageManagers))
+}
+
+// checkBackingImageManagerLabels verifies that the backing image manager
+// carries the labels the Longhorn controllers use to discover it (see
+// types.GetBackingImageManagerLabels in longhorn-manager).
+func checkBackingImageManagerLabels(backingImageManager *longhorn.BackingImageManager, result *Result) {
+	expectedLabels := lhtypes.GetBackingImageManagerLabels(
+		backingImageManager.Spec.NodeID, backingImageManager.Spec.DiskUUID,
+	)
+	checkCriticalLabels("BackingImageManager", backingImageManager.Name, backingImageManager.Labels, expectedLabels, result)
 }
 
 func evaluateVolumes(volumes []longhorn.Volume, result *Result) {

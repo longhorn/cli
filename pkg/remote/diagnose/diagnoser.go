@@ -43,11 +43,13 @@ type checkFunc func(ctx context.Context, result *Result) error
 // To add a new check, implement a checkFunc and add it to this list.
 func (remote *Diagnoser) checks() []check {
 	return []check{
-		{name: "LonghornManager", run: remote.checkDaemonSet(lhtypes.LonghornManagerDaemonSetName)},
+		{name: "LonghornManager", run: remote.checkLonghornManager},
 		{name: "LonghornBackend", run: remote.checkService(consts.LonghornBackendServiceName)},
 		{name: "LonghornNodes", run: remote.checkNodes},
 		{name: "EngineImages", run: remote.checkEngineImages},
 		{name: "InstanceManagers", run: remote.checkInstanceManagers},
+		{name: "ShareManagers", run: remote.checkShareManagers},
+		{name: "BackingImageManagers", run: remote.checkBackingImageManagers},
 		{name: "CSIDriver", run: remote.checkCSIDriver},
 		{name: "CSIPlugin", run: remote.checkDaemonSet(lhtypes.CSIPluginName)},
 		{name: "CSIAttacher", run: remote.checkDeployment(lhtypes.CSIAttacherName)},
