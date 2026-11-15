@@ -18,9 +18,7 @@ import (
 	kubeclient "k8s.io/client-go/kubernetes"
 
 	commonkube "github.com/longhorn/go-common-libs/kubernetes"
-	commonnfs "github.com/longhorn/go-common-libs/nfs"
 	commonns "github.com/longhorn/go-common-libs/ns"
-	commonsys "github.com/longhorn/go-common-libs/sys"
 	commontypes "github.com/longhorn/go-common-libs/types"
 	lhmgrutil "github.com/longhorn/longhorn-manager/util"
 
@@ -41,7 +39,12 @@ type Checker struct {
 
 	OutputFilePath string
 
-	kubeClient *kubeclient.Clientset
+	kubeClient kubeclient.Interface
+	nfsFacts   checkerNFSFacts
+
+	// CollectionOnly is the internal in-Pod transport phase. It preserves the
+	// full report for the following reporter; the remote CLI owns its verdict.
+	CollectionOnly bool
 
 	osRelease      string
 	packageManager pkgmgr.PackageManager
@@ -57,6 +60,9 @@ type Checker struct {
 
 // Init initializes the Checker.
 func (local *Checker) Init() error {
+	if err := local.ValidateDataEngineMode(); err != nil {
+		return err
+	}
 	local.collection.Log = &types.LogCollection{}
 
 	config, err := commonkube.GetInClusterConfig()
@@ -74,9 +80,17 @@ func (local *Checker) Init() error {
 		return errors.Wrap(err, "failed to get OS release")
 	}
 	local.osRelease = osRelease
+	if local.DataEngineMode == string(types.DataEngineModeV2Only) {
+		if err := validateV2HostOS(osRelease); err != nil {
+			return err
+		}
+	}
 	local.logger = logrus.WithField("os", local.osRelease)
 
 	if local.osRelease == fmt.Sprint(consts.OperatingSystemContainerOptimizedOS) {
+		if local.DataEngineMode == string(types.DataEngineModeV2Only) {
+			return fmt.Errorf("V2-only preflight is not qualified for Container-Optimized OS")
+		}
 		return nil
 	}
 
@@ -100,10 +114,13 @@ func (local *Checker) Init() error {
 	if err != nil {
 		return err
 	}
+	local.packageManager = packageManager
+	return local.configureDependencies(packageManagerType)
+}
 
+func (local *Checker) configureDependencies(packageManagerType pkgmgr.PackageManagerType) error {
 	switch packageManagerType {
 	case pkgmgr.PackageManagerApt:
-		local.packageManager = packageManager
 		local.packages = []string{
 			"nfs-common", "open-iscsi", "cryptsetup", "dmsetup",
 		}
@@ -121,7 +138,6 @@ func (local *Checker) Init() error {
 		}
 
 	case pkgmgr.PackageManagerYum:
-		local.packageManager = packageManager
 		local.packages = []string{
 			"nfs-utils", "iscsi-initiator-utils", "cryptsetup", "device-mapper",
 		}
@@ -139,7 +155,6 @@ func (local *Checker) Init() error {
 		}
 
 	case pkgmgr.PackageManagerZypper, pkgmgr.PackageManagerTransactionalUpdate, pkgmgr.PackageManagerBinary:
-		local.packageManager = packageManager
 		local.packages = []string{
 			"nfs-client", "open-iscsi", "cryptsetup", "device-mapper",
 		}
@@ -157,7 +172,6 @@ func (local *Checker) Init() error {
 		}
 
 	case pkgmgr.PackageManagerPacman:
-		local.packageManager = packageManager
 		local.packages = []string{
 			"nfs-utils", "open-iscsi", "cryptsetup", "device-mapper",
 		}
@@ -175,7 +189,11 @@ func (local *Checker) Init() error {
 		}
 
 	default:
-		return errors.Errorf("operating system (%v) package manager (%s) is not supported", osRelease, packageManagerType)
+		return errors.Errorf("operating system (%v) package manager (%s) is not supported", local.osRelease, packageManagerType)
+	}
+	if local.DataEngineMode == string(types.DataEngineModeV2Only) {
+		local.packages = withoutISCSIStrings(local.packages)
+		local.modules = withoutISCSIStrings(local.modules)
 	}
 
 	return nil
@@ -183,6 +201,22 @@ func (local *Checker) Init() error {
 
 // Run executes the preflight checks.
 func (local *Checker) Run() error {
+	if err := local.ValidateDataEngineMode(); err != nil {
+		return err
+	}
+	mode, err := types.ParseDataEngineMode(local.DataEngineMode)
+	if err != nil {
+		return err
+	}
+	if mode == types.DataEngineModeV2Only {
+		if err := validateV2HostOS(local.osRelease); err != nil {
+			return err
+		}
+		if local.osRelease == fmt.Sprint(consts.OperatingSystemContainerOptimizedOS) || local.packageManager == nil || local.kubeClient == nil || local.collection.Log == nil {
+			return fmt.Errorf("V2-only preflight requires a qualified initialized package-manager host")
+		}
+		local.collection.DataEngineMode = string(mode)
+	}
 	checkTasks := []func() error{
 		local.checkKubeDNS,
 	}
@@ -194,15 +228,17 @@ func (local *Checker) Run() error {
 			local.checkContainerOptimizedOS,
 		)
 	default:
+		if mode.RequiresISCSI() {
+			checkTasks = append(checkTasks, local.checkIscsidService)
+		}
 		checkTasks = append(checkTasks,
-			local.checkIscsidService,
 			local.checkMultipathService,
 			local.checkNFSv4Support,
 			func() error { return local.checkPackagesInstalled(false) },
 			func() error { return local.checkModulesLoaded(false) },
 		)
 
-		if local.EnableSpdk {
+		if mode.NeedsSPDK(local.EnableSpdk) {
 			instructionSets := map[string][]string{
 				"amd64": {"sse4_2"},
 				"arm64": {"asimd"},
@@ -227,7 +263,30 @@ func (local *Checker) Run() error {
 		}
 	}
 
+	if mode == types.DataEngineModeV2Only && !local.CollectionOnly {
+		return local.QualificationError()
+	}
 	return nil
+}
+
+func (local *Checker) QualificationError() error {
+	if local.DataEngineMode != string(types.DataEngineModeV2Only) {
+		return nil
+	}
+	if local.collection.DataEngineMode != string(types.DataEngineModeV2Only) || local.collection.Log == nil || len(local.collection.Log.Error) != 0 || len(local.collection.Log.Info) == 0 {
+		return fmt.Errorf("V2-only host preflight is not qualified; inspect the complete report")
+	}
+	return nil
+}
+
+func withoutISCSIStrings(dependencies []string) []string {
+	filtered := make([]string, 0, len(dependencies))
+	for _, dependency := range dependencies {
+		if dependency != "open-iscsi" && dependency != "iscsi-initiator-utils" && dependency != "iscsi_tcp" {
+			filtered = append(filtered, dependency)
+		}
+	}
+	return filtered
 }
 
 // Output converts the collection to JSON and output to stdout or the output file.
@@ -360,6 +419,9 @@ func (local *Checker) checkIscsidService() error {
 
 // checkHugePages checks if HugePages is enabled.
 func (local *Checker) checkHugePages() error {
+	if local.DataEngineMode == string(types.DataEngineModeV2Only) {
+		return local.checkV2HugePages()
+	}
 	logrus.Info("Checking if HugePages is enabled")
 	topic := formatTopic(consts.PreflightCheckTopicHugePages)
 
@@ -613,16 +675,20 @@ func (local *Checker) checkNFSv4Support() error {
 
 	// check kernel capability
 	var isKernelSupport = false
+	facts := local.nfsFacts
+	if facts == nil {
+		facts = hostCheckerNFSFacts{}
+	}
 
-	kernelVersion, err := utils.GetKernelVersion()
+	kernelVersion, err := facts.KernelVersion()
 	if err != nil {
 		return wrapInternalError(topic, fmt.Errorf("failed to detect kernel version: %v", err))
 	}
 	hostBootDir := filepath.Join(consts.VolumeMountHostDirectory, commontypes.SysBootDirectory)
-	kernelConfigMap, err := commonsys.GetBootKernelConfigMap(hostBootDir, kernelVersion)
+	kernelConfigMap, err := facts.BootKernelConfig(hostBootDir, kernelVersion)
 	if err != nil {
 		// Fallback attempt: Read from procfs if the first attempt failed
-		kernelConfigMap, err = commonsys.GetProcKernelConfigMap("/proc")
+		kernelConfigMap, err = facts.ProcKernelConfig("/proc")
 		if err != nil {
 			return wrapInternalError(topic, fmt.Errorf("failed to read kernel config: %v", err))
 		}
@@ -639,7 +705,7 @@ func (local *Checker) checkNFSv4Support() error {
 			break
 		} else if configVal == "m" {
 			// Check if the module is loaded
-			moduleLoaded, err := utils.IsModuleLoaded(module)
+			moduleLoaded, err := facts.ModuleLoaded(module)
 			if err != nil {
 				logrus.Debugf("Failed to check if module %s is loaded: %v", module, err)
 				continue
@@ -662,7 +728,7 @@ func (local *Checker) checkNFSv4Support() error {
 	var isSupportedNFSVersion bool
 
 	hostEtcDir := filepath.Join(consts.VolumeMountHostDirectory, commontypes.SysEtcDirectory)
-	nfsMajor, nfsMinor, err := commonnfs.GetSystemDefaultNFSVersion(hostEtcDir)
+	nfsMajor, nfsMinor, err := facts.DefaultNFSVersion(hostEtcDir)
 	if err == nil {
 		isSupportedNFSVersion = nfsMajor == 4 && (nfsMinor == 0 || nfsMinor == 1 || nfsMinor == 2)
 	} else if errors.Is(err, commontypes.ErrNotConfigured) {

@@ -47,6 +47,7 @@ const (
 	CmdOptNodeSelector    = "node-selector"
 	CmdOptTolerations     = "tolerations"
 	CmdOptAll             = "all"
+	CmdOptDataEngineMode  = "data-engine-mode"
 
 	// SPDK options
 	CmdOptAllowPci             = "allow-pci"

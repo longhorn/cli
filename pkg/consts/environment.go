@@ -7,10 +7,13 @@ const (
 )
 
 const (
-	EnvCurrentNodeID  = "CURRENT_NODE_ID"
-	EnvKubeConfigPath = "KUBECONFIG"
-	EnvLogLevel       = "LOG_LEVEL"
-	EnvOutputFilePath = "OUTPUT_FILE_PATH"
+	EnvCurrentNodeID           = "CURRENT_NODE_ID"
+	EnvKubeConfigPath          = "KUBECONFIG"
+	EnvLogLevel                = "LOG_LEVEL"
+	EnvOutputFilePath          = "OUTPUT_FILE_PATH"
+	EnvDataEngineMode          = "DATA_ENGINE_MODE"
+	EnvPreflightCollectionOnly = "PREFLIGHT_COLLECTION_ONLY"
+	EnvPreflightAttemptID      = "PREFLIGHT_ATTEMPT_ID"
 
 	EnvLonghornDataDirectory = "LONGHORN_DATA_DIRECTORY"
 	EnvLonghornNamespace     = "LONGHORN_NAMESPACE"
