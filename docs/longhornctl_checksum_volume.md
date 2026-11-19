@@ -30,7 +30,7 @@ $ longhornctl checksum volume --name=v1 --namespace=longhorn-system
       --image string               Image containing longhornctl-local (default "longhornio/longhorn-cli:v1.13.0-dev")
       --image-pull-secret string   Secret with registry credentials for pulling images
       --image-registry string      Registry to apply to all images (CLI, engine, pause, BCI, etc.), replacing any registry already specified in those images.
-      --kubeconfig string          Kubernetes config (kubeconfig) path
+      --kubeconfig string          Kubernetes config (kubeconfig) path. If not set, $KUBECONFIG or ~/.kube/config is used
   -l, --log-level string           Log level (default "info")
       --name string                Name of the Longhorn volume
       --namespace string           The namespace to run DaemonSet pods. (default "longhorn-system")
