@@ -26,7 +26,7 @@ func SetGlobalOptionsLocal(cmd *cobra.Command, globalOpts *types.GlobalCmdOption
 // SetGlobalOptionsRemote sets global options for remote commands.
 func SetGlobalOptionsRemote(cmd *cobra.Command, globalOpts *types.GlobalCmdOptions) {
 	cmd.PersistentFlags().StringVarP(&globalOpts.LogLevel, consts.CmdOptLogLevel, "l", globalOpts.LogLevel, "Log level")
-	cmd.PersistentFlags().StringVar(&globalOpts.KubeConfigPath, consts.CmdOptKubeConfigPath, globalOpts.KubeConfigPath, "Kubernetes config (kubeconfig) path")
+	cmd.PersistentFlags().StringVar(&globalOpts.KubeConfigPath, consts.CmdOptKubeConfigPath, globalOpts.KubeConfigPath, "Kubernetes config (kubeconfig) path. If not set, $KUBECONFIG or ~/.kube/config is used")
 	cmd.PersistentFlags().StringVar(&globalOpts.Image, consts.CmdOptImage, globalOpts.Image, "Image containing longhornctl-local")
 	cmd.PersistentFlags().StringVar(&globalOpts.ImageRegistry, consts.CmdOptImageRegistry, globalOpts.ImageRegistry, "Registry to apply to all images (CLI, engine, pause, BCI, etc.), replacing any registry already specified in those images.")
 	cmd.PersistentFlags().StringVar(&globalOpts.ImagePullSecret, consts.CmdOptImagePullSecret, globalOpts.ImagePullSecret, "Secret with registry credentials for pulling images")

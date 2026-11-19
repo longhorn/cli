@@ -8,7 +8,6 @@ const (
 
 const (
 	EnvCurrentNodeID  = "CURRENT_NODE_ID"
-	EnvKubeConfigPath = "KUBECONFIG"
 	EnvLogLevel       = "LOG_LEVEL"
 	EnvOutputFilePath = "OUTPUT_FILE_PATH"
 

@@ -83,7 +83,7 @@ $ longhornctl diagnose -o json 2>/dev/null | jq '.[] | select(.status == "fail")
 	}
 
 	cmd.PersistentFlags().StringVarP(&globalOpts.LogLevel, consts.CmdOptLogLevel, "l", globalOpts.LogLevel, "Log level")
-	cmd.PersistentFlags().StringVar(&globalOpts.KubeConfigPath, consts.CmdOptKubeConfigPath, globalOpts.KubeConfigPath, "Kubernetes config (kubeconfig) path")
+	cmd.PersistentFlags().StringVar(&globalOpts.KubeConfigPath, consts.CmdOptKubeConfigPath, globalOpts.KubeConfigPath, "Kubernetes config (kubeconfig) path. If not set, $KUBECONFIG or ~/.kube/config is used")
 	cmd.PersistentFlags().StringVar(&globalOpts.Namespace, consts.CmdOptNamespace, globalOpts.Namespace, "The namespace where Longhorn is installed.")
 	cmd.Flags().StringVarP(&outputFormat, consts.CmdOptOutput, "o", diagnose.OutputFormatYAML, fmt.Sprintf("Output format of the results. One of: %v.", strings.Join(diagnose.OutputFormats, ", ")))
 

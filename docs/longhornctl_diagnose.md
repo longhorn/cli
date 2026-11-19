@@ -39,7 +39,7 @@ $ longhornctl diagnose -o json 2>/dev/null | jq '.[] | select(.status == "fail")
 
 ```
   -h, --help                help for diagnose
-      --kubeconfig string   Kubernetes config (kubeconfig) path
+      --kubeconfig string   Kubernetes config (kubeconfig) path. If not set, $KUBECONFIG or ~/.kube/config is used
   -l, --log-level string    Log level (default "info")
       --namespace string    The namespace where Longhorn is installed. (default "longhorn-system")
   -o, --output string       Output format of the results. One of: yaml, json. (default "yaml")

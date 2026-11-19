@@ -39,7 +39,7 @@ func newCmdLonghornctl() *cobra.Command {
 	cmd.CompletionOptions.HiddenDefaultCmd = true
 
 	cmd.PersistentFlags().StringVarP(&globalOpts.LogLevel, consts.CmdOptLogLevel, "l", "info", "log level (trace, debug, info, warn, error, fatal, panic)")
-	cmd.PersistentFlags().StringVar(&globalOpts.KubeConfigPath, consts.CmdOptKubeConfigPath, os.Getenv(consts.EnvKubeConfigPath), "Kubernetes config (kubeconfig) path")
+	cmd.PersistentFlags().StringVar(&globalOpts.KubeConfigPath, consts.CmdOptKubeConfigPath, "", "Kubernetes config (kubeconfig) path. If not set, $KUBECONFIG or ~/.kube/config is used")
 	cmd.PersistentFlags().StringVar(&globalOpts.Image, consts.CmdOptImage, consts.ImageLonghornCli, "Image containing longhornctl-local")
 	cmd.PersistentFlags().StringVar(&globalOpts.ImageRegistry, consts.CmdOptImageRegistry, "", "Registry to apply to all images (CLI, engine, pause, BCI, etc.), replacing any registry already specified in those images.")
 	cmd.PersistentFlags().StringVar(&globalOpts.ImagePullSecret, consts.CmdOptImagePullSecret, "", "Secret with registry credentials for pulling images")
