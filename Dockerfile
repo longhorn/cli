@@ -10,9 +10,11 @@ ARG https_proxy
 ENV ARCH=${TARGETARCH}
 ENV GOFLAGS=-mod=vendor
 
-# Install packages
+# Install packages. python311 provides python3 for the ASCII checker; the
+# default python3 package is too old.
 RUN zypper update -y && \
-    zypper -n install curl awk && \
+    zypper -n install curl awk python311 && \
+    ln -sf /usr/bin/python3.11 /usr/local/bin/python3 && \
     rm -rf /var/cache/zypp/*
 
 # Copy golangci-lint binary from official image
@@ -25,6 +27,7 @@ FROM base AS build
 RUN ./scripts/build
 
 FROM base AS validate
+ARG ASCII_CHECKER_URL
 RUN ./scripts/validate && touch /validate.done
 
 FROM base AS test

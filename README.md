@@ -51,4 +51,23 @@ You can obtain `longhornctl` either through downloading a prebuilt binary or by 
     > **Note:** This process will generate two binaries:
     >   - `longhornctl`: A command-line interface for remote Longhorn operations, designed to be run outside the Kubernetes cluster. It executes `longhornctl-local` for operations within the cluster.
     >   - `longhornctl-local`: A command-line interface to be used within a DaemonSet pod inside the Kubernetes cluster, handling in-cluster and host operations.
+1. Validate your changes before opening a pull request
+    ```bash
+    make validate
+    ```
+    > **Note:** Besides `go vet`, `golangci-lint`, and `go fmt`, this runs the [ASCII check](https://github.com/longhorn/longhorn/blob/master/CONTRIBUTING.md#ascii-only-content) on the files and commit messages changed since your branch base. The changes are computed on the host before the containerized validation runs, so this also works in a git worktree.
+
+    The branch base is the merge base of `HEAD` and `UPSTREAM_BASE`. By default, `UPSTREAM_BASE` is the default branch of whichever remote points at `github.com/longhorn/cli`, so a fork named `origin` next to an `upstream` remote works without setup. Set `UPSTREAM_BASE` to any commit or ref when the default does not match the branch your pull request targets:
+    ```bash
+    # A backport targeting a release branch
+    make validate UPSTREAM_BASE=upstream/v1.10.x
+
+    # No github.com/longhorn/cli remote configured, e.g. only a fork as origin
+    git fetch https://github.com/longhorn/cli.git master
+    make validate UPSTREAM_BASE=FETCH_HEAD
+
+    # A branch stacked on another feature branch: check only your own commits
+    make validate UPSTREAM_BASE=my-feature-base
+    ```
+    Fetch the remote first so the ref is current. If no base can be found, for example in a shallow clone, `make validate` prints a message and skips the ASCII check.
 
