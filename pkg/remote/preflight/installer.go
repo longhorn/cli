@@ -45,6 +45,7 @@ type InstallerCmdOptions struct {
 
 	UpdatePackages       bool
 	EnableSpdk           bool
+	EnableRdma           bool
 	SpdkOptions          string
 	HugePageSize         int
 	AllowPci             string
@@ -496,6 +497,10 @@ func (remote *Installer) newDaemonSetForPackageManager() *appsv1.DaemonSet {
 								{
 									Name:  consts.EnvEnableSpdk,
 									Value: commonutils.ConvertTypeToString(remote.EnableSpdk),
+								},
+								{
+									Name:  consts.EnvEnableRdma,
+									Value: commonutils.ConvertTypeToString(remote.EnableRdma),
 								},
 								{
 									Name:  consts.EnvSpdkOptions,
