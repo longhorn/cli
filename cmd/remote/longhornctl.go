@@ -63,6 +63,12 @@ func newCmdLonghornctl() *cobra.Command {
 			},
 		},
 		{
+			Message: "Planning Commands:",
+			Commands: []*cobra.Command{
+				subcmd.NewCmdPlan(),
+			},
+		},
+		{
 			Message: "Troubleshoot Commands:",
 			Commands: []*cobra.Command{
 				subcmd.NewCmdCheck(globalOpts),
