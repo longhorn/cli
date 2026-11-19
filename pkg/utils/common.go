@@ -1,9 +1,27 @@
 package utils
 
 import (
+	"bytes"
 	"path"
 	"strings"
+
+	"go.yaml.in/yaml/v3"
 )
+
+// MarshalYAML encodes v as YAML using 2-space indentation and compact sequence indentation.
+func MarshalYAML(v any) ([]byte, error) {
+	var buf bytes.Buffer
+	enc := yaml.NewEncoder(&buf)
+	enc.SetIndent(2)
+	enc.CompactSeqIndent()
+	if err := enc.Encode(v); err != nil {
+		return nil, err
+	}
+	if err := enc.Close(); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
 
 // BuildImageName returns an image name with the given global registry prepended.
 // If no global registry is provided, the original image string is returned unchanged.

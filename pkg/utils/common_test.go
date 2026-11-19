@@ -1,6 +1,11 @@
 package utils
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
 
 func TestBuildImageName(t *testing.T) {
 	for testName, testCase := range map[string]struct {
@@ -17,4 +22,14 @@ func TestBuildImageName(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestMarshalYAML(t *testing.T) {
+	type sample struct {
+		Name  string   `yaml:"name"`
+		Items []string `yaml:"items"`
+	}
+	out, err := MarshalYAML([]sample{{Name: "first", Items: []string{"a", "b"}}})
+	require.NoError(t, err)
+	assert.Equal(t, "- name: first\n  items:\n  - a\n  - b\n", string(out))
 }
