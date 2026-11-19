@@ -57,6 +57,7 @@ func newCmdLonghornctl() *cobra.Command {
 		{
 			Message: "Operation Commands:",
 			Commands: []*cobra.Command{
+				subcmd.NewCmdMaintenance(globalOpts),
 				subcmd.NewCmdTrim(globalOpts),
 				subcmd.NewCmdExport(globalOpts),
 				subcmd.NewCmdChecksum(globalOpts),

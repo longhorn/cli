@@ -8,12 +8,13 @@ const (
 
 const (
 	// The first layer of subcommands (verb)
-	SubCmdCheck    = "check"
-	SubCmdDiagnose = "diagnose"
-	SubCmdExport   = "export"
-	SubCmdGet      = "get"
-	SubCmdInstall  = "install"
-	SubCmdTrim     = "trim"
+	SubCmdCheck       = "check"
+	SubCmdDiagnose    = "diagnose"
+	SubCmdExport      = "export"
+	SubCmdGet         = "get"
+	SubCmdInstall     = "install"
+	SubCmdMaintenance = "maintenance"
+	SubCmdTrim        = "trim"
 
 	// The second layer of subcommands (noun)
 	SubCmdPreflight = "preflight"
@@ -21,7 +22,9 @@ const (
 	SubCmdVolume    = "volume"
 
 	// The third layer of subcommands (action to the previous layers)
-	SubCmdStop = "stop"
+	SubCmdStop      = "stop"
+	SubCmdEvictNode = "evict-node"
+	SubCmdEvictDisk = "evict-disk"
 
 	// Other subcommands
 	SubCmdVersion = "version"
@@ -67,6 +70,10 @@ const (
 	CmdOptReplicaDryRun         = "dry-run"
 	EnvReplicaDirectory         = "REPLICA_DIR"
 	SubCmdRecover               = "recover"
+
+	// Maintenance options
+	CmdOptDiskUUID = "disk-uuid"
+	CmdOptWait     = "wait"
 )
 
 const (
