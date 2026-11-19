@@ -10,7 +10,6 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"k8s.io/utils/ptr"
-	"sigs.k8s.io/kustomize/kyaml/yaml"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -214,7 +213,7 @@ func (remote *Installer) InstallByPackageManager() (string, error) {
 		return "", nil
 	}
 
-	yamlData, err := yaml.Marshal(nodeCollections)
+	yamlData, err := utils.MarshalYAML(nodeCollections)
 	if err != nil {
 		return "", err
 	}

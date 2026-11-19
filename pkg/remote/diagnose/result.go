@@ -6,9 +6,8 @@ import (
 
 	"github.com/pkg/errors"
 
-	"sigs.k8s.io/kustomize/kyaml/yaml"
-
 	"github.com/longhorn/cli/pkg/types"
+	"github.com/longhorn/cli/pkg/utils"
 )
 
 const (
@@ -80,7 +79,7 @@ func (results Results) Failed() []string {
 func (results Results) Marshal(format string) ([]byte, error) {
 	switch format {
 	case OutputFormatYAML:
-		return yaml.Marshal(results)
+		return utils.MarshalYAML(results)
 	case OutputFormatJSON:
 		output, err := json.MarshalIndent(results, "", "  ")
 		if err != nil {
