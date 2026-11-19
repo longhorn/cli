@@ -16,9 +16,11 @@ const (
 	SubCmdTrim     = "trim"
 
 	// The second layer of subcommands (noun)
-	SubCmdPreflight = "preflight"
-	SubCmdReplica   = "replica"
-	SubCmdVolume    = "volume"
+	SubCmdPreflight    = "preflight"
+	SubCmdReplica      = "replica"
+	SubCmdSystem       = "system"
+	SubCmdV2DataEngine = "v2-data-engine"
+	SubCmdVolume       = "volume"
 
 	// The third layer of subcommands (action to the previous layers)
 	SubCmdStop = "stop"
@@ -53,7 +55,10 @@ const (
 	CmdOptDriverOverride       = "driver-override"
 	CmdOptEnableSpdk           = "enable-spdk"
 	CmdOptHugePageSize         = "huge-page-size"
+	CmdOptPid                  = "pid"
+	CmdOptProcDir              = "proc-dir"
 	CmdOptSpdkOptions          = "spdk-options"
+	CmdOptSpdkSocket           = "spdk-sock"
 	CmdOptUserspaceDriver      = "userspace-driver"
 	CmdOptRestartKubelet       = "restart-kubelet"
 	CmdOptRestartKubeletWindow = "restart-kubelet-window"

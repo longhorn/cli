@@ -59,6 +59,7 @@ func newCmdLonghornctlLocal() *cobra.Command {
 			Message: "Troubleshoot Commands:",
 			Commands: []*cobra.Command{
 				localsubcmd.NewCmdCheck(globalOpts),
+				localsubcmd.NewCmdDiagnose(globalOpts),
 				localsubcmd.NewCmdGet(globalOpts),
 			},
 		},
