@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	ImageBciBase = "registry.suse.com/bci/bci-base:15.6"
+	ImageBciBase = "registry.suse.com/bci/bci-base:15.7"
 	ImagePause   = "registry.k8s.io/pause:3.1"
 )
 

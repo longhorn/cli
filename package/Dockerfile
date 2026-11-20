@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.17.1@sha256:38387523653efa0039f8e1c89bb74a30504e76ee9f565e25c9a09841f9427b05
-FROM registry.suse.com/bci/golang:1.25@sha256:bd17be73bd89df69fa98dc085afdaee4edbe7cd97d15c6b52f48089ce234088e AS app_builder
+FROM registry.suse.com/bci/golang:1.26@sha256:943e15701cdd16a111906eeb798e294fa82bcccb93f59b6d84192d8459962d9c AS app_builder
 
 WORKDIR /app
 
@@ -13,7 +13,7 @@ RUN chmod +x /app/dapper/build
 RUN /app/dapper/build
 
 
-FROM registry.suse.com/bci/golang:1.25@sha256:bd17be73bd89df69fa98dc085afdaee4edbe7cd97d15c6b52f48089ce234088e AS spdk_builder
+FROM registry.suse.com/bci/golang:1.26@sha256:943e15701cdd16a111906eeb798e294fa82bcccb93f59b6d84192d8459962d9c AS spdk_builder
 
 ARG ARCH=amd64
 
