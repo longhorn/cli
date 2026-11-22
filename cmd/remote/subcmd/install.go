@@ -113,6 +113,7 @@ If a reboot is required, the following message will be displayed:
 	cmd.Flags().StringVar(&preflightInstaller.OperatingSystem, consts.CmdOptOperatingSystem, "", "Specify the operating system (\"\", cos). Leave this empty to use the package manager for installation.")
 	cmd.Flags().BoolVar(&preflightInstaller.UpdatePackages, consts.CmdOptUpdatePackages, true, "Update packages before installing required dependencies.")
 	cmd.Flags().BoolVar(&preflightInstaller.EnableSpdk, consts.CmdOptEnableSpdk, false, "Enable installation of SPDK required packages, modules, and setup.")
+	cmd.Flags().BoolVar(&preflightInstaller.EnableRdma, consts.CmdOptEnableRdma, false, "Load and persist the kernel modules required by the V2 data engine RDMA transport.")
 	cmd.Flags().StringVar(&preflightInstaller.SpdkOptions, consts.CmdOptSpdkOptions, "", "Specify a comma-separated list of KEY=VALUE environment variables passed to SPDK's scripts/setup.sh (e.g. HUGEMEM=2048,HUGENODE=0,PERSIST_HUGE=yes).")
 	cmd.Flags().IntVar(&preflightInstaller.HugePageSize, consts.CmdOptHugePageSize, 2048, "Specify the huge page size in MiB for SPDK.")
 	cmd.Flags().StringVar(&preflightInstaller.AllowPci, consts.CmdOptAllowPci, "none", fmt.Sprintf("Specify a comma-separated (%s) list of allowed PCI devices. By default, all PCI devices are blocked by a non-valid address.", consts.CmdOptSeperator))

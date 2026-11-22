@@ -41,6 +41,10 @@ type CheckerCmdOptions struct {
 	EnableSpdk      bool
 	HugePageSize    int
 	UserspaceDriver string
+
+	EnableRdma        bool
+	RdmaInterface     string
+	LonghornNamespace string
 }
 
 // Init initializes the Checker.
@@ -62,6 +66,7 @@ func (remote *Checker) Run() (string, error) {
 	// - the node agent existence when the cluster is running on Container-Optimized OS (COS)
 	// - replica count of the DNS deployment
 	// - hugepages-2Mi capacity on nodes
+	// - V2 data engine CPU mask and iobuf pool settings (RDMA check)
 	rbacRules := []rbacv1.PolicyRule{
 		{
 			APIGroups: []string{"apps"},
@@ -71,6 +76,11 @@ func (remote *Checker) Run() (string, error) {
 		{
 			APIGroups: []string{""},
 			Resources: []string{"nodes", "nodes/status"},
+			Verbs:     []string{"get"},
+		},
+		{
+			APIGroups: []string{"longhorn.io"},
+			Resources: []string{"settings"},
 			Verbs:     []string{"get"},
 		},
 	}
@@ -199,6 +209,18 @@ func (remote *Checker) newDaemonSet() *appsv1.DaemonSet {
 								{
 									Name:  consts.EnvUserspaceDriver,
 									Value: remote.UserspaceDriver,
+								},
+								{
+									Name:  consts.EnvEnableRdma,
+									Value: commonutils.ConvertTypeToString(remote.EnableRdma),
+								},
+								{
+									Name:  consts.EnvRdmaInterface,
+									Value: remote.RdmaInterface,
+								},
+								{
+									Name:  consts.EnvLonghornNamespace,
+									Value: remote.LonghornNamespace,
 								},
 								{
 									Name: consts.EnvCurrentNodeID,
