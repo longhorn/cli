@@ -1,0 +1,58 @@
+name: ASCII Check
+
+# Reject non-ASCII and invisible/control characters introduced by a pull
+# request. The checker is maintained in longhorn/longhorn; scripts/ascii-check
+# fetches it so that every Longhorn repository applies the same rules.
+
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - synchronize
+      - reopened
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ascii-check-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  ASCII_CHECKER_URL: https://raw.githubusercontent.com/longhorn/longhorn/master/scripts/development/ascii-checker.sh
+
+jobs:
+  ascii-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # Check out the default PR merge ref, not the PR head: open PRs whose
+      # branches predate these scripts get them from the merge result, and the
+      # merge base with UPSTREAM_BASE still limits the check to the PR changes.
+      - id: checkout
+        name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check PR title
+        if: ${{ !cancelled() && steps.checkout.outcome == 'success' }}
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          curl -fsSL --retry 3 "${ASCII_CHECKER_URL}" -o "${RUNNER_TEMP}/ascii-checker.sh"
+          printf '%s\n' "${PR_TITLE}" | bash "${RUNNER_TEMP}/ascii-checker.sh" --label "PR title" -
+
+      - name: Check changed files and commit messages
+        if: ${{ !cancelled() && steps.checkout.outcome == 'success' }}
+        env:
+          UPSTREAM_BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          ./scripts/ascii-check-prepare
+          ./scripts/ascii-check

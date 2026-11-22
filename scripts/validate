@@ -16,3 +16,6 @@ golangci-lint run --timeout=5m
 
 echo Running: go fmt
 test -z "$(go fmt ${PACKAGES} | tee /dev/stderr)"
+
+echo Running: ASCII check
+./scripts/ascii-check

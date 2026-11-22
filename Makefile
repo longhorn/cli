@@ -5,22 +5,36 @@ MACHINE := longhorn
 # defined in TARGET_PLATFORMS, and must be a subset of the below:
 DEFAULT_PLATFORMS := linux/amd64,linux/arm64
 
-.PHONY: build validate test ci package
+.PHONY: build validate test ci package ascii-check-prepare
+
+# Branch base for the ASCII check: a commit or ref whose merge base with HEAD
+# starts the range of changed files and commits. Empty means the remote branch
+# of github.com/longhorn/cli. Example: make validate UPSTREAM_BASE=upstream/v1.10.x
+UPSTREAM_BASE ?=
+# Override to test another version of the ASCII checker, e.g. from a fork.
+ASCII_CHECKER_URL ?=
+VALIDATE_BUILD_ARGS := $(if $(ASCII_CHECKER_URL),--build-arg ASCII_CHECKER_URL=$(ASCII_CHECKER_URL))
+
 build:
 	docker buildx build --target build-artifacts --output type=local,dest=. -f Dockerfile .
 
-validate:
-	docker buildx build --target validate -f Dockerfile .
+validate: ascii-check-prepare
+	docker buildx build --target validate $(VALIDATE_BUILD_ARGS) -f Dockerfile .
 
 test:
 	docker buildx build --target base -t longhorn-cli-test -f Dockerfile .
 	docker run longhorn-cli-test ./scripts/test
 
-ci:
-	docker buildx build --target ci-artifacts --output type=local,dest=. -f Dockerfile .
+ci: ascii-check-prepare
+	docker buildx build --target ci-artifacts $(VALIDATE_BUILD_ARGS) --output type=local,dest=. -f Dockerfile .
 
 package:
 	bash scripts/package
+
+# Compute the files and commit messages to check on the host, where git works
+# (also in git worktrees), before the containerized validation runs.
+ascii-check-prepare:
+	@UPSTREAM_BASE="$(UPSTREAM_BASE)" bash scripts/ascii-check-prepare
 
 .PHONY: buildx-machine
 buildx-machine:
