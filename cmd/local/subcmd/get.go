@@ -8,9 +8,10 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/longhorn/cli/pkg/consts"
-	local "github.com/longhorn/cli/pkg/local/replica"
 	"github.com/longhorn/cli/pkg/types"
 	"github.com/longhorn/cli/pkg/utils"
+
+	localreplica "github.com/longhorn/cli/pkg/local/replica"
 )
 
 func NewCmdGet(globalOpts *types.GlobalCmdOptions) *cobra.Command {
@@ -27,7 +28,7 @@ func NewCmdGet(globalOpts *types.GlobalCmdOptions) *cobra.Command {
 }
 
 func newCmdGetReplica(globalOpts *types.GlobalCmdOptions) *cobra.Command {
-	var localGetter = local.Getter{}
+	var localGetter = localreplica.Getter{}
 
 	cmd := &cobra.Command{
 		Use:   consts.SubCmdReplica,
