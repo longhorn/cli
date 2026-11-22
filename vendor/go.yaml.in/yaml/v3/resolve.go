@@ -42,7 +42,6 @@ func init() {
 	for _, c := range "yYnNtTfFoO~" {
 		t[int(c)] = 'M' // In map
 	}
-	t[int('<')] = 'M' // In map (merge key "<<")
 	t[int('.')] = '.' // Float (potentially in map)
 
 	var resolveMapList = []struct {
